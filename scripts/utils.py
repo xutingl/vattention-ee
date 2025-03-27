@@ -25,7 +25,7 @@ MAX_CONTEXT_LENGTH_DYNAMIC_TRACES = 32768
 
 models = {
     'yi-6b-1': {'tp': 1, 'hfrecord': '01-ai/Yi-6B-200k', 'logentry': 'yi-6b'},
-    #'llama-3-8b-1': {'tp': 1, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b'},
+    'llama-3-8b-1': {'tp': 1, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b-ee'},
     'llama-3-8b-2': {'tp': 2, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b'},
     'yi-34b-2': {'tp': 2, 'hfrecord': '01-ai/Yi-34B-200k', 'logentry': 'yi-34b'},
     'llama-2': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama-ee'}

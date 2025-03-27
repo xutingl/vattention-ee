@@ -66,7 +66,10 @@ class vATTNCacheEngine(BaseCacheEngine):
             cache_list = []
             for i in range(self.num_layers):
                 cache_list.append((k_cache[:,:,i], v_cache[:,:,i]))
+            
+            print("[vATTNCacheEngine] Allocated Mega Cache")
         else:
+            print("[vATTNCacheEngine] Allocated Normal Cache")
             k_cache = kv_cache[:self.num_layers]
             v_cache = kv_cache[self.num_layers:]
             for i in range(self.num_layers):
@@ -87,6 +90,12 @@ class vATTNCacheEngine(BaseCacheEngine):
 
     def get_v_cache(self, layer_idx: int) -> torch.Tensor:
         return self.gpu_cache[layer_idx][1]
+    
+    def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int) -> None:
+        self.gpu_cache[dest_layer_idx][0] = self.gpu_cache[src_layer_idx][0]
+    
+    def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int) -> None:
+        self.gpu_cache[dest_layer_idx][1] = self.gpu_cache[src_layer_idx][1]
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         b_idx_prompt = []

@@ -11,13 +11,16 @@ class Request(BaseEntity):
     def __init__(
         self,
         arrived_at: float,
-        num_prefill_tokens: int,
-        num_decode_tokens: int,
+        num_prefill_tokens: int=1,
+        num_decode_tokens: int=1,
+        prompt: str=None,
     ):
         self._id = Request.generate_id()
         self._arrived_at = arrived_at
         self._num_prefill_tokens = num_prefill_tokens
         self._num_decode_tokens = num_decode_tokens
+
+        self.prompt = prompt
         assert num_prefill_tokens > 0
         assert num_decode_tokens > 0
 
@@ -51,4 +54,5 @@ class Request(BaseEntity):
             "arrived_at": self._arrived_at,
             "num_prefill_tokens": self._num_prefill_tokens,
             "num_decode_tokens": self._num_decode_tokens,
+            "prompt": self.prompt,
         }

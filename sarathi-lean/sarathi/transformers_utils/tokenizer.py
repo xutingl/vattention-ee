@@ -24,6 +24,7 @@ def get_tokenizer(
         tokenizer = AutoTokenizer.from_pretrained(
             tokenizer_name, *args, trust_remote_code=trust_remote_code, **kwargs
         )
+        # tokenizer.add_special_tokens({"pad_token":"<pad>"})
     except TypeError as e:
         # The LLaMA tokenizer causes a protobuf error in some environments.
         err_msg = "Failed to load the tokenizer."

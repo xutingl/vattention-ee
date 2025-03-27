@@ -175,6 +175,8 @@ class BaseWorker:
         self,
         scheduler_outputs: SchedulerOutputs,
         preempted_seq: Optional[List] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> Optional[SamplerOutputs]:
         
         batch_stage_start_time = time.monotonic()
@@ -188,6 +190,9 @@ class BaseWorker:
         sampler_outputs = self.model_runner.run(
             seq_metadata_list,
             self.gpu_cache,
+            cache_engine=self.cache_engine,
+            cur_idx_in_seq=cur_idx_in_seq,
+            seq_ids_in_batch=seq_ids_in_batch,
         )
 
         self.on_step_completed(scheduler_outputs, sampler_outputs)

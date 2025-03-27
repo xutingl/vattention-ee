@@ -22,6 +22,7 @@ from sarathi.model_executor.layers.sampler import Sampler
 from sarathi.model_executor.utils import pad_to_alignment
 from sarathi.utils import get_gpu_memory
 from sarathi.worker.cache_engine import get_cache_engine
+from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 from sarathi.model_executor.attention import AttentionBackend
 logger = init_logger(__name__)
 
@@ -228,6 +229,9 @@ class ModelRunner:
         self,
         seq_metadata_list: List[SequenceMetadata],
         gpu_cache: Optional[List[torch.Tensor]] = None,
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> torch.Tensor:
         # Prepare input tensors.
         with self._prepare_inputs_e2e_timer:
@@ -243,6 +247,9 @@ class ModelRunner:
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
+                    cache_engine=cache_engine,
+                    cur_idx_in_seq=cur_idx_in_seq,
+                    seq_ids_in_batch=seq_ids_in_batch,
                 )
             except RuntimeError as e:
                 logger.error(

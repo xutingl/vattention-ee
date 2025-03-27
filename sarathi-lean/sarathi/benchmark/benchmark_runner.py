@@ -65,6 +65,8 @@ class BenchmarkRunner:
             chunk_size = self._config.sarathi_scheduler_chunk_size
         elif self._config.replica_scheduler_provider == "simple_chunking":
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
+        
+        self._config.model_load_format = "auto"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -117,17 +119,20 @@ class BenchmarkRunner:
     ) -> SamplingParams:
         sampling_params = SamplingParams(
             ignore_eos=True,
-            max_tokens=request.num_decode_tokens,
-            temperature=0,
-            top_p=1.0,
+            # max_tokens=request.num_decode_tokens,
+            max_tokens=1000,
+            #temperature=0.5,
+            #top_p=0.5,
+            #top_k=-1,
         )
-        prompt_token_ids = [1] * request.num_prefill_tokens
+        # prompt_token_ids = [1] * request.num_prefill_tokens
 
         return {
-            "prompt": None,
-            "prompt_token_ids": prompt_token_ids,
+            "prompt": request.prompt,
+            # "prompt_token_ids": prompt_token_ids,
             "sampling_params": sampling_params,
             "arrival_time": first_request_time + request.arrived_at,
+            "seq_id": request._id,
         }
 
     def warmup(self) -> None:
@@ -168,6 +173,9 @@ class BenchmarkRunner:
                 if output.finished:
                     num_processed_requests += 1
                     pbar.update(1)
+                    print("=====================================")
+                    print(output)
+                    print("=====================================")
         end_time = time.monotonic()
         pbar.close()
 

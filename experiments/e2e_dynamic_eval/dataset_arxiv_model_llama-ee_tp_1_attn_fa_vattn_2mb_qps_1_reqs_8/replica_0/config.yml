@@ -8,7 +8,7 @@ tokenizer: meta-llama/Llama-2-7b-chat-hf
 tokenizer_mode: auto
 trust_remote_code: true
 download_dir: null
-load_format: dummy
+load_format: auto
 dtype: float16
 seed: 42
 pipeline_parallel_size: 1
@@ -18,7 +18,7 @@ gpu_memory_utilization: 0.9
 revision: null
 scheduler_type: vllm
 max_model_len: 1024
-max_num_seqs: 8
+max_num_seqs: 1
 max_num_batched_tokens: 1024
 chunk_size: null
 enable_dynamic_chunking_schedule: false

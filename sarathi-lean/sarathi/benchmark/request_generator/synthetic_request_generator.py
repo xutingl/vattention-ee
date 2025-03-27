@@ -12,6 +12,9 @@ from sarathi.benchmark.request_generator.request_length_generator_registry impor
 )
 from sarathi.benchmark.utils.random import set_seeds
 
+from datasets import load_dataset
+
+
 
 class SyntheticRequestGenerator(BaseRequestGenerator):
 
@@ -28,8 +31,17 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
                 self._config.synthetic_request_generator_interval_provider, self._config
             )
         )
+        self.squad = load_dataset("rajpurkar/squad_v2", split="validation")
+        self.cnn = load_dataset("abisee/cnn_dailymail", "3.0.0", split="validation")
+    
+    def _get_squad_prompt(self, idx: int) -> str:
+        return self.squad[idx]["context"] + " " + self.squad[idx]["question"]
+    
+    def _get_cnn_prompt(self, idx: int) -> str:
+        # https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00632/119276/Benchmarking-Large-Language-Models-for-News
+        return "Article: " + self.cnn[idx]["article"][:800] + ". Summarize the article in three sentences. Summary:"
 
-    def _generate_next_request(self, last_arrived_at: float) -> Request:
+    def _generate_next_request(self, last_arrived_at: float, idx: int=0) -> Request:
         inter_request_time = (
             self._request_interval_generator.get_next_inter_request_time()
         )
@@ -37,18 +49,19 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
             return None
         arrived_at = last_arrived_at + inter_request_time
 
-        (
-            prefill_tokens,
-            decode_tokens,
-        ) = self._request_length_generator.get_next_num_tokens()
+        # (
+        #     prefill_tokens,
+        #     decode_tokens,
+        # ) = self._request_length_generator.get_next_num_tokens()
 
-        if prefill_tokens is None or decode_tokens is None:
-            return None
+        # if prefill_tokens is None or decode_tokens is None:
+        #     return None
 
         return Request(
             arrived_at=arrived_at,
-            num_prefill_tokens=int(prefill_tokens),
-            num_decode_tokens=int(decode_tokens),
+            prompt=self._get_cnn_prompt(idx),
+            # num_prefill_tokens=int(prefill_tokens),
+            # num_decode_tokens=int(decode_tokens),
         )
 
     def _generate_requests(self) -> List[Request]:
@@ -58,19 +71,23 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
 
         # first priority is duration
         if self._config.synthetic_request_generator_duration is not None:
+            idx = 0
             while current_time < self._config.synthetic_request_generator_duration:
-                request = self._generate_next_request(current_time)
+                request = self._generate_next_request(current_time, idx=idx)
+                idx += 1
                 current_time = request.arrived_at
                 requests.append(request)
         elif self._config.synthetic_request_generator_num_requests is not None:
-            for _ in range(self._config.synthetic_request_generator_num_requests):
-                request = self._generate_next_request(current_time)
+            for i in range(self._config.synthetic_request_generator_num_requests):
+                request = self._generate_next_request(current_time, idx=i)
                 current_time = request.arrived_at
                 requests.append(request)
         else:
             assert self._config.synthetic_request_generator_interval_provider == "trace"
+            idx = 0
             while True:
-                request = self._generate_next_request(current_time)
+                request = self._generate_next_request(current_time, idx=idx)
+                idx += 1
                 if request is None:
                     break
                 current_time = request.arrived_at

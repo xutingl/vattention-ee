@@ -56,6 +56,7 @@ from sarathi.model_executor.weight_utils import (
     load_tensor_parallel_weights,
 )
 from sarathi.worker.cache_engine import KVCache
+from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 
 
 class LlamaMLP(nn.Module):
@@ -345,6 +346,9 @@ class LlamaModel(nn.Module):
         positions: torch.Tensor,
         kv_caches: List[KVCache],
         lm_head,
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> torch.Tensor:
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
@@ -359,9 +363,19 @@ class LlamaModel(nn.Module):
                     ee_policy="eager",
                     return_conf=True
                 )
+                print("-----------------------")
+                print(f"kv caches len: {len(kv_caches)}")
+                if cache_engine is None:
+                    print("cache engine is None")
+                else:
+                    # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
+                    # k_cache = cache_engine.get_k_cache(i)
+                    # print(k_cache.shape)
+                    pass
+                print("-----------------------------\n")
                 if skip_mask:
                     self.exited_rates[0] += 1
-                    print(f"Exiting at layer {i} with confidence {conf}. exited rates: {self.exited_rates}")
+                    print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}")
                     break
                 else:
                     self.exited_rates[1] += 1
@@ -407,6 +421,9 @@ class LlamaForCausalLM(nn.Module):
         hidden_states: torch.Tensor,
         positions: torch.Tensor,
         kv_caches: List[KVCache],
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None,
+        seq_ids_in_batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -417,7 +434,7 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states = self.model(hidden_states, positions, kv_caches, self.lm_head)
+        hidden_states = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, cur_idx_in_seq=cur_idx_in_seq, seq_ids_in_batch=seq_ids_in_batch)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)

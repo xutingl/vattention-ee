@@ -7,7 +7,7 @@ import utils
 # configurable
 num_requests = 256
 gpu_mem_util = 0.9
-max_batch_size = 8
+max_batch_size = 2
 
 models = utils.models
 attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
@@ -21,8 +21,9 @@ dataset_path = os.path.join(root, 'sarathi-lean', utils.dataset_subpath)
 
 # for quick testing
 if utils.args.test == True:
-    models, attention_backends = {'llama-2'}, ['fa_vattn_2mb']
-    num_requests, qps_values = 8, [1]
+    models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
+    # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
+    num_requests, qps_values = 2, [1]
 
 for model in models:
     for qps in qps_values:
@@ -30,7 +31,7 @@ for model in models:
             model_logentry = utils.models[model]['logentry']
             tp_dim = utils.models[model]['tp']
             max_tokens = utils.get_max_context_length(backend, utils.MAX_CONTEXT_LENGTH_DYNAMIC_TRACES)
-            max_tokens = 1024
+            max_tokens = 1000
             kv_block_size = utils.get_block_or_page_size(backend)
             attn_backend_arg = utils.get_backend(backend)
             command = [
