@@ -399,15 +399,24 @@ class BaseLLMEngine:
             scheduler_outputs
         )
 
-        print("\n\nseq_metadata_list: ")
-        seq_ids_in_batch = torch.tensor([metadata.seq.seq_id for metadata in seq_metadata_list])
-        print(seq_ids_in_batch)
+        seq_ids_in_batch = []
+        cur_idx_in_seq = [] # The index of the token to be generated in the sequence
+        for metadata in seq_metadata_list:
+            seq_ids_in_batch.append(metadata.seq.seq_id)
+            if metadata.seq.prompt_processing_finished:
+                cur_idx_in_seq.append(len(metadata.seq.prompt_token_ids) + len(metadata.seq.output_token_ids))
+            else:
+                cur_idx_in_seq.append(metadata.seq.prompt_tokens_processed)
+        seq_ids_in_batch = torch.tensor(seq_ids_in_batch)
+        cur_idx_in_seq = torch.tensor(cur_idx_in_seq)
+
 
         sampler_outputs = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
+            cur_idx_in_seq=cur_idx_in_seq,
         )
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)

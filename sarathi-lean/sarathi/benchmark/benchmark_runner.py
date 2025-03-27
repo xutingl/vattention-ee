@@ -40,6 +40,7 @@ class BenchmarkRunner:
         os.makedirs(output_dir, exist_ok=True)
 
         set_seeds(config.seed)
+        set_seeds(42)
         request_generator = RequestGeneratorRegistry.get_from_str(
             self._config.request_generator_provider, self._config
         )
@@ -120,7 +121,7 @@ class BenchmarkRunner:
         sampling_params = SamplingParams(
             ignore_eos=True,
             # max_tokens=request.num_decode_tokens,
-            max_tokens=1000,
+            max_tokens=self._config.model_max_model_len // self._config.replica_scheduler_max_batch_size,
             #temperature=0.5,
             #top_p=0.5,
             #top_k=-1,

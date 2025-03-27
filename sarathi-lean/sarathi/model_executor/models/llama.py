@@ -347,8 +347,8 @@ class LlamaModel(nn.Module):
         kv_caches: List[KVCache],
         lm_head,
         cache_engine: Optional[vATTNCacheEngine] = None,
-        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
-        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
+        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>. The idx in the seqence of the token to be generated
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size> # The seq_id of the seqences in the batch
     ) -> torch.Tensor:
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
@@ -363,19 +363,39 @@ class LlamaModel(nn.Module):
                     ee_policy="eager",
                     return_conf=True
                 )
-                print("-----------------------")
-                print(f"kv caches len: {len(kv_caches)}")
-                if cache_engine is None:
-                    print("cache engine is None")
-                else:
-                    # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
-                    # k_cache = cache_engine.get_k_cache(i)
-                    # print(k_cache.shape)
-                    pass
-                print("-----------------------------\n")
+                # if cache_engine is None:
+                #     print("cache engine is None")
+                # else:
+                #     # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
+                #     k_cache = cache_engine.get_k_cache(i)
+                #     cur_idx = cur_idx_in_seq[0]
+                #     print(f"cur_idx: {cur_idx}")
+                #     print("current layer, prev token:")
+                #     print(k_cache[0][cur_idx-1])
+                #     print("prev layer, current token:")
+                #     k_cache = cache_engine.get_k_cache(i-1)
+                #     print(k_cache[0][cur_idx])
+                #     print()
+                #     print(k_cache[0][cur_idx-1])
+                # print("-----------------------------\n")
                 if skip_mask:
                     self.exited_rates[0] += 1
-                    print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}")
+                    # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
+
+                    # Copy layer i-1's kv cache for the prev token to layer i - last layer.
+                    for batch_idx, token_idx in enumerate(cur_idx_in_seq):
+                        for l in range(i, len(self.layers)):
+
+                            # print(f"Before:")
+                            # print(k_cache[0][token_idx-1], flush=True)
+
+                            cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx-1)
+                            cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx-1)
+
+                            # print(f"after:")
+                            # print(k_cache[0][token_idx-1], flush=True)
+
+
                     break
                 else:
                     self.exited_rates[1] += 1

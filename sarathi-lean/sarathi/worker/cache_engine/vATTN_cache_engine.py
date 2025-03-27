@@ -91,11 +91,11 @@ class vATTNCacheEngine(BaseCacheEngine):
     def get_v_cache(self, layer_idx: int) -> torch.Tensor:
         return self.gpu_cache[layer_idx][1]
     
-    def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int) -> None:
-        self.gpu_cache[dest_layer_idx][0] = self.gpu_cache[src_layer_idx][0]
+    def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, batch_idx: int, token_idx: int) -> None:
+        self.gpu_cache[dest_layer_idx][0][batch_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][0][batch_idx][token_idx,:,:]
     
-    def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int) -> None:
-        self.gpu_cache[dest_layer_idx][1] = self.gpu_cache[src_layer_idx][1]
+    def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, batch_idx: int, token_idx: int) -> None:
+        self.gpu_cache[dest_layer_idx][1][batch_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][1][batch_idx][token_idx,:,:]
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         b_idx_prompt = []
