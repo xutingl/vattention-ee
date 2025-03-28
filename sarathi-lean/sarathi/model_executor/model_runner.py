@@ -106,8 +106,8 @@ class ModelRunner:
             input_positions.append(position)
         # Optimization: Pad the input length to be a multiple of 8.
         # This is required for utilizing the Tensor Cores in NVIDIA GPUs.
-        input_tokens = pad_to_alignment(input_tokens, multiple_of=8)
-        input_positions = pad_to_alignment(input_positions, multiple_of=8)
+        # input_tokens = pad_to_alignment(input_tokens, multiple_of=8)
+        # input_positions = pad_to_alignment(input_positions, multiple_of=8)
 
         # Convert to tensors.
         tokens_tensor = torch.tensor(input_tokens, dtype=torch.long, device=self.device)
@@ -243,12 +243,11 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output = self.model(
+                output, output_seq_ids = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
                     cache_engine=cache_engine,
-                    cur_idx_in_seq=cur_idx_in_seq,
                     seq_ids_in_batch=seq_ids_in_batch,
                 )
             except RuntimeError as e:

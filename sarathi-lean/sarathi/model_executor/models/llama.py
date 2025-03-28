@@ -24,7 +24,7 @@
 
 The input of the model is flattened to a 1D tensor of tokens.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn
@@ -253,6 +253,67 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = residual + hidden_states
         return hidden_states
 
+class HiddenStatesBuffer():
+    """
+    A buffer that stores hidden states
+    """
+
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096):
+        self.batch_size = batch_size
+        self.capacity = capacity
+        # [WARNING!] hard code device
+        self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
+        self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
+        self.available_slots = set(range(self.capacity))
+        self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
+    
+    def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
+        print(f"[add_hidden_states] adding hidden states. size: {hidden_states.size()}, req_ids: {req_ids}")
+        num_hidden_states = hidden_states.size(0)
+        assert num_hidden_states + len(self.hidden_states_map) <= self.capacity, f"Not enough capacity in hidden states buffer. num_hidden_states: {num_hidden_states}, len(hidden_states_map): {len(self.hidden_states_map)}, capacity: {self.capacity}"
+        assert self.hidden_states.size(1) == hidden_states.size(1), f"Hidden states have different lengths, buffer requires size {self.hidden_states.size(1)} but got {hidden_states.size(1)}"
+        assert hidden_states.size(0) == len(req_ids), f"Number of hidden states({hidden_states.size(0)}) and req_ids({len(req_ids)}) do not match"
+
+        # Find available slots in hidden_states and put hidden states in them
+        for i in range(num_hidden_states):
+            slot = self.available_slots.pop()
+            self.hidden_states[slot] = hidden_states[i].clone()
+            self.positions[slot] = positions[i]
+            self.hidden_states_map[req_ids[i]] = slot
+    """
+    Args:
+        num: number of hidden states to take. If 0, take all hidden states in the buffer.
+    Returns:
+        output_hidden_states: hidden states taken from the buffer. <num, hidden_state_length>
+        output_req_ids: req_ids corresponding to the hidden states. <num>
+        positions: positions corresponding to the hidden states. <num>
+    """
+    def take_hidden_states(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+        if num == 0:
+            num = self.batch_size
+        assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
+        
+        output_hidden_states = torch.zeros(num, self.hidden_states.size(1), device='cuda:0')
+        output_req_ids = []
+        positions = []
+        
+        # FIFO order: take hidden states from the left of the hidden_states_map
+        num_taken = 0
+        for req_id, slot in list(self.hidden_states_map.items())[:num]:
+            output_hidden_states[num_taken] = self.hidden_states[slot]
+            self.available_slots.add(slot)
+            self.hidden_states_map.pop(req_id)
+            output_req_ids.append(req_id)
+            positions.append(self.positions[slot])
+            num_taken += 1
+        print(f"[take_hidden_states] output_hidden_states {output_hidden_states}")
+        output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
+        output_positions = torch.tensor(positions, device='cuda:0')
+        return output_hidden_states, output_req_ids, output_positions
+        
+    def __len__(self):
+        return len(self.hidden_states_map)
+
 
 class LlamaModel(nn.Module):
 
@@ -291,9 +352,14 @@ class LlamaModel(nn.Module):
         if is_pipeline_last_stage():
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         
+        self.ee_policy = "rebatching"
         self.shallow_exit_layer = 20
         self.conf_threshold = 0.6
         self.exited_rates = [0, 0]
+
+
+        self.start_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states of the token arrived at first layer
+        self.deep_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states that EE'ed
     
     def softmax_confidence(
         self,
@@ -316,84 +382,67 @@ class LlamaModel(nn.Module):
             mask = torch.tensor(0.0, device=hidden_states.device).bool()
             conf = torch.tensor(0.0, device=hidden_states.device)
             if not return_conf:
-                return mask
+                return mask, False
             else:
-                return mask, conf
+                return mask, conf, False
         logits = logits[~torch.any(logits.isnan(),dim=1)]
         conf = self.softmax_confidence(logits)
         conf = conf[~torch.isnan(conf)]
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
-        conf = torch.mean(conf)
-        if ee_policy == "eager":
-            mask = torch.any(mask)
-        elif ee_policy == "lazy":
-            mask = torch.all(mask)
-        elif ee_policy == "average":
-            val = 0.0 if conf <= self.conf_threshold else 1.0
-            mask = torch.tensor(val, device=hidden_states.device).bool()
-        else:
-            raise ValueError("Invalid EE policy: {}".format(ee_policy))
+
+        need_skip = torch.any(mask)
+
+        if ee_policy != "rebatching":
+            
+            conf = torch.mean(conf)
+            if ee_policy == "eager":
+                need_skip = torch.any(mask)
+            elif ee_policy == "lazy":
+                need_skip = torch.all(mask)
+            elif ee_policy == "average":
+                val = 0.0 if conf <= self.conf_threshold else 1.0
+                need_skip = torch.tensor(val, device=hidden_states.device).bool()
+            else:
+                raise ValueError("Invalid EE policy: {}".format(ee_policy))
         
 
         if not return_conf:
-            return mask 
+            return mask, need_skip
         else:
-            return mask, conf
-
-    def forward(
+            return mask, conf, need_skip
+    
+    def forward_without_rebatching(
         self,
         hidden_states: torch.Tensor,
         positions: torch.Tensor,
         kv_caches: List[KVCache],
         lm_head,
         cache_engine: Optional[vATTNCacheEngine] = None,
-        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>. The idx in the seqence of the token to be generated
-        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size> # The seq_id of the seqences in the batch
     ) -> torch.Tensor:
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
+        
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if i == self.shallow_exit_layer:
                 lm_logits, _ = lm_head(self.norm(hidden_states))
-                skip_mask, conf = self.get_skip_mask(
+                skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
-                    ee_policy="eager",
+                    ee_policy=self.ee_policy,
                     return_conf=True
                 )
-                # if cache_engine is None:
-                #     print("cache engine is None")
-                # else:
-                #     # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
-                #     k_cache = cache_engine.get_k_cache(i)
-                #     cur_idx = cur_idx_in_seq[0]
-                #     print(f"cur_idx: {cur_idx}")
-                #     print("current layer, prev token:")
-                #     print(k_cache[0][cur_idx-1])
-                #     print("prev layer, current token:")
-                #     k_cache = cache_engine.get_k_cache(i-1)
-                #     print(k_cache[0][cur_idx])
-                #     print()
-                #     print(k_cache[0][cur_idx-1])
-                # print("-----------------------------\n")
-                if skip_mask:
+
+                if need_skip:
                     self.exited_rates[0] += 1
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
-                    for batch_idx, token_idx in enumerate(cur_idx_in_seq):
+                    for batch_idx, token_idx in enumerate(positions):
                         for l in range(i, len(self.layers)):
-
-                            # print(f"Before:")
-                            # print(k_cache[0][token_idx-1], flush=True)
-
-                            cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx-1)
-                            cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx-1)
-
-                            # print(f"after:")
-                            # print(k_cache[0][token_idx-1], flush=True)
+                            cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
+                            cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
 
 
                     break
@@ -410,6 +459,114 @@ class LlamaModel(nn.Module):
             hidden_states = self.norm(hidden_states)
 
         return hidden_states
+    
+    """
+    When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
+    - We check `deep_buffer` first to see if there are enough hidden states to form a batch. If there are, we will process and return them. The incoming hidden states are added to `start_buffer`. Return.
+    - Any requests in the `start_buffer` has a higher priority than incoming requests. Pop requests from `start_buffer` and swap incoming requests to `start_buffer`.
+        Process the requests:
+        - If all requests want to EE, no rebatching is done.
+        - If some requests want to EE, they are returned immediately, and the rest are put into `deep_buffer`.
+
+    Returns:
+    - hidden_states: <batch_size, hidden_size>
+    - seq_ids_in_batch: <batch_size>
+    """
+    def forward(
+        self,
+        hidden_states: torch.Tensor,
+        positions: torch.Tensor,
+        kv_caches: List[KVCache],
+        lm_head,
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size> # The seq_id of the seqences in the batch
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        # Rebatching disabled
+        if seq_ids_in_batch is None:
+            return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine)
+
+        # Rebatching enabled
+
+        if self.embed_tokens:
+            hidden_states = self.embed_tokens(hidden_states)
+
+        batch_size = seq_ids_in_batch.size(0)
+        # 1. We check `deep_buffer` first to see if there are enough hidden states to form a batch. If there are, we will process and return them. The incoming hidden states are added to `start_buffer`.
+        if len(self.deep_buffer) >= batch_size:
+            # 1.1 Put incoming hidden states into `start_buffer`
+            self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch.tolist(), positions)
+            # 1.2 Take hidden states from `deep_buffer`
+            hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(batch_size)
+
+            # 1.3 Process hidden states starting from the EE layer
+            for i in range(self.shallow_exit_layer, len(self.layers)):
+                layer = self.layers[i]
+                hidden_states = layer(
+                    positions,
+                    hidden_states,
+                    kv_caches[i],
+                )
+            if self.norm:
+                hidden_states = self.norm(hidden_states)
+
+            return hidden_states, seq_ids_in_batch
+
+        # 2. Requests in the `start_buffer` has a higher priority than incoming requests. Pop requests from `start_buffer` and swap incoming requests to `start_buffer`.
+        num_req_in_start_buffer = len(self.start_buffer)
+        if num_req_in_start_buffer > 0:
+            num_req_to_take = min(num_req_in_start_buffer, batch_size)
+            self.start_buffer.add_hidden_states(hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take].tolist(), positions[:num_req_to_take])
+            hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take] = self.start_buffer.take_hidden_states(num_req_to_take)
+
+        for i in range(len(self.layers)):
+            layer = self.layers[i]
+            if cache_engine and i == self.shallow_exit_layer:
+                lm_logits, _ = lm_head(self.norm(hidden_states))
+                skip_mask, conf, need_skip = self.get_skip_mask(
+                    logits=lm_logits,
+                    hidden_states=hidden_states,
+                    ee_policy=self.ee_policy,
+                    return_conf=True
+                )
+                
+                if need_skip:
+                    self.exited_rates[0] += 1
+                    # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
+
+                    if torch.all(skip_mask):
+                        # 3.1 If all requests want to EE, no rebatching is done.
+                        # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
+                        # Copy layer i-1's kv cache for the prev token to layer i - last layer.
+                        for batch_idx, token_idx in enumerate(positions[:batch_size]):
+                            for l in range(i, len(self.layers)):
+                                cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
+                                cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
+                    else:
+
+                        for req_idx, skip in enumerate(skip_mask):
+                            if not skip:
+                                # 3.2 Put requests that don't EE into `deep_buffer`.
+                                self.deep_buffer.add_hidden_states(hidden_states[req_idx].unsqueeze(0), [seq_ids_in_batch[req_idx].item()], positions[req_idx].unsqueeze(0))
+                        # Remove requests that don't EE
+                        hidden_states = hidden_states[~skip_mask]
+                        seq_ids_in_batch = seq_ids_in_batch[~skip_mask]
+                        positions = positions[~skip_mask]
+                    
+                    break
+                else:
+                    self.exited_rates[1] += 1
+                
+            hidden_states = layer(
+                positions,
+                hidden_states,
+                kv_caches[i],
+            )
+
+        if self.norm:
+            hidden_states = self.norm(hidden_states)
+
+        return hidden_states, seq_ids_in_batch
 
 
 class LlamaForCausalLM(nn.Module):

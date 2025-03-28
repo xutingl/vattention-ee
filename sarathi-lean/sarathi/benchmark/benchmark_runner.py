@@ -175,7 +175,7 @@ class BenchmarkRunner:
                     num_processed_requests += 1
                     pbar.update(1)
                     print("=====================================")
-                    print(output)
+                    print(output.text)
                     print("=====================================")
         end_time = time.monotonic()
         pbar.close()
