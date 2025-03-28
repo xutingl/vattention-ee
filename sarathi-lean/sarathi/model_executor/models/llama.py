@@ -537,7 +537,7 @@ class LlamaModel(nn.Module):
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if cache_engine and i == self.shallow_exit_layer:
+            if False and cache_engine and i == self.shallow_exit_layer:
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
