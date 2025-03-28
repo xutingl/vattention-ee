@@ -128,6 +128,8 @@ class BaseLLMEngine:
             CpuOperationMetrics.PROCESS_MODEL_OUTPUTS
         )
 
+        self.rebatching = True
+
     def _validate_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
 
@@ -400,24 +402,20 @@ class BaseLLMEngine:
         )
 
         seq_ids_in_batch = []
-        cur_idx_in_seq = [] # The index of the token to be generated in the sequence
         for metadata in seq_metadata_list:
             seq_ids_in_batch.append(metadata.seq.seq_id)
-            if metadata.seq.prompt_processing_finished:
-                cur_idx_in_seq.append(len(metadata.seq.prompt_token_ids) + len(metadata.seq.output_token_ids))
-            else:
-                cur_idx_in_seq.append(metadata.seq.prompt_tokens_processed)
-        seq_ids_in_batch = torch.tensor(seq_ids_in_batch)
-        cur_idx_in_seq = torch.tensor(cur_idx_in_seq)
+        seq_ids_in_batch = torch.tensor(seq_ids_in_batch, device="cuda:0")
 
-
-        sampler_outputs = self._run_workers(
+        sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
-            cur_idx_in_seq=cur_idx_in_seq,
         )
+
+        
+        
+
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))

@@ -52,6 +52,7 @@ class BaseWorker:
         local_rank: int,
         rank: Optional[int] = None,
         distributed_init_method: Optional[str] = None,
+        rebatching: bool = True,
     ) -> None:
         self.model_config = model_config
         self.parallel_config = parallel_config
@@ -75,6 +76,9 @@ class BaseWorker:
         
         self._verify_parallel_config()
         self.metrics_store = MetricsStore(metrics_config)
+
+        self.rebatching = rebatching
+        self.scheduled_seq_metadata_map = {} # seq_id -> SequenceScheduleMetadata
 
     def _verify_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
@@ -175,7 +179,6 @@ class BaseWorker:
         self,
         scheduler_outputs: SchedulerOutputs,
         preempted_seq: Optional[List] = None,
-        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> Optional[SamplerOutputs]:
         
@@ -187,13 +190,20 @@ class BaseWorker:
 
         self.cache_engine.step(seq_metadata_list)
 
-        sampler_outputs = self.model_runner.run(
+        # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
+        sampler_outputs, output_seq_ids, seq_metadata_list = self.model_runner.run(
             seq_metadata_list,
             self.gpu_cache,
             cache_engine=self.cache_engine,
-            cur_idx_in_seq=cur_idx_in_seq,
             seq_ids_in_batch=seq_ids_in_batch,
         )
+
+        # Update scheduler_outputs with the new seq_metadata_list
+        if self.rebatching:
+            for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
+                self.scheduled_seq_metadata_map[scheduled_seq_metadata.seq_id] = scheduled_seq_metadata
+            
+            scheduler_outputs.scheduled_seq_metadata_list = [self.scheduled_seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
 
         self.on_step_completed(scheduler_outputs, sampler_outputs)
         self.cache_engine.on_step_completion(seq_metadata_list)
@@ -210,7 +220,7 @@ class BaseWorker:
             batch_stage_end_time,
         )
 
-        return sampler_outputs #, self.cache_engine.num_free_blocks()
+        return sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs #, self.cache_engine.num_free_blocks()
 
     @synchronized
     def get_metrics_store(self) -> MetricsStore:

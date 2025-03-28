@@ -105,6 +105,7 @@ class BaseSequenceManager(ABC):
         # to finished if the stop condition is met
         seq.check_stop()
         if seq.is_finished():
+            print(f"[BaseSequenceManager] seq_id: {seq_id} finished. text: {seq.output_text}")
             self._free_seq(seq.seq_id)
 
     @synchronized

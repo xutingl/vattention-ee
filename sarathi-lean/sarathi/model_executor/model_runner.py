@@ -37,6 +37,7 @@ class ModelRunner:
         cache_config: CacheConfig,
         device: torch.device,
         rank: int,
+        rebatching: bool = True,
     ):
         self.model_config = model_config
         self.parallel_config = parallel_config
@@ -67,6 +68,9 @@ class ModelRunner:
         self._model_execution_e2e_timer = CpuTimer(
             CpuOperationMetrics.MODEL_EXECUTION_E2E, rank=self.rank
         )
+
+        self.rebatching = rebatching
+        self.seq_metadata_map = {}
 
     def _prepare_inputs(
         self,
@@ -230,7 +234,6 @@ class ModelRunner:
         seq_metadata_list: List[SequenceMetadata],
         gpu_cache: Optional[List[torch.Tensor]] = None,
         cache_engine: Optional[vATTNCacheEngine] = None,
-        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> torch.Tensor:
         # Prepare input tensors.
@@ -255,6 +258,12 @@ class ModelRunner:
                     f"RuntimeError: {e} for seq_metadata_list: {seq_metadata_list}"
                 )
                 raise e
+            
+            if self.rebatching:
+                for matadata in seq_metadata_list:
+                    self.seq_metadata_map[matadata.seq.seq_id] = matadata
+                seq_metadata_list = [self.seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
+
 
         with self._sampler_e2e_timer:
             if self.sampler is not None:
@@ -262,4 +271,4 @@ class ModelRunner:
 
         get_attention_wrapper().end_forward()
 
-        return output
+        return output, output_seq_ids, seq_metadata_list
