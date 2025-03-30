@@ -115,6 +115,8 @@ class ModelRunner:
             input_positions, dtype=torch.long, device=self.device
         )
 
+        print(f"==============================\ntokens_tensor: {tokens_tensor}, positions_tensor: {positions_tensor}\n")
+
         return tokens_tensor, positions_tensor
 
     @torch.inference_mode()
@@ -247,9 +249,6 @@ class ModelRunner:
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
-                    cache_engine=cache_engine,
-                    cur_idx_in_seq=cur_idx_in_seq,
-                    seq_ids_in_batch=seq_ids_in_batch,
                 )
             except RuntimeError as e:
                 logger.error(

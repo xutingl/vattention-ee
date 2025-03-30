@@ -79,7 +79,7 @@ class BenchmarkRunner:
             tensor_parallel_size=self._config.model_tensor_parallel_degree,
             pipeline_parallel_size=self._config.model_pipeline_parallel_degree,
             attention_backend=self._config.model_attention_backend,
-            seed=self._config.seed,
+            seed=42,
             dtype="float16",
             load_format=self._config.model_load_format,
             gpu_memory_utilization=self._config.gpu_memory_utilization,
@@ -118,7 +118,7 @@ class BenchmarkRunner:
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
         sampling_params = SamplingParams(
-            ignore_eos=True,
+            ignore_eos=False,
             # max_tokens=request.num_decode_tokens,
             max_tokens=1000,
             #temperature=0.5,

@@ -97,6 +97,7 @@ class BaseSequenceManager(ABC):
 
         if not seq.prompt_processing_finished:
             seq.update_prompt_tokens_processed(prompt_chunk_len)
+            print(f"seq prompt tokens processed: {seq.prompt_tokens_processed}")
             return
 
         seq.append_token_id(sample.output_token)

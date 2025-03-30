@@ -399,9 +399,7 @@ class BaseLLMEngine:
             scheduler_outputs
         )
 
-        print("\n\nseq_metadata_list: ")
         seq_ids_in_batch = torch.tensor([metadata.seq.seq_id for metadata in seq_metadata_list])
-        print(seq_ids_in_batch)
 
         sampler_outputs = self._run_workers(
             "execute_model",

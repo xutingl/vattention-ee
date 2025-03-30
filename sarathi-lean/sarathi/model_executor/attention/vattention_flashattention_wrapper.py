@@ -116,6 +116,11 @@ class VAttentionFlashAttentionWrapper(BaseAttentionWrapper):
         softmax_scale: float = 1.0,
         layer_id: Optional[int] = None,
     ) -> torch.Tensor:
+        # print(f"Attention input-----------------")
+        # print(f"query: {query[0][:10]}")
+        # print(f"key: {key[0][:10]}")
+        # print(f"value: {value[0][:10]}")
+        # print(f"---------------------------\n")
         assert self.is_metadata_initialized, "Metadata is not initialized."
 
         if self.is_profiling_iteration:

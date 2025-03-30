@@ -56,6 +56,7 @@ from sarathi.model_executor.weight_utils import (
     load_tensor_parallel_weights,
 )
 from sarathi.worker.cache_engine import KVCache
+from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 
 
 class LlamaMLP(nn.Module):
@@ -289,18 +290,96 @@ class LlamaModel(nn.Module):
         self.norm = None
         if is_pipeline_last_stage():
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
+        
+        self.shallow_exit_layer = 20
+        self.conf_threshold = 0.6
+        self.exited_rates = [0, 0]
+    
+    def softmax_confidence(
+        self,
+        logits: torch.Tensor,
+    ):
+        probs = torch.softmax(logits, dim=-1)
+        top_2 = torch.topk(probs, dim=-1, k=2)[0]
+        return (top_2[..., 0] - top_2[..., 1]).squeeze()
+    
+    def get_skip_mask(
+        self,
+        logits: torch.Tensor = None,
+        hidden_states: torch.Tensor = None,
+        ee_policy: str = "eager",
+        return_conf=False,
+    ):
+        assert ee_policy != "off", "Turn off EE by setting self.use_shallow_deep = False. Set policy to 'off' incurrs unnecessary overhead."
+        if hidden_states.size(0) > 16:
+            # Heuristic to avoid using EE for prefilling
+            mask = torch.tensor(0.0, device=hidden_states.device).bool()
+            conf = torch.tensor(0.0, device=hidden_states.device)
+            if not return_conf:
+                return mask
+            else:
+                return mask, conf
+        logits = logits[~torch.any(logits.isnan(),dim=1)]
+        conf = self.softmax_confidence(logits)
+        conf = conf[~torch.isnan(conf)]
+        mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
+        conf = torch.mean(conf)
+        if ee_policy == "eager":
+            mask = torch.any(mask)
+        elif ee_policy == "lazy":
+            mask = torch.all(mask)
+        elif ee_policy == "average":
+            val = 0.0 if conf <= self.conf_threshold else 1.0
+            mask = torch.tensor(val, device=hidden_states.device).bool()
+        else:
+            raise ValueError("Invalid EE policy: {}".format(ee_policy))
+        
+
+        if not return_conf:
+            return mask 
+        else:
+            return mask, conf
 
     def forward(
         self,
         hidden_states: torch.Tensor,
         positions: torch.Tensor,
         kv_caches: List[KVCache],
+        lm_head,
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None, # <batch_size>
+        seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
     ) -> torch.Tensor:
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
+            if i == self.shallow_exit_layer:
+                lm_logits, _ = lm_head(self.norm(hidden_states))
+                skip_mask, conf = self.get_skip_mask(
+                    logits=lm_logits,
+                    hidden_states=hidden_states,
+                    ee_policy="eager",
+                    return_conf=True
+                )
+                print("-----------------------")
+                print(f"kv caches len: {len(kv_caches)}")
+                if cache_engine is None:
+                    print("cache engine is None")
+                else:
+                    # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
+                    # k_cache = cache_engine.get_k_cache(i)
+                    # print(k_cache.shape)
+                    pass
+                print("-----------------------------\n")
+                if skip_mask:
+                    self.exited_rates[0] += 1
+                    print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}")
+                    break
+                else:
+                    self.exited_rates[1] += 1
+                
             hidden_states = layer(
                 positions,
                 hidden_states,
@@ -342,6 +421,9 @@ class LlamaForCausalLM(nn.Module):
         hidden_states: torch.Tensor,
         positions: torch.Tensor,
         kv_caches: List[KVCache],
+        cache_engine: Optional[vATTNCacheEngine] = None,
+        cur_idx_in_seq: Optional[torch.Tensor] = None,
+        seq_ids_in_batch: Optional[torch.Tensor] = None,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -352,7 +434,7 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states = self.model(hidden_states, positions, kv_caches)
+        hidden_states = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, cur_idx_in_seq=cur_idx_in_seq, seq_ids_in_batch=seq_ids_in_batch)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)
