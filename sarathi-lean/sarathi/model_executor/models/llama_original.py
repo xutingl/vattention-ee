@@ -176,6 +176,7 @@ class LlamaAttention(nn.Module):
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
         # with self._attn_rope_timer:
         #     q, k = self.rotary_emb(positions, q, k)
+        q, k = self.rotary_emb(positions, q, k)
         attn_output = get_attention_wrapper().forward(
             q,
             k,

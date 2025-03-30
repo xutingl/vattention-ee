@@ -18,6 +18,7 @@ class BaseSequenceManager(ABC):
 
     def __init__(self):
         self.seq_map = {}
+        self.finished_seq_map = {}
 
     @synchronized
     def add_seq(self, seq: Sequence) -> None:
@@ -26,6 +27,7 @@ class BaseSequenceManager(ABC):
 
     def _free_seq(self, seq_id: int) -> None:
         assert seq_id in self.seq_map
+        self.finished_seq_map[seq_id] = self.seq_map[seq_id]
         del self.seq_map[seq_id]
 
     def _preempt_seq(self, seq_id: int) -> None:
@@ -105,7 +107,6 @@ class BaseSequenceManager(ABC):
         # to finished if the stop condition is met
         seq.check_stop()
         if seq.is_finished():
-            print(f"[BaseSequenceManager] seq_id: {seq_id} finished. text: {seq.output_text}")
             self._free_seq(seq.seq_id)
 
     @synchronized
@@ -138,4 +139,9 @@ class BaseSequenceManager(ABC):
         seq_metadata_list: List[SequenceMetadata],
     ) -> List[RequestOutput]:
         all_seqs = ignored_seqs + [x.seq for x in seq_metadata_list]
+        # Update all_seqs with the current status
+        all_seqs = [
+            self.finished_seq_map[seq.seq_id] if seq.seq_id in self.finished_seq_map else seq for seq in all_seqs
+        ]
+        
         return [RequestOutput.from_seq(seq) for seq in all_seqs]

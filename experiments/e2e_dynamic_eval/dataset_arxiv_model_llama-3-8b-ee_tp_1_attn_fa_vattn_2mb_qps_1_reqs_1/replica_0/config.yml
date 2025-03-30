@@ -2,7 +2,7 @@ model: meta-llama/Meta-Llama-3-8B
 replica_id: 0
 replica_resource_mapping:
 - !!python/tuple
-  - node:172.23.0.2
+  - node:172.26.0.2
   - 0
 tokenizer: meta-llama/Meta-Llama-3-8B
 tokenizer_mode: auto
@@ -17,9 +17,9 @@ block_size: 2097152
 gpu_memory_utilization: 0.9
 revision: null
 scheduler_type: vllm
-max_model_len: 1024
-max_num_seqs: 1
-max_num_batched_tokens: 1024
+max_model_len: 1000
+max_num_seqs: 2
+max_num_batched_tokens: 1000
 chunk_size: null
 enable_dynamic_chunking_schedule: false
 low_chunk_size: 128

@@ -177,6 +177,7 @@ class LlamaAttention(nn.Module):
         q, k, v = qkv.split([self.q_size, self.kv_size, self.kv_size], dim=-1)
         # with self._attn_rope_timer:
         #     q, k = self.rotary_emb(positions, q, k)
+        q, k = self.rotary_emb(positions, q, k)
         attn_output = get_attention_wrapper().forward(
             q,
             k,
@@ -309,7 +310,7 @@ class HiddenStatesBuffer():
             output_req_ids.append(req_id+1) # 1-indexed
             positions.append(self.positions[slot])
             num_taken += 1
-        print(f"[take_hidden_states] output_hidden_states sizeL {output_hidden_states.size()}")
+        print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
         output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
         output_positions = torch.tensor(positions, device='cuda:0')
         return output_hidden_states, output_req_ids, output_positions

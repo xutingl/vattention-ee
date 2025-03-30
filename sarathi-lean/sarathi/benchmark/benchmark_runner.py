@@ -119,7 +119,7 @@ class BenchmarkRunner:
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
         sampling_params = SamplingParams(
-            ignore_eos=True,
+            ignore_eos=False,
             # max_tokens=request.num_decode_tokens,
             max_tokens=self._config.model_max_model_len // self._config.replica_scheduler_max_batch_size,
             #temperature=0.5,
@@ -174,8 +174,8 @@ class BenchmarkRunner:
                 if output.finished:
                     num_processed_requests += 1
                     pbar.update(1)
-                    print("=====================================")
-                    print(output)
+                    print("[BenchmarkRunner._run] Finished=====================================")
+                    print(output.text)
                     print("=====================================")
         end_time = time.monotonic()
         pbar.close()
