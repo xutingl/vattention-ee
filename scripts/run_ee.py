@@ -23,7 +23,7 @@ dataset_path = os.path.join(root, 'sarathi-lean', utils.dataset_subpath)
 if utils.args.test == True:
     models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
     # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
-    num_requests, qps_values = 2, [1]
+    num_requests, qps_values = 10, [1]
 
 for model in models:
     for qps in qps_values:

@@ -174,9 +174,11 @@ class BenchmarkRunner:
                 if output.finished:
                     num_processed_requests += 1
                     pbar.update(1)
-                    print("[BenchmarkRunner._run] Finished=====================================")
+                    print(f"[BenchmarkRunner._run] Output id {output.seq_id} Finished=====================================")
                     print(output.text)
                     print("=====================================")
+                # else:
+                #     print(f"[BenchmarkRunner._run] Output id {output.seq_id} not finished")
         end_time = time.monotonic()
         pbar.close()
 

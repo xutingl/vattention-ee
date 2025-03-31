@@ -1,0 +1,566 @@
+unable to import module pod_attn
+INFO 03-30 21:59:06 config.py:41] Starting benchmark with config: Namespace(host='localhost', port=8000, seed=42, log_level='info', output_dir='/workspace/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee_tp_1_attn_fa_vattn_2mb_qps_1_reqs_2/', write_json_trace=True, write_chrome_trace=True, write_metrics=True, enable_profiling=False, gpu_memory_utilization=0.9, time_limit=10281800, replica_resource_mapping='', cluster_num_replicas=1, model_name='meta-llama/Meta-Llama-3-8B', model_tensor_parallel_degree=1, model_pipeline_parallel_degree=1, model_max_model_len=1000, model_load_format='dummy', model_attention_backend='fa_vattn', model_block_size=2097152, request_generator_provider='synthetic', synthetic_request_generator_length_provider='trace', synthetic_request_generator_interval_provider='poisson', synthetic_request_generator_num_requests=2, trace_request_generator_trace_file='./data/processed_traces/sydney_enterprise.csv', trace_request_generator_date='2023-08-21', trace_request_generator_prefill_scale_factor=0.3, trace_request_generator_decode_scale_factor=1, trace_request_generator_time_scale_factor=0.04, trace_request_generator_max_tokens=32768, trace_request_length_generator_trace_file='/workspace/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv', trace_request_length_generator_prefill_scale_factor=1, trace_request_length_generator_decode_scale_factor=1, trace_request_length_generator_max_tokens=1000, trace_request_length_generator_min_tokens=0, trace_request_interval_generator_trace_file='./data/processed_traces/AzureFunctionsInvocationTraceForTwoWeeksJan2021Processed.csv', trace_request_interval_generator_start_time='1970-01-04 12:00:00', trace_request_interval_generator_end_time='1970-01-04 15:00:00', trace_request_interval_generator_time_scale_factor=0.3, poisson_request_interval_generator_qps=1.0, gamma_request_interval_generator_cv=0.5, gamma_request_interval_generator_qps=0.2, zipf_request_length_generator_theta=0.6, zipf_request_length_generator_scramble=False, zipf_request_length_generator_min_tokens=1024, zipf_request_length_generator_max_tokens=4096, zipf_request_length_generator_prefill_to_decode_ratio=20.0, uniform_request_length_generator_min_tokens=1024, uniform_request_length_generator_max_tokens=4096, uniform_request_length_generator_prefill_to_decode_ratio=20.0, fixed_request_length_generator_prefill_tokens=4096, fixed_request_length_generator_decode_tokens=512, replica_scheduler_provider='vllm', replica_scheduler_max_batch_size=2, sarathi_scheduler_chunk_size=512, sarathi_scheduler_enable_dynamic_chunking_schedule=False, sarathi_scheduler_low_chunk_size=128, sarathi_scheduler_high_chunk_size=2048, sarathi_scheduler_chunk_schedule_max_tokens=131072, sarathi_scheduler_chunk_schedule_stages=16, vllm_scheduler_max_tokens_in_batch=1000, simple_chunking_scheduler_chunk_size=512, metrics_store_wandb_project='', metrics_store_wandb_sweep_id='', metrics_store_wandb_run_id='', metrics_store_wandb_group='', metrics_store_wandb_run_name='', metrics_store_enable_op_level_metrics=False, metrics_store_enable_cpu_op_level_metrics=False, metrics_store_enable_request_outputs=False, metrics_store_keep_individual_batch_metrics=False)
+INFO 03-30 21:59:17 benchmark_runner.py:292] Replica resource mapping: {'0': [('node:172.23.0.2', 0)]}
+INFO 03-30 21:59:17 trace_request_length_generator.py:82] Loaded request length trace file /workspace/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv with 186206 requests
+WARNING 03-30 21:59:22 config.py:487] Casting torch.bfloat16 to torch.float16.
+INFO 03-30 21:59:22 base_llm_engine.py:69] Initializing an LLM engine with config: model='meta-llama/Meta-Llama-3-8B', tokenizer='meta-llama/Meta-Llama-3-8B', tokenizer_mode=auto, revision=None, trust_remote_code=True, dtype=torch.float16, download_dir=None, load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, seed=42, attention_backend=fa_vattn)
+INFO 03-30 21:59:23 base_llm_engine.py:147] Starting workers with resource mapping: [('node:172.23.0.2', 0)]
+INFO 03-30 21:59:23 base_llm_engine.py:190] Initializing workers with distributed init method: tcp://172.23.0.2:55469
+[36m(RayWorker pid=17573)[0m INFO 03-30 21:59:39 base_worker.py:100] Worker 0 is using device 0
+[36m(RayWorker pid=17573)[0m INFO 03-30 21:59:39 base_worker.py:119] Initializing worker 0 on device cuda:0, tensor parallel rank 0 and pipeline parallel rank 0.
+[36m(RayWorker pid=17573)[0m INFO 03-30 22:00:00 base_worker.py:135] Model initialized on worker 0.
+INFO 03-30 22:00:00 base_llm_engine.py:248] # GPU blocks: 48
+[36m(RayWorker pid=17573)[0m [vATTNCacheEngine] Allocated Normal Cache
+adding request with prompt: Article: (CNN)Share, and your gift will be multiplied. That may sound like an esoteric adage, but when Zully Broussard selflessly decided to give one of her kidneys to a stranger, her generosity paired up with big data. It resulted in six patients receiving transplants. That surprised and wowed her. "I thought I was going to help this one person who I don't know, but the fact that so many people can have a life extension, that's pretty big," Broussard told CNN affiliate KGO. She may feel guided in her generosity by a higher power. "Thanks for all the support and prayers," a comment on a Facebook page in her name read. "I know this entire journey is much bigger than all of us. I also know I'm just the messenger." CNN cannot verify the authenticity of the page. But the power that multiplied Broussard. Summarize the article in three sentences. Summary:. len: 200. seq_id: 1
+adding request with prompt: Article: (CNN)On the 6th of April 1996, San Jose Clash and DC United strode out in front of 31,683 expectant fans at the Spartan Stadium in San Jose, California. The historic occasion was the first ever Major League Soccer match -- a brave new dawn for the world's favorite sport in a land its charms had yet to conquer. Summarizing the action for ESPN, commentator Ty Keough eagerly described the momentous "birth of a new era for American soccer." Looking back at footage from that balmy evening now it's hard not to feel a certain nostalgia. Baggy shirts, questionable hairstyles and strange rule adaptations to make games more exciting were all part of the formative MLS experience. Countdown clocks were employed to provide drama at the end of each half. Even more bizarrely, tied games were settled by s. Summarize the article in three sentences. Summary:. len: 187. seq_id: 2
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[BenchmarkRunner._run] Finished=====================================
+ San Jose Clash won a 1-0 victory over Washington's DC United in the first major league soccer match on April 6, 1996. Ty Keough made a commentary for ESPN, but the; television commentary was sensational and it made them a new era of stars to the major league soccer. Actually, the commentator tried to explain the flow of the play, but they couldn't understand that it really had very little to watch. Then he commented: "'And there we have it', which was the banner could catch up with, but it was possible to do so, the clock, and it didn't make any sense'. #2 Shiba Valel, Apr 2, 2018 Reply With Quote 0 The original statement was not very clear. The Facebook banner caught up with, referring to the clock? Or the banner read "no score, so far"? What clock? Did he need to make every point? Try to summarize the whole writing.. so that the reader might understand a bit more. give one line for each problem and then you might summarize at the end. #3 Coolhat, Apr 6, 2018 Reply With Quote 0 Sorry, mod, but I feel we missed the mark on this summary. Patient Loc can help present it better, but I think the summary is also not completely clear. We are not sure what exactly is the matter to summarize here. The main idea seems to be centered around the adjustments made to the sport to help it get started. Is it the rule change about goals settling tie games or the overall advertising of the game to make it appealing? Something else? Coolhat is right in saying that we need to confirm these details before proceeding as perhaps more than one adjustments were implemented. #4 Magoosh Art, Apr 20, 2018 Reply With Quote 0 student Your post was one of the matters of summary, hope you can modify your post. Art, please let me know what matter of summary I missed! #5 MichaelCHI638, Apr 23, 2018 Reply With Quote 1 I think the commentator made a big exaggeration here: possible to do so, the clock. #6 patient_Loc, Apr 24, 2018 Reply With Quote
+=====================================
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[36m(RayWorker pid=17573)[0m Entering
+[BenchmarkRunner._run] Finished=====================================
+ In this article describes the idea of pairing organ donors and transplant patients through big data and mutual desires to help someone or many people in need. That surprised and wowed Broussard. She may feel guided in her generosity by a higher power. "Thanks for all the support and prayers." Comment on the keys points: I think the article describes how useful the idea of pairing up organ donors and transplant patients through big data.
+Article: (CNN)Share, and your gift will be multiplied. That may sound like an esoteric adage, but when Zully Broussard selflessly decided to give one of her kidneys to a stranger, her generosity paired up with big data. It resulted in six patients receiving transplants. That surprised and wowed her. "I thought I was going to help this one person who I don't know, but the fact that so many people can have a life extension, that's pretty big," Broussard told CNN affiliate KGO. She may feel guided in her generosity by a higher power. "Thanks for all the support and prayers," a comment on a Facebook page in her name read. "I know this entire journey is much bigger than all of us. I also know I'm just the messenger." CNN cannot verify the authenticity of the page.
+Summarize the article in three sentences.
+Summary: In this article describes the idea of pairing organ donors and transplant patients through big data and mutual desires to help someone or many people in need. That surprised and wowed Broussard. She may feel guided in her generosity by a higher power. "Thanks for all the support and prayers."
+Comment on the keys points:
+I think the article describes how useful the idea of pairing up organ donors and transplant patients through big data.
+With you if saved, a page would have that any names or faces of the people who were morphed with it. The next day gets the call from the show's staff asking you if service shut down between 5:00 and
+I recommend that your papers tone and these me as a safe haven. Yin TEO: "Havens are lonely Mlucas. I. Up in times of unrest. Grishma t:: u C• Ta.. or when lonely, people strive to freeze oyer time therein, and
+Business Communication	/ Real Simple, 3 sentences: In Real Simple magazine June 2014, Beth Greenfield discusses mistakes that every family makes.
+=====================================
+INFO 03-30 22:00:36 benchmark_runner.py:183] Replica 0 exiting after processing 2 (1200 iterations), Total time taken: 35.47 seconds
+INFO 03-30 22:00:36 data_series.py:150] request_inter_arrival_delay: request_inter_arrival_delay stats: min: 0.025328838964924216, max: 0.025328838964924216, mean: 0.025328838964924216, median: 0.025328838964924216, 95th percentile: 0.025328838964924216, 99th percentile: 0.025328838964924216 99.9th percentile: 0.025328838964924216
+INFO 03-30 22:00:39 data_series.py:150] request_num_tokens: request_num_tokens stats: min: 646, max: 700, mean: 673.0, median: 673.0, 95th percentile: 697.3, 99th percentile: 699.46 99.9th percentile: 699.946
+INFO 03-30 22:00:39 data_series.py:150] request_num_prefill_tokens: request_num_prefill_tokens stats: min: 187, max: 200, mean: 193.5, median: 193.5, 95th percentile: 199.35, 99th percentile: 199.87 99.9th percentile: 199.987
+INFO 03-30 22:00:40 data_series.py:150] request_num_decode_tokens: request_num_decode_tokens stats: min: 459, max: 500, mean: 479.5, median: 479.5, 95th percentile: 497.95, 99th percentile: 499.59 99.9th percentile: 499.959
+INFO 03-30 22:00:40 data_series.py:150] request_pd_ratio: request_pd_ratio stats: min: 0.4, max: 0.4074074074074074, mean: 0.4037037037037037, median: 0.4037037037037037, 95th percentile: 0.40703703703703703, 99th percentile: 0.4073333333333333 99.9th percentile: 0.4074
+INFO 03-30 22:00:40 data_series.py:150] request_num_restarts: request_num_restarts stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 03-30 22:00:40 data_series.py:150] request_num_pauses: request_num_pauses stats: min: 460, max: 501, mean: 480.5, median: 480.5, 95th percentile: 498.95, 99th percentile: 500.59 99.9th percentile: 500.959
+INFO 03-30 22:00:40 data_series.py:150] request_num_ignored: request_num_ignored stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 03-30 22:00:40 data_series.py:150] request_e2e_time: request_e2e_time stats: min: 32.07550112367608, max: 34.44156039762311, mean: 33.25853076064959, median: 33.25853076064959, 95th percentile: 34.323257433925754, 99th percentile: 34.41789980488364 99.9th percentile: 34.43919433834916
+INFO 03-30 22:00:40 data_series.py:150] request_e2e_time_normalized: request_e2e_time_normalized stats: min: 0.06888312079524621, max: 0.06988126606465377, mean: 0.06938219342994999, median: 0.06938219342994999, 95th percentile: 0.0698313588011834, 99th percentile: 0.0698712846119597 99.9th percentile: 0.06988026791938436
+INFO 03-30 22:00:40 data_series.py:150] request_e2e_time_piecewise_normalized: request_e2e_time_piecewise_normalized stats: min: 0.31011205253424123, max: 0.4795092863334071, mean: 0.39481066943382415, median: 0.39481066943382415, 95th percentile: 0.47103942464344883, 99th percentile: 0.47781531399541544 99.9th percentile: 0.47933988909960795
+INFO 03-30 22:00:40 data_series.py:150] request_execution_time: request_execution_time stats: min: 11.079784674569964, max: 12.17805026541464, mean: 11.628917469992302, median: 11.628917469992302, 95th percentile: 12.123136985872407, 99th percentile: 12.167067609506194 99.9th percentile: 12.176951999823796
+INFO 03-30 22:00:41 data_series.py:150] request_execution_time_normalized: request_execution_time_normalized stats: min: 0.0241389644326143, max: 0.024356100530829282, mean: 0.02424753248172179, median: 0.02424753248172179, 95th percentile: 0.024345243725918533, 99th percentile: 0.024353929169847133 99.9th percentile: 0.024355883394731066
+INFO 03-30 22:00:41 data_series.py:150] request_preemption_time: request_preemption_time stats: min: 20.585194044513628, max: 22.021797775756568, mean: 21.303495910135098, median: 21.303495910135098, 95th percentile: 21.949967589194422, 99th percentile: 22.00743173844414 99.9th percentile: 22.020361172025325
+INFO 03-30 22:00:41 data_series.py:150] request_scheduling_delay: request_scheduling_delay stats: min: 0.2417123564518988, max: 0.41052240459248424, mean: 0.3261173805221915, median: 0.3261173805221915, 95th percentile: 0.402081902185455, 99th percentile: 0.4088343041110784 99.9th percentile: 0.41035359454434367
+INFO 03-30 22:00:41 data_series.py:150] request_execution_plus_preemption_time: request_execution_plus_preemption_time stats: min: 31.664978719083592, max: 34.19984804117121, mean: 32.9324133801274, median: 32.9324133801274, 95th percentile: 34.07310457506683, 99th percentile: 34.17449934795033 99.9th percentile: 34.19731317184912
+INFO 03-30 22:00:41 data_series.py:150] request_execution_plus_preemption_time_normalized: request_execution_plus_preemption_time_normalized stats: min: 0.06839969608234242, max: 0.06898688174092286, mean: 0.06869328891163265, median: 0.06869328891163265, 95th percentile: 0.06895752245799384, 99th percentile: 0.06898100988433706 99.9th percentile: 0.06898629455526428
+INFO 03-30 22:00:41 data_series.py:150] prefill_e2e_time: prefill_e2e_time stats: min: 0.4254342336207628, max: 0.4996119956485927, mean: 0.46252311463467777, median: 0.46252311463467777, 95th percentile: 0.49590310754720124, 99th percentile: 0.49887021802831444 99.9th percentile: 0.49953781788656487
+INFO 03-30 22:00:41 data_series.py:150] prefill_e2e_time_normalized: prefill_e2e_time_normalized stats: min: 0.002127171168103814, max: 0.002671721901864132, mean: 0.0023994465349839733, median: 0.0023994465349839733, 95th percentile: 0.002644494365176116, 99th percentile: 0.002666276394526529 99.9th percentile: 0.002671177351130372
+INFO 03-30 22:00:41 data_series.py:150] prefill_e2e_time_piecewise_normalized: prefill_e2e_time_piecewise_normalized stats: min: 0.24263096583774313, max: 0.41099881951791795, mean: 0.32681489267783054, median: 0.32681489267783054, 95th percentile: 0.4025804268339092, 99th percentile: 0.4093151409811162 99.9th percentile: 0.4108304516642378
+INFO 03-30 22:00:41 data_series.py:150] prefill_time_execution_plus_preemption: prefill_time_execution_plus_preemption stats: min: 0.08908959105610847, max: 0.183721877168864, mean: 0.13640573411248624, median: 0.13640573411248624, 95th percentile: 0.17899026286322622, 99th percentile: 0.18277555430773645 99.9th percentile: 0.18362724488275126
+INFO 03-30 22:00:42 data_series.py:150] prefill_time_execution_plus_preemption_normalized: prefill_time_execution_plus_preemption_normalized stats: min: 0.00047641492543373516, max: 0.0009186093858443201, mean: 0.0006975121556390277, median: 0.0006975121556390277, 95th percentile: 0.0008964996628237908, 99th percentile: 0.0009141874412402142 99.9th percentile: 0.0009181671913839095
+INFO 03-30 22:00:42 data_series.py:150] decode_time_execution_plus_preemption_normalized: decode_time_execution_plus_preemption_normalized stats: min: 0.0680322523280047, max: 0.06879278677130171, mean: 0.0684125195496532, median: 0.0684125195496532, 95th percentile: 0.06875476004913686, 99th percentile: 0.06878518142686874 99.9th percentile: 0.06879202623685841
+INFO 03-30 22:00:42 cdf_sketch.py:71] batch_execution_time: batch_execution_time stats: min: 0.04170349892228842, max: 0.4283109710086137, mean: 0.06602193829111859, 25th percentile: 0.05848403626551822, median: 0.06515401108824675, 75th percentile: 0.07058049950119633, 95th percentile: 0.0810246914806502, 99th percentile: 0.08655274209392386 99.9th percentile: 0.09642389065801434 count: 502.0 sum: 33.14301302214153
+INFO 03-30 22:00:42 cdf_sketch.py:71] inter_batch_delay: inter_batch_delay stats: min: 0.001545462990179658, max: 0.009374486049637198, mean: 0.0026255611110917346, 25th percentile: 0.0021398863710431824, median: 0.00246145534001063, 75th percentile: 0.0028598032439609844, 95th percentile: 0.0038603309828284696, 99th percentile: 0.006717748886687155 99.9th percentile: 0.009362882682571589 count: 501.0 sum: 1.315406116656959
+INFO 03-30 22:00:42 cdf_sketch.py:71] batch_num_tokens: batch_num_tokens stats: min: 1, max: 200, mean: 2.681274900398406, 25th percentile: 1.9997051226201907, median: 1.9997051226201907, 75th percentile: 1.9997051226201907, 95th percentile: 1.9997051226201907, 99th percentile: 1.9997051226201907 99.9th percentile: 186.97992229193082 count: 502.0 sum: 1346.0
+INFO 03-30 22:00:42 cdf_sketch.py:71] batch_num_prefill_tokens: batch_num_prefill_tokens stats: min: 0, max: 200, mean: 0.7709163346613546, 25th percentile: 0, median: 0, 75th percentile: 0, 95th percentile: 0, 99th percentile: 0 99.9th percentile: 186.97992229193082 count: 502.0 sum: 387.0
+INFO 03-30 22:00:42 cdf_sketch.py:71] batch_num_decode_tokens: batch_num_decode_tokens stats: min: 0, max: 2, mean: 1.9103585657370519, 25th percentile: 1.9997051226201907, median: 1.9997051226201907, 75th percentile: 1.9997051226201907, 95th percentile: 1.9997051226201907, 99th percentile: 1.9997051226201907 99.9th percentile: 1.9997051226201907 count: 502.0 sum: 959.0
+INFO 03-30 22:00:43 cdf_sketch.py:71] batch_size: batch_size stats: min: 1, max: 2, mean: 1.9143426294820718, 25th percentile: 1.9997051226201907, median: 1.9997051226201907, 75th percentile: 1.9997051226201907, 95th percentile: 1.9997051226201907, 99th percentile: 1.9997051226201907 99.9th percentile: 1.9997051226201907 count: 502.0 sum: 961.0
+INFO 03-30 22:00:43 cdf_sketch.py:71] decode_token_execution_plus_preemption_time: decode_token_execution_plus_preemption_time stats: min: 0.0, max: 0.096388665959239, mean: 0.06805436968130837, 25th percentile: 0.06160566619420101, median: 0.0676775071219228, 75th percentile: 0.07331417019270454, 95th percentile: 0.08450020457065767, 99th percentile: 0.0909903975919381 99.9th percentile: 0.09642389065801434 count: 961.0 sum: 65.40024926373735
+INFO 03-30 22:00:44 data_series.py:124] request_arrival_time_series: request_arrival stats: min: 1, max: 2, mean: 1.5,
+INFO 03-30 22:00:44 data_series.py:124] request_completion_time_series: request_completion stats: min: 1, max: 2, mean: 1.5,
+INFO 03-30 22:00:44 data_series.py:124] prefill_completion_time_series: prefill_completion stats: min: 200, max: 387, mean: 293.5,
+Running command: python /workspace/vattention-ee/sarathi-lean/sarathi/benchmark/main.py --model_name meta-llama/Meta-Llama-3-8B --model_tensor_parallel_degree 1 --request_generator_provider synthetic --synthetic_request_generator_length_provider trace --synthetic_request_generator_interval_provider poisson --poisson_request_interval_generator_qps 1 --trace_request_length_generator_trace_file /workspace/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv --replica_scheduler_provider vllm --trace_request_length_generator_prefill_scale_factor 1 --trace_request_length_generator_decode_scale_factor 1 --replica_scheduler_max_batch_size 2 --vllm_scheduler_max_tokens_in_batch 1000 --model_max_model_len 1000 --metrics_store_enable_op_level_metrics false --metrics_store_keep_individual_batch_metrics false --output_dir /workspace/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee_tp_1_attn_fa_vattn_2mb_qps_1_reqs_2/ --synthetic_request_generator_num_requests 2 --trace_request_length_generator_max_tokens 1000 --trace_request_length_generator_min_tokens 0 --model_block_size 2097152 --model_attention_backend fa_vattn --gpu_memory_utilization 0.9

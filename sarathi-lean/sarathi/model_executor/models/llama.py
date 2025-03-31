@@ -57,6 +57,7 @@ from sarathi.model_executor.weight_utils import (
 )
 from sarathi.worker.cache_engine import KVCache
 from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
+from sarathi.core.datatypes.sequence import Sequence, SequenceMetadata
 
 
 class LlamaMLP(nn.Module):
@@ -266,12 +267,15 @@ class HiddenStatesBuffer():
         self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
         self.hidden_states = self.hidden_states.to(torch.float16)
         self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
+        self.positions = self.positions.to(torch.int64)
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
+        self.dtype = None
     
     def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
+        self.dtype = hidden_states.dtype
         req_ids = [req_id - 1 for req_id in req_ids] # 0-indexed
-        print(f"[add_hidden_states] adding hidden states. size: {hidden_states.size()}, req_ids: {req_ids} (has been -1 because of 0-indexed)")
+        # print(f"[add_hidden_states] adding hidden states. size: {hidden_states.size()}, req_ids: {req_ids} (has been -1 because of 0-indexed)")
         num_hidden_states = hidden_states.size(0)
         assert num_hidden_states + len(self.hidden_states_map) <= self.capacity, f"Not enough capacity in hidden states buffer. num_hidden_states: {num_hidden_states}, len(hidden_states_map): {len(self.hidden_states_map)}, capacity: {self.capacity}"
         assert self.hidden_states.size(1) == hidden_states.size(1), f"Hidden states have different lengths, buffer requires size {self.hidden_states.size(1)} but got {hidden_states.size(1)}"
@@ -280,7 +284,7 @@ class HiddenStatesBuffer():
         # Find available slots in hidden_states and put hidden states in them
         for i in range(num_hidden_states):
             slot = self.available_slots.pop()
-            self.hidden_states[slot] = hidden_states[i].clone()
+            self.hidden_states[slot] = hidden_states[i]
             self.positions[slot] = positions[i]
             self.hidden_states_map[req_ids[i]] = slot
     """
@@ -297,7 +301,7 @@ class HiddenStatesBuffer():
         assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
         
         output_hidden_states = torch.zeros(num, self.hidden_states.size(1), device='cuda:0')
-        output_hidden_states = output_hidden_states.to(torch.float16)
+        output_hidden_states = output_hidden_states.to(self.dtype)
         output_req_ids = []
         positions = []
         
@@ -310,7 +314,7 @@ class HiddenStatesBuffer():
             output_req_ids.append(req_id+1) # 1-indexed
             positions.append(self.positions[slot])
             num_taken += 1
-        print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
+        # print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
         output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
         output_positions = torch.tensor(positions, device='cuda:0')
         return output_hidden_states, output_req_ids, output_positions
@@ -365,6 +369,7 @@ class LlamaModel(nn.Module):
         self.start_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states of the token arrived at first layer
         self.deep_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states that EE'ed
         self.max_batch_size = 2
+        self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
     
     def softmax_confidence(
         self,
@@ -416,6 +421,16 @@ class LlamaModel(nn.Module):
         else:
             return mask, conf, need_skip
     
+    def update_seqs_in_kvcache(
+        self,
+        seq_ids_in_batch: torch.Tensor,
+        cache_engine: vATTNCacheEngine,
+    ):
+        updated_seq_metadata_list = [self.seq_metadata_map[seq_id.item()] for seq_id in seq_ids_in_batch]  
+
+        cache_engine.step(updated_seq_metadata_list) # in base_worker
+        get_attention_wrapper().begin_forward(updated_seq_metadata_list) # in model_runner
+    
     def forward_without_rebatching(
         self,
         hidden_states: torch.Tensor,
@@ -423,14 +438,21 @@ class LlamaModel(nn.Module):
         kv_caches: List[KVCache],
         lm_head,
         cache_engine: Optional[vATTNCacheEngine] = None,
+        seq_ids_in_batch: Optional[torch.Tensor] = None,
+        seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> torch.Tensor:
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
         
+        if seq_ids_in_batch is not None:
+            for seq_metadata in seq_metadata_list:
+                self.seq_metadata_map[seq_metadata.seq.seq_id] = seq_metadata
+            self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine) # Will be executed in prefilling. Not executed in profiling.
+        
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if i == self.shallow_exit_layer:
+            if cache_engine and i == self.shallow_exit_layer:
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
@@ -463,7 +485,7 @@ class LlamaModel(nn.Module):
         if self.norm:
             hidden_states = self.norm(hidden_states)
 
-        return hidden_states, None
+        return hidden_states, seq_ids_in_batch
     
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
@@ -485,13 +507,18 @@ class LlamaModel(nn.Module):
         lm_head,
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size> # The seq_id of the seqences in the batch
+        seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-
         # Rebatching disabled
-        if seq_ids_in_batch is None:
-            return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine)
+        if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size:
+            return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 
         # Rebatching enabled
+
+        # Update seq_metadasta_map
+        for seq_metadata in seq_metadata_list:
+            self.seq_metadata_map[seq_metadata.seq.seq_id] = seq_metadata
+
 
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
@@ -503,6 +530,8 @@ class LlamaModel(nn.Module):
             self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch.tolist(), positions)
             # 1.2 Take hidden states from `deep_buffer`
             hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(batch_size)
+
+            self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
             # 1.3 Process hidden states starting from the EE layer
             for i in range(self.shallow_exit_layer, len(self.layers)):
@@ -535,10 +564,12 @@ class LlamaModel(nn.Module):
             else:
                 self.start_buffer.add_hidden_states(hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take].tolist(), positions[:num_req_to_take])
                 hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take] = self.start_buffer.take_hidden_states(num_req_to_take)
+            
+        self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if False and cache_engine and i == self.shallow_exit_layer:
+            if cache_engine and i == self.shallow_exit_layer and hidden_states.size(0) <= self.max_batch_size: # Avoid EE in profiling (cache_engine is None) and prefilling (batch size is too large)
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
@@ -555,14 +586,19 @@ class LlamaModel(nn.Module):
                         # 3.1 If all requests want to EE, no rebatching is done.
                         # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
                         # Copy layer i-1's kv cache for the prev token to layer i - last layer.
-                        for batch_idx, token_idx in enumerate(positions[:batch_size]):
+                        for batch_idx, token_pos_idx in enumerate(positions[:batch_size]):
                             for l in range(i, len(self.layers)):
-                                cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
-                                cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
+                                cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
+                                cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
                     else:
 
                         for req_idx, skip in enumerate(skip_mask):
-                            if not skip:
+                            if skip:
+                                token_pos_idx = positions[req_idx]
+                                for l in range(i, len(self.layers)):
+                                    cache_engine.copy_k_cache_between_layers(i-1, l, req_idx, token_pos_idx)
+                                    cache_engine.copy_v_cache_between_layers(i-1, l, req_idx, token_pos_idx)
+                            else:
                                 # 3.2 Put requests that don't EE into `deep_buffer`.
                                 self.deep_buffer.add_hidden_states(hidden_states[req_idx].unsqueeze(0), [seq_ids_in_batch[req_idx].item()], positions[req_idx].unsqueeze(0))
                                 # print(f"req_id {seq_ids_in_batch[req_idx].item()} don't want EE and is put into deep buffer")
@@ -623,6 +659,7 @@ class LlamaForCausalLM(nn.Module):
         kv_caches: List[KVCache],
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None,
+        seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -633,7 +670,7 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch)
+        hidden_states, output_seq_ids = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)

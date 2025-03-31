@@ -2,7 +2,7 @@ model: meta-llama/Meta-Llama-3-8B
 replica_id: 0
 replica_resource_mapping:
 - !!python/tuple
-  - node:172.26.0.2
+  - node:172.23.0.2
   - 0
 tokenizer: meta-llama/Meta-Llama-3-8B
 tokenizer_mode: auto

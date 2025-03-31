@@ -336,7 +336,7 @@ class BaseLLMEngine:
         if prompt_token_ids is None:
             assert prompt is not None
             prompt_token_ids = self.tokenizer.encode(prompt)
-            print(f"adding request with prompt: {prompt}. len: {len(prompt_token_ids)}. seq_id: {seq_id}")
+            print(f"[BaseLLMEngine] Adding request with prompt: {prompt}. len: {len(prompt_token_ids)}. seq_id: {seq_id}")
 
         # Create the sequences.
         block_size = self.cache_config.block_size

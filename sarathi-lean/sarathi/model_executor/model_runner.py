@@ -240,7 +240,7 @@ class ModelRunner:
         with self._prepare_inputs_e2e_timer:
             input_tokens, input_positions = self._prepare_inputs(seq_metadata_list)
 
-        get_attention_wrapper().begin_forward(seq_metadata_list)
+        # get_attention_wrapper().begin_forward(seq_metadata_list) # Moved to llama model
         
             
         with self._model_execution_e2e_timer:
@@ -252,6 +252,7 @@ class ModelRunner:
                     kv_caches=gpu_cache,
                     cache_engine=cache_engine,
                     seq_ids_in_batch=seq_ids_in_batch,
+                    seq_metadata_list=seq_metadata_list,
                 )
             except RuntimeError as e:
                 logger.error(
