@@ -295,7 +295,7 @@ class HiddenStatesBuffer():
         output_req_ids: req_ids corresponding to the hidden states. <num>
         positions: positions corresponding to the hidden states. <num>
     """
-    def take_hidden_states(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+    def take_hidden_states_old(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
         if num == 0:
             num = self.batch_size
         assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
@@ -314,6 +314,41 @@ class HiddenStatesBuffer():
             output_req_ids.append(req_id+1) # 1-indexed
             positions.append(self.positions[slot])
             num_taken += 1
+        # print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
+        output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
+        output_positions = torch.tensor(positions, device='cuda:0')
+        return output_hidden_states, output_req_ids, output_positions
+
+    """
+    Args:
+        num: number of hidden states to take. If 0, take all hidden states in the buffer.
+    Returns:
+        output_hidden_states: hidden states taken from the buffer. <num, hidden_state_length>
+        output_req_ids: req_ids corresponding to the hidden states. <num>
+        positions: positions corresponding to the hidden states. <num>
+    """
+    def take_hidden_states(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+        if num == 0:
+            num = self.batch_size
+        assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
+
+        output_req_ids = []
+        positions = []
+
+        output_slot_idx = []
+        
+        # FIFO order: take hidden states from the left of the hidden_states_map
+        num_taken = 0
+        for req_id, slot in list(self.hidden_states_map.items())[:num]:
+            output_slot_idx.append(slot)
+            
+            self.available_slots.add(slot)
+            self.hidden_states_map.pop(req_id)
+            output_req_ids.append(req_id+1) # 1-indexed
+            positions.append(self.positions[slot])
+            num_taken += 1
+        output_hidden_states = self.hidden_states[output_slot_idx]
+
         # print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
         output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
         output_positions = torch.tensor(positions, device='cuda:0')
@@ -365,10 +400,9 @@ class LlamaModel(nn.Module):
         self.conf_threshold = 0.6
         self.exited_rates = [0, 0]
 
-
-        self.start_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states of the token arrived at first layer
-        self.deep_buffer = HiddenStatesBuffer(2, 5, 4096) # Buffers the hidden states that EE'ed
         self.max_batch_size = 2
+        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states of the token arrived at first layer
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states that EE'ed
         self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
     
     def softmax_confidence(
@@ -452,7 +486,7 @@ class LlamaModel(nn.Module):
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if cache_engine and i == self.shallow_exit_layer:
+            if cache_engine and self.ee_policy != "off" and i == self.shallow_exit_layer:
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
@@ -466,6 +500,7 @@ class LlamaModel(nn.Module):
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
+                    # [TODO] i-2 seems to give better results.
                     for batch_idx, token_idx in enumerate(positions):
                         for l in range(i, len(self.layers)):
                             cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
@@ -484,6 +519,8 @@ class LlamaModel(nn.Module):
 
         if self.norm:
             hidden_states = self.norm(hidden_states)
+
+        print(f"[LlamaModel] ee_rates: {self.exited_rates}")
 
         return hidden_states, seq_ids_in_batch
     
@@ -624,6 +661,7 @@ class LlamaModel(nn.Module):
         # print(f"seq_ids_in_batch: {seq_ids_in_batch}")
         # print(f"seq ids in deep buffer: {self.deep_buffer.hidden_states_map.keys()}")
         # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}\n")
+        print(f"[LlamaModel] ee_rates: {self.exited_rates}")
 
         return hidden_states, seq_ids_in_batch
 

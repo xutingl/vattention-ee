@@ -159,6 +159,7 @@ class BenchmarkRunner:
             total=len(self._requests),
             desc=f"Replica {self._replica_id} processed requests",
         )
+        num_output_tokens = 0
         start_time = time.monotonic()
 
         # Run the engine.
@@ -166,14 +167,17 @@ class BenchmarkRunner:
             elapsed_time = time.monotonic() - start_time
             if elapsed_time > self._time_limit:
                 break
-
+            
+            print(f"step {num_steps} started")
             step_outputs = self._llm_engine.step()
             num_steps += 1
+            print(f"step {num_steps} ended")
 
             for output in step_outputs:
                 if output.finished:
                     num_processed_requests += 1
                     pbar.update(1)
+                    num_output_tokens += len(output.token_ids)
                     print(f"[BenchmarkRunner._run] Output id {output.seq_id} Finished=====================================")
                     print(output.text)
                     print("=====================================")
@@ -185,6 +189,7 @@ class BenchmarkRunner:
         logger.info(
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {num_output_tokens / (end_time - start_time):.2f} tokens/sec")
 
         if self._config.enable_profiling:
             self._llm_engine.stop_profiling()
