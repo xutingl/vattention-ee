@@ -59,6 +59,8 @@ from sarathi.worker.cache_engine import KVCache
 from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 from sarathi.core.datatypes.sequence import Sequence, SequenceMetadata
 
+import random
+
 
 class LlamaMLP(nn.Module):
 
@@ -295,7 +297,7 @@ class HiddenStatesBuffer():
         output_req_ids: req_ids corresponding to the hidden states. <num>
         positions: positions corresponding to the hidden states. <num>
     """
-    def take_hidden_states_old(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+    def take_hidden_states(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
         if num == 0:
             num = self.batch_size
         assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
@@ -327,7 +329,7 @@ class HiddenStatesBuffer():
         output_req_ids: req_ids corresponding to the hidden states. <num>
         positions: positions corresponding to the hidden states. <num>
     """
-    def take_hidden_states(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
+    def take_hidden_states_test(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
         if num == 0:
             num = self.batch_size
         assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
@@ -395,8 +397,8 @@ class LlamaModel(nn.Module):
         if is_pipeline_last_stage():
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         
-        self.ee_policy = "rebatching"
-        self.shallow_exit_layer = 20
+        self.ee_policy = "lazy"
+        self.shallow_exit_layer = 16
         self.conf_threshold = 0.6
         self.exited_rates = [0, 0]
 
@@ -481,12 +483,13 @@ class LlamaModel(nn.Module):
         if seq_ids_in_batch is not None:
             for seq_metadata in seq_metadata_list:
                 self.seq_metadata_map[seq_metadata.seq.seq_id] = seq_metadata
-            self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine) # Will be executed in prefilling. Not executed in profiling.
+            # self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine) # Will be executed in prefilling. Not executed in profiling.
         
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if cache_engine and self.ee_policy != "off" and i == self.shallow_exit_layer:
+                #need_skip = random.random() < 0.4
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
@@ -520,7 +523,7 @@ class LlamaModel(nn.Module):
         if self.norm:
             hidden_states = self.norm(hidden_states)
 
-        print(f"[LlamaModel] ee_rates: {self.exited_rates}")
+        # print(f"[LlamaModel.forward_without_rebatching] ee_rates: {self.exited_rates}")
 
         return hidden_states, seq_ids_in_batch
     
@@ -661,7 +664,7 @@ class LlamaModel(nn.Module):
         # print(f"seq_ids_in_batch: {seq_ids_in_batch}")
         # print(f"seq ids in deep buffer: {self.deep_buffer.hidden_states_map.keys()}")
         # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}\n")
-        print(f"[LlamaModel] ee_rates: {self.exited_rates}")
+        # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}")
 
         return hidden_states, seq_ids_in_batch
 

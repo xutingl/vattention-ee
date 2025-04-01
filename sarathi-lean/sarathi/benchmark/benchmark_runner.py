@@ -39,7 +39,7 @@ class BenchmarkRunner:
         output_dir = f"{self._config.output_dir}/replica_{replica_id}"
         os.makedirs(output_dir, exist_ok=True)
 
-        set_seeds(config.seed)
+        # set_seeds(config.seed)
         set_seeds(42)
         request_generator = RequestGeneratorRegistry.get_from_str(
             self._config.request_generator_provider, self._config
@@ -68,6 +68,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
+        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -80,7 +81,7 @@ class BenchmarkRunner:
             tensor_parallel_size=self._config.model_tensor_parallel_degree,
             pipeline_parallel_size=self._config.model_pipeline_parallel_degree,
             attention_backend=self._config.model_attention_backend,
-            seed=self._config.seed,
+            seed=42,
             dtype="float16",
             load_format=self._config.model_load_format,
             gpu_memory_utilization=self._config.gpu_memory_utilization,
@@ -113,6 +114,7 @@ class BenchmarkRunner:
             keep_individual_batch_metrics=self._config.metrics_store_keep_individual_batch_metrics,
             # engine config
             trust_remote_code=True,
+            download_dir=self._config.download_dir,
         )
 
     def _get_input_params(
@@ -168,10 +170,10 @@ class BenchmarkRunner:
             if elapsed_time > self._time_limit:
                 break
             
-            print(f"step {num_steps} started")
+            # print(f"step {num_steps} started")
             step_outputs = self._llm_engine.step()
             num_steps += 1
-            print(f"step {num_steps} ended")
+            # print(f"step {num_steps} ended")
 
             for output in step_outputs:
                 if output.finished:

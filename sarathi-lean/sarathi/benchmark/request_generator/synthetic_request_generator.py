@@ -45,6 +45,7 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
         inter_request_time = (
             self._request_interval_generator.get_next_inter_request_time()
         )
+        inter_request_time = 0.1
         if inter_request_time is None:
             return None
         arrived_at = last_arrived_at + inter_request_time

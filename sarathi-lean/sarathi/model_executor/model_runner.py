@@ -240,7 +240,7 @@ class ModelRunner:
         with self._prepare_inputs_e2e_timer:
             input_tokens, input_positions = self._prepare_inputs(seq_metadata_list)
 
-        # get_attention_wrapper().begin_forward(seq_metadata_list) # Moved to llama model
+        get_attention_wrapper().begin_forward(seq_metadata_list) # Moved to llama model
         
             
         with self._model_execution_e2e_timer:

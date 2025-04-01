@@ -188,7 +188,7 @@ class BaseWorker:
         if preempted_seq:
             self.preempt_requests(preempted_seq)
 
-        # self.cache_engine.step(seq_metadata_list) # moved to llama model
+        self.cache_engine.step(seq_metadata_list) # moved to llama model
 
         # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
         sampler_outputs, output_seq_ids, seq_metadata_list = self.model_runner.run(
