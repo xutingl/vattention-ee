@@ -7,7 +7,7 @@ import utils
 # configurable
 num_requests = 256
 gpu_mem_util = 0.9
-max_batch_size = 8
+max_batch_size = 4
 
 models = utils.models
 attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
@@ -23,7 +23,7 @@ dataset_path = os.path.join(root, 'sarathi-lean', utils.dataset_subpath)
 if utils.args.test == True:
     models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
     # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
-    num_requests, qps_values = 100, [1]
+    num_requests, qps_values = 100, [0.5]
 
 for model in models:
     for qps in qps_values:

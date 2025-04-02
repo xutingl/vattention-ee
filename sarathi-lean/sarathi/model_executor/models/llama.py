@@ -397,12 +397,12 @@ class LlamaModel(nn.Module):
         if is_pipeline_last_stage():
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         
-        self.ee_policy = "lazy"
+        self.ee_policy = "eager"
         self.shallow_exit_layer = 16
         self.conf_threshold = 0.6
         self.exited_rates = [0, 0]
 
-        self.max_batch_size = 2
+        self.max_batch_size = 4
         self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states of the token arrived at first layer
         self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states that EE'ed
         self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
