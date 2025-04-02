@@ -402,7 +402,7 @@ class LlamaModel(nn.Module):
         self.conf_threshold = 0.6
         self.exited_rates = [0, 0]
 
-        self.max_batch_size = 4
+        self.max_batch_size = 2
         self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states of the token arrived at first layer
         self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states that EE'ed
         self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
@@ -504,10 +504,10 @@ class LlamaModel(nn.Module):
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                     # [TODO] i-2 seems to give better results.
-                    for batch_idx, token_idx in enumerate(positions):
-                        for l in range(i, len(self.layers)):
-                            cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
-                            cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
+                    # for batch_idx, token_idx in enumerate(positions):
+                    #     for l in range(i, len(self.layers)):
+                    #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
+                    #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
 
 
                     break

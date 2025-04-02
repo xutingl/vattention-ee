@@ -2,7 +2,7 @@ model: meta-llama/Meta-Llama-3-8B
 replica_id: 0
 replica_resource_mapping:
 - !!python/tuple
-  - node:172.17.0.2
+  - node:172.23.0.2
   - 0
 tokenizer: meta-llama/Meta-Llama-3-8B
 tokenizer_mode: auto
@@ -27,7 +27,7 @@ high_chunk_size: 2048
 chunk_schedule_max_tokens: 131072
 chunk_schedule_stages: 16
 write_metrics: true
-output_dir: /workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee-eager_tp_1_attn_fa_vattn_2mb_qps_0.5_reqs_100///replica_0
+output_dir: /workspace/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee-eager_tp_1_attn_fa_vattn_2mb_qps_0.5_reqs_100///replica_0
 wandb_project: ''
 wandb_sweep_id: ''
 wandb_run_id: ''

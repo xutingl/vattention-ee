@@ -23,7 +23,7 @@ model_max_model_len: 2048
 model_name: meta-llama/Meta-Llama-3-8B
 model_pipeline_parallel_degree: 1
 model_tensor_parallel_degree: 1
-output_dir: /workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee-eager_tp_1_attn_fa_vattn_2mb_qps_0.5_reqs_100//
+output_dir: /workspace/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama-3-8b-ee-eager_tp_1_attn_fa_vattn_2mb_qps_0.5_reqs_100//
 poisson_request_interval_generator_qps: 0.5
 port: 8000
 replica_resource_mapping: ''
@@ -56,7 +56,7 @@ trace_request_length_generator_decode_scale_factor: 1
 trace_request_length_generator_max_tokens: 2048
 trace_request_length_generator_min_tokens: 0
 trace_request_length_generator_prefill_scale_factor: 1
-trace_request_length_generator_trace_file: /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv
+trace_request_length_generator_trace_file: /workspace/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv
 uniform_request_length_generator_max_tokens: 4096
 uniform_request_length_generator_min_tokens: 1024
 uniform_request_length_generator_prefill_to_decode_ratio: 20.0
