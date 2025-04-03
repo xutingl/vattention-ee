@@ -45,7 +45,7 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
         inter_request_time = (
             self._request_interval_generator.get_next_inter_request_time()
         )
-        inter_request_time = 0.1
+        inter_request_time = 0.01
         if inter_request_time is None:
             return None
         arrived_at = last_arrived_at + inter_request_time
@@ -72,6 +72,7 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
 
         # first priority is duration
         if self._config.synthetic_request_generator_duration is not None:
+            print("Generating requests with duration")
             idx = 0
             while current_time < self._config.synthetic_request_generator_duration:
                 request = self._generate_next_request(current_time, idx=idx)
@@ -79,11 +80,13 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
                 current_time = request.arrived_at
                 requests.append(request)
         elif self._config.synthetic_request_generator_num_requests is not None:
+            print("Generating requests with num_requests")
             for i in range(self._config.synthetic_request_generator_num_requests):
                 request = self._generate_next_request(current_time, idx=i)
                 current_time = request.arrived_at
                 requests.append(request)
         else:
+            print
             assert self._config.synthetic_request_generator_interval_provider == "trace"
             idx = 0
             while True:

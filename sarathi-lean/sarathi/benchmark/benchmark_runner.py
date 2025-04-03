@@ -202,7 +202,8 @@ class BenchmarkRunner:
 
     def _add_requests(self) -> None:
         index = 0
-        first_request_time = time.monotonic()
+        # first_request_time = time.monotonic()
+        first_request_time = 0.01
         while index < len(self._requests):
             request = self._requests[index]
             self._llm_engine.add_request(
