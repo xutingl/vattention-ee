@@ -69,6 +69,9 @@ class EngineArgs:
     enable_request_outputs: bool = False
     keep_individual_batch_metrics: bool = False
     attention_backend: str = "flash_attention"
+    ee_policy: str = "off"
+    shallow_exit_layer: Optional[int] = None
+    conf_threshold: Optional[float] = None
 
     def __post_init__(self):
         if self.tokenizer is None:
@@ -141,6 +144,10 @@ class EngineArgs:
             revision=self.revision,
             max_model_len=self.max_model_len,
             attention_backend=self.attention_backend,
+            ee_policy=self.ee_policy,
+            shallow_exit_layer=self.shallow_exit_layer,
+            conf_threshold=self.conf_threshold,
+            max_num_seqs=self.max_num_seqs,
         )
         elem_size = torch.tensor([1], dtype=model_config.hf_config.dtype).element_size()
 

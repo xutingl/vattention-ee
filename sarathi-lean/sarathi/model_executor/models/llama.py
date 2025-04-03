@@ -397,12 +397,12 @@ class LlamaModel(nn.Module):
         if is_pipeline_last_stage():
             self.norm = RMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         
-        self.ee_policy = "eager"
-        self.shallow_exit_layer = 16
-        self.conf_threshold = 0.6
+        self.ee_policy = config.ee_policy
+        self.shallow_exit_layer = config.shallow_exit_layer
+        self.conf_threshold = config.conf_threshold
         self.exited_rates = [0, 0]
 
-        self.max_batch_size = 2
+        self.max_batch_size = config.max_num_seqs
         self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states of the token arrived at first layer
         self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states that EE'ed
         self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
@@ -462,6 +462,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: torch.Tensor,
         cache_engine: vATTNCacheEngine,
     ):
+        assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         updated_seq_metadata_list = [self.seq_metadata_map[seq_id.item()] for seq_id in seq_ids_in_batch]  
 
         cache_engine.step(updated_seq_metadata_list) # in base_worker
@@ -504,10 +505,10 @@ class LlamaModel(nn.Module):
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                     # [TODO] i-2 seems to give better results.
-                    # for batch_idx, token_idx in enumerate(positions):
-                    #     for l in range(i, len(self.layers)):
-                    #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
-                    #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
+                    for batch_idx, token_idx in enumerate(positions):
+                        for l in range(i, len(self.layers)):
+                            cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
+                            cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
 
 
                     break

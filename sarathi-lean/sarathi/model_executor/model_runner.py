@@ -37,7 +37,6 @@ class ModelRunner:
         cache_config: CacheConfig,
         device: torch.device,
         rank: int,
-        rebatching: bool = True,
     ):
         self.model_config = model_config
         self.parallel_config = parallel_config
@@ -69,7 +68,8 @@ class ModelRunner:
             CpuOperationMetrics.MODEL_EXECUTION_E2E, rank=self.rank
         )
 
-        self.rebatching = rebatching
+        self.ee_policy = self.model_config.ee_policy
+        self.rebatching = self.ee_policy == "rebatching"
         self.seq_metadata_map = {}
 
     def _prepare_inputs(
@@ -240,7 +240,9 @@ class ModelRunner:
         with self._prepare_inputs_e2e_timer:
             input_tokens, input_positions = self._prepare_inputs(seq_metadata_list)
 
-        get_attention_wrapper().begin_forward(seq_metadata_list) # Moved to llama model
+        if not self.rebatching:
+            # For rebatching, this is moved to llama model
+            get_attention_wrapper().begin_forward(seq_metadata_list)
         
             
         with self._model_execution_e2e_timer:

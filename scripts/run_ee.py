@@ -31,7 +31,7 @@ for model in models:
             model_logentry = utils.models[model]['logentry']
             tp_dim = utils.models[model]['tp']
             max_tokens = utils.get_max_context_length(backend, utils.MAX_CONTEXT_LENGTH_DYNAMIC_TRACES)
-            max_tokens = 2048
+            max_tokens = 800
             kv_block_size = utils.get_block_or_page_size(backend)
             attn_backend_arg = utils.get_backend(backend)
             command = [
@@ -60,6 +60,10 @@ for model in models:
                     '--model_block_size', f'{kv_block_size}',
                     '--model_attention_backend', f'{attn_backend_arg}',
                     '--gpu_memory_utilization', f'{gpu_mem_util}',
+                    # EE configs
+                    '--ee_policy', 'off',
+                    '--shallow_exit_layer', '16',
+                    '--conf_threshold', '0.8',
                 ]
             # assert dataset_name in dataset_path
             print("Running command:", " ".join(command))

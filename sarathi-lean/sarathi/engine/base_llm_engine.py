@@ -79,7 +79,11 @@ class BaseLLMEngine:
             f"tensor_parallel_size={parallel_config.tensor_parallel_size}, "
             f"pipeline_parallel_size={parallel_config.pipeline_parallel_size}, "
             f"seed={model_config.seed}, "
-            f"attention_backend={model_config.attention_backend})"
+            f"attention_backend={model_config.attention_backend})\n"
+            f"EE configs: ee_policy={model_config.ee_policy}, "
+            f"shallow_exit_layer={model_config.shallow_exit_layer}, "
+            f"conf_threshold={model_config.conf_threshold}, "
+            f"max_num_seqs(max batch size)={model_config.max_num_seqs}, "
         )
         # TODO(woosuk): Print more configs in debug mode.
 
@@ -128,7 +132,8 @@ class BaseLLMEngine:
             CpuOperationMetrics.PROCESS_MODEL_OUTPUTS
         )
 
-        self.rebatching = True
+        self.ee_policy = model_config.ee_policy
+        self.rebatching = self.ee_policy == "rebatching"
 
     def _validate_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
@@ -409,12 +414,15 @@ class BaseLLMEngine:
         seq_ids_in_batch = torch.tensor(seq_ids_in_batch, device="cuda:0")
         
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs = self._run_workers(
+        sampler_outputs, output_seq_ids, updated_seq_metadata_list, updated_scheduler_outputs = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
         )
+        if self.rebatching:
+            seq_metadata_list = updated_seq_metadata_list
+            scheduler_outputs = updated_scheduler_outputs
         # print(f"[BaseLLMEngine] output output_seq_ids: {output_seq_ids}")
 
         

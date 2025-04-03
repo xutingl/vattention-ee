@@ -77,7 +77,7 @@ class BaseWorker:
         self._verify_parallel_config()
         self.metrics_store = MetricsStore(metrics_config)
 
-        self.rebatching = rebatching
+        self.rebatching = self.model_config.ee_policy == "rebatching"
         self.scheduled_seq_metadata_map = {} # seq_id -> SequenceScheduleMetadata
 
     def _verify_parallel_config(self) -> None:
@@ -188,10 +188,12 @@ class BaseWorker:
         if preempted_seq:
             self.preempt_requests(preempted_seq)
 
-        self.cache_engine.step(seq_metadata_list) # moved to llama model
+        if not self.rebatching:
+            # For rebatching, this is moved to llama model
+            self.cache_engine.step(seq_metadata_list)
 
         # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
-        sampler_outputs, output_seq_ids, seq_metadata_list = self.model_runner.run(
+        sampler_outputs, output_seq_ids, updated_seq_metadata_list = self.model_runner.run(
             seq_metadata_list,
             self.gpu_cache,
             cache_engine=self.cache_engine,
@@ -200,6 +202,7 @@ class BaseWorker:
 
         # Update scheduler_outputs with the new seq_metadata_list
         if self.rebatching:
+            seq_metadata_list = updated_seq_metadata_list
             for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
                 self.scheduled_seq_metadata_map[scheduled_seq_metadata.seq_id] = scheduled_seq_metadata
             

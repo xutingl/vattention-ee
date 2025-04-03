@@ -68,7 +68,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
+        self._config.download_dir = "/home/xutingl/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -115,6 +115,10 @@ class BenchmarkRunner:
             # engine config
             trust_remote_code=True,
             download_dir=self._config.download_dir,
+            # EE config
+            ee_policy=self._config.ee_policy,
+            shallow_exit_layer=self._config.shallow_exit_layer,
+            conf_threshold=self._config.conf_threshold,
         )
 
     def _get_input_params(
@@ -264,7 +268,8 @@ class BenchmarkRunnerLauncher:
             if x.startswith("node:") and x != "node:__internal_head__"
         ]
 
-        runner_ip = f"node:{get_ip()}"
+        # runner_ip = f"node:{get_ip()}"
+        runner_ip = "node:158.130.4.64"
 
         ip_addresses.remove(runner_ip)
         ip_addresses.insert(0, runner_ip)

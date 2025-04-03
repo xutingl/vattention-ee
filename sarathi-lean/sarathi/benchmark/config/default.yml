@@ -107,3 +107,7 @@ metrics_store:
   enable_cpu_op_level_metrics: false
   enable_request_outputs: false
   keep_individual_batch_metrics: false
+
+ee_policy: "off"
+shallow_exit_layer: 16
+conf_threshold: 0.8
