@@ -45,6 +45,7 @@ class vATTNCacheEngine(BaseCacheEngine):
         return vattention.num_free_kvblocks()
 
     def allocate_gpu_cache(self) -> List[torch.Tensor]:
+        print(f"[vATTNCacheEngine] Allocating GPU cache with size: {self.cache_mem_size}. page_size: {self.page_size}.")
         kv_cache = vattention.init_kvcache(
                                     self.num_layers,
                                     self.num_heads,

@@ -7,7 +7,7 @@ import utils
 # configurable
 num_requests = 256
 gpu_mem_util = 0.9
-max_batch_size = 4
+max_batch_size = 8
 
 models = utils.models
 attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
@@ -31,7 +31,7 @@ for model in models:
             model_logentry = utils.models[model]['logentry']
             tp_dim = utils.models[model]['tp']
             max_tokens = utils.get_max_context_length(backend, utils.MAX_CONTEXT_LENGTH_DYNAMIC_TRACES)
-            max_tokens = 800
+            max_tokens = 1000
             kv_block_size = utils.get_block_or_page_size(backend)
             attn_backend_arg = utils.get_backend(backend)
             command = [
@@ -61,7 +61,7 @@ for model in models:
                     '--model_attention_backend', f'{attn_backend_arg}',
                     '--gpu_memory_utilization', f'{gpu_mem_util}',
                     # EE configs
-                    '--ee_policy', 'off',
+                    '--ee_policy', 'rebatching',
                     '--shallow_exit_layer', '16',
                     '--conf_threshold', '0.8',
                 ]

@@ -174,10 +174,10 @@ class BenchmarkRunner:
             if elapsed_time > self._time_limit:
                 break
             
-            # print(f"step {num_steps} started")
+            print(f"[BenchmarkRunner]step {num_steps} started")
             step_outputs = self._llm_engine.step()
             num_steps += 1
-            # print(f"step {num_steps} ended")
+            print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
 
             for output in step_outputs:
                 if output.finished:
@@ -269,8 +269,8 @@ class BenchmarkRunnerLauncher:
             if x.startswith("node:") and x != "node:__internal_head__"
         ]
 
-        # runner_ip = f"node:{get_ip()}"
-        runner_ip = "node:158.130.4.64"
+        runner_ip = f"node:{get_ip()}"
+        # runner_ip = "node:158.130.4.64" # For Phastform machine
 
         ip_addresses.remove(runner_ip)
         ip_addresses.insert(0, runner_ip)
