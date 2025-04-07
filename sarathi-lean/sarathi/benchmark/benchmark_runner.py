@@ -174,10 +174,10 @@ class BenchmarkRunner:
             if elapsed_time > self._time_limit:
                 break
             
-            print(f"[BenchmarkRunner]step {num_steps} started")
+            #print(f"[BenchmarkRunner]step {num_steps} started")
             step_outputs = self._llm_engine.step()
             num_steps += 1
-            print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
+            #print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
 
             for output in step_outputs:
                 if output.finished:

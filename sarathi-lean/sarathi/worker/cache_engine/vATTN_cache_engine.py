@@ -92,8 +92,34 @@ class vATTNCacheEngine(BaseCacheEngine):
     def get_v_cache(self, layer_idx: int) -> torch.Tensor:
         return self.gpu_cache[layer_idx][1]
     
+    def copy_kv_cache(self, src_layer_idx: int, positions: torch.Tensor) -> None:
+        batch_indices = torch.arange(len(positions), device=positions.device)
+        token_indices = positions
+
+        src_k = self.gpu_cache[src_layer_idx][0][batch_indices, token_indices]  # shape: [batch, heads, dim]
+        src_v = self.gpu_cache[src_layer_idx][1][batch_indices, token_indices]
+
+        for layer in self.gpu_cache[src_layer_idx + 1:]:
+            layer[0][batch_indices, token_indices] = src_k
+            layer[1][batch_indices, token_indices] = src_v
+    
+    def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, batch_idx: int, token_idx: int) -> None:
+        src_k = self.gpu_cache[src_layer_idx][0][batch_idx, token_idx, :, :]
+        src_v = self.gpu_cache[src_layer_idx][1][batch_idx, token_idx, :, :]
+
+        for layer in self.gpu_cache[src_layer_idx + 1:]:
+            layer[0][batch_idx, token_idx, :, :] = src_k
+            layer[1][batch_idx, token_idx, :, :] = src_v
+    
     def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, batch_idx: int, token_idx: int) -> None:
-        self.gpu_cache[dest_layer_idx][0][batch_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][0][batch_idx][token_idx,:,:]
+        dest_k_cache = self.gpu_cache[dest_layer_idx][0]
+        src_k_cache = self.gpu_cache[src_layer_idx][0]
+
+        dest_k_cache_for_req = dest_k_cache[batch_idx]
+        src_k_cache_for_req = src_k_cache[batch_idx]
+
+        dest_k_cache_for_req[token_idx,:,:] = src_k_cache_for_req[token_idx,:,:]
+        # self.gpu_cache[dest_layer_idx][0][batch_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][0][batch_idx][token_idx,:,:]
     
     def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, batch_idx: int, token_idx: int) -> None:
         self.gpu_cache[dest_layer_idx][1][batch_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][1][batch_idx][token_idx,:,:]
