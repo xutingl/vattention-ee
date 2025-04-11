@@ -44,7 +44,7 @@ class vATTNCacheEngine(BaseCacheEngine):
     def num_free_blocks(self) -> int:
         return vattention.num_free_kvblocks()
 
-    def allocate_gpu_cache(self) -> List[torch.Tensor]:
+    def allocate_gpu_cache(self) -> Tuple[torch.Tensor, torch.Tensor]:
         print(f"[vATTNCacheEngine] Allocating GPU cache with size: {self.cache_mem_size}. page_size: {self.page_size}.")
         kv_cache = vattention.init_kvcache(
                                     self.num_layers,
@@ -80,16 +80,21 @@ class vATTNCacheEngine(BaseCacheEngine):
                             "v_cache device mismatch expected: {}, got: {}".format(self.device, self.v_cache[i].device)
             cache_list = list(zip(k_cache, v_cache))
         vattention.reserve_physical_pages(self.cache_mem_size)
-        return cache_list
 
+        # Before: return cache_list of shape <num_layers, 2(k and v), batch_size, num_heads, head_size>
+        # New: return Tuple of shape <2, num_layers, batch_size, num_heads, head_size>
+        return cache_list
+        #return (k_cache, v_cache)
     def preempt_requests(self, preempted_seq: List[int]) -> None:
         for seq in preempted_seq:
             self.free_request(seq.seq_id)
 
     def get_k_cache(self, layer_idx: int) -> torch.Tensor:
+        #return self.gpu_cache[0][layer_idx]
         return self.gpu_cache[layer_idx][0]
 
     def get_v_cache(self, layer_idx: int) -> torch.Tensor:
+        #return self.gpu_cache[1][layer_idx]
         return self.gpu_cache[layer_idx][1]
     
     """
@@ -99,9 +104,35 @@ class vATTNCacheEngine(BaseCacheEngine):
         src_k = self.gpu_cache[src_layer_idx][0][req_indices, token_indices]  # shape: [batch, heads, dim]
         src_v = self.gpu_cache[src_layer_idx][1][req_indices, token_indices]
 
-        for layer in self.gpu_cache[src_layer_idx + 1:]:
-            layer[0][req_indices, token_indices] = src_k
-            layer[1][req_indices, token_indices] = src_v
+        # Calculate number of layers to copy to
+        num_layers_to_copy = len(self.gpu_cache) - (src_layer_idx + 1)
+        if num_layers_to_copy <= 0:
+            return  # Nothing to copy if we're at the last layer
+
+        # Stack the same k and v values for all target layers
+        # This creates tensors of shape [num_target_layers, batch, heads, dim]
+        k_stack = src_k.unsqueeze(0).expand(num_layers_to_copy, *src_k.shape)
+        v_stack = src_v.unsqueeze(0).expand(num_layers_to_copy, *src_v.shape)
+
+        # Get all target layers' k and v caches at once
+        target_k_caches = torch.stack([self.gpu_cache[i][0] for i in range(src_layer_idx + 1, len(self.gpu_cache))])
+        target_v_caches = torch.stack([self.gpu_cache[i][1] for i in range(src_layer_idx + 1, len(self.gpu_cache))])
+
+        # Update all target layers at once using advanced indexing
+        target_k_caches[:, req_indices, token_indices] = k_stack
+        target_v_caches[:, req_indices, token_indices] = v_stack
+
+        # Update the original caches
+        for i, layer_idx in enumerate(range(src_layer_idx + 1, len(self.gpu_cache))):
+            self.gpu_cache[layer_idx] = (target_k_caches[i], target_v_caches[i])
+        """
+        # src_k = self.gpu_cache[src_layer_idx][0][req_indices, token_indices]  # shape: [batch, heads, dim]
+        # src_v = self.gpu_cache[src_layer_idx][1][req_indices, token_indices]
+
+        # for layer in self.gpu_cache[src_layer_idx + 1:]:
+        #     layer[0][req_indices, token_indices] = src_k
+        #     layer[1][req_indices, token_indices] = src_v
+        """
     
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, req_idx: int, token_idx: int) -> None:
         src_k = self.gpu_cache[src_layer_idx][0][req_idx, token_idx, :, :]

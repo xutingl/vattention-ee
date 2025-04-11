@@ -5,9 +5,7 @@ import utils
 
 
 # configurable
-num_requests = 256
 gpu_mem_util = 0.9
-max_batch_size = 8
 
 models = utils.models
 attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
@@ -19,11 +17,15 @@ src, root, main = utils.get_paths()
 experiment_dir = utils.dynamic_experiment_dir
 dataset_path = os.path.join(root, 'sarathi-lean', utils.dataset_subpath)
 
-# for quick testing
-if utils.args.test == True:
-    models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
-    # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
-    num_requests, qps_values = 100  , [0.5]
+
+models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
+# models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
+num_requests = utils.args.num_requests
+qps_values = [utils.args.qps]
+max_batch_size = utils.args.max_batch_size
+shallow_exit_layer = utils.args.shallow_exit_layer
+conf_threshold = utils.args.conf_threshold
+ee_policy = utils.args.ee_policy
 
 for model in models:
     for qps in qps_values:
@@ -31,7 +33,7 @@ for model in models:
             model_logentry = utils.models[model]['logentry']
             tp_dim = utils.models[model]['tp']
             max_tokens = utils.get_max_context_length(backend, utils.MAX_CONTEXT_LENGTH_DYNAMIC_TRACES)
-            max_tokens = 1000
+            max_tokens = 2048
             kv_block_size = utils.get_block_or_page_size(backend)
             attn_backend_arg = utils.get_backend(backend)
             command = [
@@ -61,9 +63,9 @@ for model in models:
                     '--model_attention_backend', f'{attn_backend_arg}',
                     '--gpu_memory_utilization', f'{gpu_mem_util}',
                     # EE configs
-                    '--ee_policy', 'rebatching',
-                    '--shallow_exit_layer', '16',
-                    '--conf_threshold', '0.6',
+                    '--ee_policy', f'{ee_policy}',
+                    '--shallow_exit_layer', f'{shallow_exit_layer}',
+                    '--conf_threshold', f'{conf_threshold}',
                 ]
             # assert dataset_name in dataset_path
             print("Running command:", " ".join(command))

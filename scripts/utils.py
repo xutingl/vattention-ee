@@ -6,6 +6,12 @@ MB = 1024 * KB
 
 parser = argparse.ArgumentParser(description='Run e2e dynamic trace experiments')
 parser.add_argument('--test', action='store_true', help='Run a test experiment')
+parser.add_argument('--num_requests', '-n', type=int, default=1000, help='Number of requests')
+parser.add_argument('--qps', '-q', type=float, default=0.5, help='QPS')
+parser.add_argument('--max_batch_size', '-b', type=int, default=8, help='Max batch size')
+parser.add_argument('--shallow_exit_layer', '-l', type=int, default=16, help='Shallow exit layer')
+parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Confidence threshold')
+parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))

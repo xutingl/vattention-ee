@@ -578,6 +578,8 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size> # The seq_id of the seqences in the batch
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
+        # if kv_caches is not None and kv_caches[0] is not None:
+        #     kv_caches = list(zip(*kv_caches))
         # Rebatching disabled
         print(f"policy: {self.ee_policy}, batch size: {hidden_states.size(0)}, max batch size: {self.max_batch_size}")
         if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size:
