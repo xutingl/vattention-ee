@@ -23,7 +23,7 @@ dataset_path = os.path.join(root, 'sarathi-lean', utils.dataset_subpath)
 if utils.args.test == True:
     models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb']
     # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
-    num_requests, qps_values = 1000, [0.5]
+    num_requests, qps_values = 100  , [0.5]
 
 for model in models:
     for qps in qps_values:
@@ -61,7 +61,7 @@ for model in models:
                     '--model_attention_backend', f'{attn_backend_arg}',
                     '--gpu_memory_utilization', f'{gpu_mem_util}',
                     # EE configs
-                    '--ee_policy', 'eager',
+                    '--ee_policy', 'rebatching',
                     '--shallow_exit_layer', '16',
                     '--conf_threshold', '0.6',
                 ]

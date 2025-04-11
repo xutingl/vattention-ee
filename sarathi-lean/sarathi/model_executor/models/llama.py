@@ -531,7 +531,10 @@ class LlamaModel(nn.Module):
                     # for batch_idx, token_idx in enumerate(positions):
                     #     cache_engine.copy_kv_cache_starting_at_layer(i-1, batch_idx, token_idx)
 
-                    cache_engine.copy_kv_cache(i-1, positions)
+                    
+                    req_indices = torch.arange(len(positions), device=positions.device)
+                    token_indices = positions
+                    cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
 
                     break
@@ -711,15 +714,24 @@ class LlamaModel(nn.Module):
                         #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
                         #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
                         
-                        cache_engine.copy_kv_cache(i-1, positions)
+                        req_indices = torch.arange(len(positions), device=positions.device)
+                        token_indices = positions
+                        cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
                     else:
+
+                        # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
+                        req_indices = torch.where(skip_mask)[0]
+                        print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
+                        token_indices = positions[req_indices]
+                        cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
                         for req_idx, skip in enumerate(skip_mask):
                             if skip:
-                                token_pos_idx = positions[req_idx]
-                                for l in range(i, len(self.layers)):
-                                    cache_engine.copy_k_cache_between_layers(i-1, l, req_idx, token_pos_idx)
-                                    cache_engine.copy_v_cache_between_layers(i-1, l, req_idx, token_pos_idx)
+                                pass
+                                # token_pos_idx = positions[req_idx]
+                                # for l in range(i, len(self.layers)):
+                                #     cache_engine.copy_k_cache_between_layers(i-1, l, req_idx, token_pos_idx)
+                                #     cache_engine.copy_v_cache_between_layers(i-1, l, req_idx, token_pos_idx)
                             else:
                                 # 3.2 Put requests that don't EE into `deep_buffer`.
                                 self.deep_buffer.add_hidden_states(hidden_states[req_idx].unsqueeze(0), [seq_ids_in_batch[req_idx].item()], positions[req_idx].unsqueeze(0))
