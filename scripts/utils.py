@@ -34,7 +34,7 @@ models = {
     'llama-3-8b-1': {'tp': 1, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b-ee-eager'},
     'llama-3-8b-2': {'tp': 2, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b'},
     'yi-34b-2': {'tp': 2, 'hfrecord': '01-ai/Yi-34B-200k', 'logentry': 'yi-34b'},
-    'llama-2': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama-ee'}
+    'llama-2-13b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-13b-chat-hf', 'logentry': 'llama2-13b-ee'}
 }
 
 # vattention allocates memory in power of two while fa_paged/fi_paged
@@ -93,7 +93,7 @@ def get_backend(attn_backend):
     if 'fa3_vattn' in attn_backend.lower():
         return 'fa3_vattn_sync' if '_sync' in attn_backend else 'fa3_vattn'
     if 'fa_vattn' in attn_backend.lower():
-        return 'fa_vattn_sync' if '_sync' in attn_backend else 'fa_vattn'
+        return 'fa_vattn_sync' if '_sync' in attn_backend else 'fa_vattn_megacache'
     elif 'fi_vattn' in attn_backend.lower():
         return 'fi_vattn_sync' if '_sync' in attn_backend else 'fi_vattn'
     elif 'fa_paged' in attn_backend.lower():

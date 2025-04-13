@@ -262,7 +262,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096):
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -400,11 +400,11 @@ class LlamaModel(nn.Module):
         self.ee_policy = config.ee_policy
         self.shallow_exit_layer = config.shallow_exit_layer
         self.conf_threshold = config.conf_threshold
-        self.exited_rates = [0, 1]
+        self.exited_rates = [0, 1] # [0]: exited, [1]: not exited. Initialized `not exited` to 1 to avoid division by 0.
 
         self.max_batch_size = config.max_num_seqs
-        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states of the token arrived at first layer
-        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 4096) # Buffers the hidden states that EE'ed
+        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 5120) # Buffers the hidden states of the token arrived at first layer
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, 5120) # Buffers the hidden states that EE'ed
         self.seq_metadata_map = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
 
         self.batch_size_lst = [0]
@@ -499,10 +499,10 @@ class LlamaModel(nn.Module):
                 # This is the prefilling of a rebatching run
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
-
+        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) == self.max_batch_size
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if cache_engine and self.ee_policy != "off" and i == self.shallow_exit_layer and hidden_states.size(0) <= self.max_batch_size:
+            if check_for_ee and i == self.shallow_exit_layer:
                 #need_skip = random.random() < 0.4
                 lm_logits, _ = lm_head(self.norm(hidden_states))
                 skip_mask, conf, need_skip = self.get_skip_mask(
@@ -515,7 +515,8 @@ class LlamaModel(nn.Module):
                 #need_skip=False
 
                 if need_skip:
-                    #self.exited_rates[0] += 1
+                    # print(f"[LlamaModel.forward_without_rebatching] trying to exit with confidence {conf}.")
+                    # self.exited_rates[0] += 1
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
@@ -528,19 +529,19 @@ class LlamaModel(nn.Module):
 
 
                     
-                    # for batch_idx, token_idx in enumerate(positions):
-                    #     cache_engine.copy_kv_cache_starting_at_layer(i-1, batch_idx, token_idx)
+                    # for req_idx, token_idx in enumerate(positions):
+                    #     cache_engine.copy_kv_cache_starting_at_layer(i-1, req_idx, token_idx)
 
-                    
-                    req_indices = torch.arange(len(positions), device=positions.device)
-                    token_indices = positions
-                    cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
+                    # req_indices = torch.arange(len(positions), device=positions.device)
+                    # token_indices = positions
+                    # cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
-
+                    # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     break
                 else:
+                    # print(f"[LlamaModel.forward_without_rebatching] Exited without EE.")
                     pass
-                    #self.exited_rates[1] += 1
+                    # self.exited_rates[1] += 1
                 
             hidden_states = layer(
                 positions,
@@ -553,6 +554,8 @@ class LlamaModel(nn.Module):
 
         # print(f"[LlamaModel.forward_without_rebatching] ee_rates: {self.exited_rates}")
         # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
+
+        # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
         return hidden_states, seq_ids_in_batch
     
@@ -581,7 +584,7 @@ class LlamaModel(nn.Module):
         # if kv_caches is not None and kv_caches[0] is not None:
         #     kv_caches = list(zip(*kv_caches))
         # Rebatching disabled
-        print(f"policy: {self.ee_policy}, batch size: {hidden_states.size(0)}, max batch size: {self.max_batch_size}")
+        # print(f"policy: {self.ee_policy}, batch size: {hidden_states.size(0)}, max batch size: {self.max_batch_size}")
         if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size:
             return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 

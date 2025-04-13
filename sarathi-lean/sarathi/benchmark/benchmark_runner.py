@@ -68,7 +68,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/home/xutingl/downloaded_models/"
+        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -127,7 +127,7 @@ class BenchmarkRunner:
         sampling_params = SamplingParams(
             ignore_eos=False,
             # max_tokens=request.num_decode_tokens,
-            max_tokens=self._config.model_max_model_len // self._config.replica_scheduler_max_batch_size,
+            max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
             #temperature=0.5,
             #top_p=0.5,
             #top_k=-1,

@@ -39,7 +39,7 @@ class SyntheticRequestGenerator(BaseRequestGenerator):
     
     def _get_cnn_prompt(self, idx: int) -> str:
         # https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00632/119276/Benchmarking-Large-Language-Models-for-News
-        return "Article: " + self.cnn[idx]["article"][:500] + ". Summarize the article in three sentences. Summary:"
+        return "Article: " + self.cnn[idx]["article"][:1000] + ". Summarize the article in three sentences. Summary:"
 
     def _generate_next_request(self, last_arrived_at: float, idx: int=0) -> Request:
         inter_request_time = (
