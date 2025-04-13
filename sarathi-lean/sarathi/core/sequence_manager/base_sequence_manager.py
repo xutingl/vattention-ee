@@ -39,14 +39,15 @@ class BaseSequenceManager(ABC):
     def _pause_seq(self, seq_id: int) -> None:
         assert seq_id in self.seq_map
         seq = self.seq_map[seq_id]
-        assert seq.is_running(), f"seq_id: {seq_id}, status: {seq.get_status()}"
+        assert seq.is_running() or seq.is_in_buffer(), f"seq_id: {seq_id}, status: {seq.get_status()}"
         seq.set_status(SequenceStatus.PAUSED)
 
     def _resume_seq(self, seq_id: int) -> None:
         assert seq_id in self.seq_map
         seq = self.seq_map[seq_id]
-        assert seq.is_waiting() or seq.is_paused()
-        seq.set_status(SequenceStatus.RUNNING)
+        if not seq.is_running():
+            assert seq.is_waiting() or seq.is_paused() or seq.is_in_buffer(), f"seq_id: {seq_id}, status: {seq.get_status()}"
+            seq.set_status(SequenceStatus.RUNNING)
 
     def _on_seq_scheduled(self, seq_sched_metadata: SequenceScheduleMetadata) -> None:
         assert seq_sched_metadata.seq_id in self.seq_map

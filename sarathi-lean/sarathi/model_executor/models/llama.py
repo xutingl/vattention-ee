@@ -497,6 +497,7 @@ class LlamaModel(nn.Module):
             
             if self.ee_policy == "rebatching":
                 # This is the prefilling of a rebatching run
+                print(f"[LlamaModel.forward_without_rebatching] prefilling with seq_ids_in_batch: {seq_ids_in_batch}. batch size: {hidden_states.size(0)}")
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
         check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) == self.max_batch_size
@@ -726,13 +727,13 @@ class LlamaModel(nn.Module):
 
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
                         req_indices = torch.where(skip_mask)[0]
-                        print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
+                        # print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
                         token_indices = positions[req_indices]
                         cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
                         for req_idx, skip in enumerate(skip_mask):
                             if skip:
-                                pass
+                                pass # Pass because already handled above
                                 # token_pos_idx = positions[req_idx]
                                 # for l in range(i, len(self.layers)):
                                 #     cache_engine.copy_k_cache_between_layers(i-1, l, req_idx, token_pos_idx)

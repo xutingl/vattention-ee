@@ -50,6 +50,9 @@ class BaseScheduler(ABC):
         # Sequence groups in the RUNNING state.
         self.running: List[Sequence] = []
 
+        # Sequence groups in the EE or start buffer. Needed for rebatching.
+        self.rebatching_buffer: List[Sequence] = []
+
     def set_block_manager(self, model_config):
         attn_cfg = model_config.attention_backend
         self.attention_backend = attn_cfg
@@ -107,7 +110,7 @@ class BaseScheduler(ABC):
         return scheduler_outputs
 
     def remove_finished_seqs(self) -> None:
-        self.running = [seq for seq in self.running if not seq.is_finished()]
+        self.running = [seq for seq in self.running if not seq.is_finished() and not seq.is_in_buffer()]
 
     def free_finished_seqs(self) -> None:
         for seq in self.running:

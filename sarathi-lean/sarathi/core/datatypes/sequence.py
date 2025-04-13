@@ -142,6 +142,9 @@ class Sequence:
 
     def is_finished(self) -> bool:
         return SequenceStatus.is_finished(self.get_status())
+    
+    def is_in_buffer(self) -> bool:
+        return SequenceStatus.is_in_buffer(self.get_status())
 
     def is_executing(self) -> bool:
         return SequenceStatus.is_executing(self.get_status())

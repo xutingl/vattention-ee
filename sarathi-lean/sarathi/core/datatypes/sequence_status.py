@@ -11,6 +11,7 @@ class SequenceStatus(enum.Enum):
     FINISHED_STOPPED = enum.auto()
     FINISHED_LENGTH_CAPPED = enum.auto()
     FINISHED_IGNORED = enum.auto()
+    IN_BUFFER = enum.auto()
 
     @staticmethod
     def is_finished(status: "SequenceStatus") -> bool:
@@ -26,6 +27,10 @@ class SequenceStatus(enum.Enum):
             SequenceStatus.RUNNING,
             SequenceStatus.PAUSED,
         ]
+    
+    @staticmethod
+    def is_in_buffer(status: "SequenceStatus") -> bool:
+        return status == SequenceStatus.IN_BUFFER
 
     @staticmethod
     def is_waiting(status: "SequenceStatus") -> bool:

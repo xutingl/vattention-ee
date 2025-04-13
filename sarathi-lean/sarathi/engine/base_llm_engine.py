@@ -413,15 +413,21 @@ class BaseLLMEngine:
             seq_ids_in_batch.append(metadata.seq.seq_id)
         seq_ids_in_batch = torch.tensor(seq_ids_in_batch, device="cuda:0")
         
+        print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
+        print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, updated_seq_metadata_list, updated_scheduler_outputs = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
         )
+        print(f"[BaseLLMEngine] output_seq_metadata_list: {output_seq_metadata_list}\n")
         if self.rebatching:
-            seq_metadata_list = updated_seq_metadata_list
+            output_seq_ids = list(output_seq_ids)
+            output_seqs = [self.seq_manager.seq_map[seq_id] for seq_id in output_seq_ids]
+            self.scheduler.on_rebatching(seq_metadata_list, output_seqs)
+            seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         # print(f"[BaseLLMEngine] output output_seq_ids: {output_seq_ids}")
 

@@ -229,6 +229,9 @@ class SequenceState:
         elif status == SequenceStatus.WAITING:
             self._num_restarts += 1
             self._last_restart_at = current_time
+        elif status == SequenceStatus.IN_BUFFER:
+            self._num_pauses += 1
+            self._last_pause_at = current_time
         else:
             raise ValueError(
                 f"Invalid state transition from {self._status} to {status} for request {self._id}."
@@ -254,6 +257,11 @@ class SequenceState:
             raise ValueError(
                 f"Invalid state transition from {self._status} to {status} for request {self._id}."
             )
+    
+    def _handle_transitions_from_in_buffer_status(
+        self, current_time: float, status: SequenceStatus
+    ) -> None:
+        pass
 
     def set_status(self, status: SequenceStatus) -> None:
         current_time = time.monotonic()
@@ -264,6 +272,8 @@ class SequenceState:
             self._handle_transitions_from_running_status(current_time, status)
         elif self._status == SequenceStatus.PAUSED:
             self._handle_transitions_from_paused_status(current_time, status)
+        elif self._status == SequenceStatus.IN_BUFFER:
+            self._handle_transitions_from_in_buffer_status(current_time, status)
         else:
             raise ValueError(
                 f"Invalid state transition from {self._status} to {status} for request {self._id}."
