@@ -51,6 +51,9 @@ class VLLMScheduler(BaseScheduler):
         # Optimization: We do not sort the waiting queue since the preempted
         # sequence groups are added to the front and the new sequence groups
         # are added to the back.
+
+        # print(f"[VLLMScheduler._schedule] Start of iteration: {self._iteration_id}:")
+        # print(f"[VLLMScheduler._schedule] running list: {self.running}")
        
         while self.waiting:
             seq = self.waiting[0]
@@ -75,8 +78,11 @@ class VLLMScheduler(BaseScheduler):
                 > self.scheduler_config.max_num_batched_tokens
             ):
                 break
-            print(f"[VLLMScheduler._schedule] len(self.running): {len(self.running)}. max_num_seqs: {self.scheduler_config.max_num_seqs}")
+            # print(f"[VLLMScheduler._schedule] len(self.running): {len(self.running)}. max_num_seqs: {self.scheduler_config.max_num_seqs}")
             if len(self.running) + 1 > self.scheduler_config.max_num_seqs:
+                break
+
+            if len(self.rebatching_buffer) > 2 * self.scheduler_config.max_num_seqs + 1:
                 break
 
             seq = self.waiting.pop(0)
@@ -88,7 +94,7 @@ class VLLMScheduler(BaseScheduler):
             self.running.append(seq)
 
         if scheduled_seq_metadata_list or ignored_seq_ids:
-            print(f"[VLLMScheduler._schedule] from waiting: scheduled_seq_metadata_list: {scheduled_seq_metadata_list}")
+            # print(f"[VLLMScheduler._schedule] from waiting: scheduled_seq_metadata_list: {scheduled_seq_metadata_list}")
             return SchedulerOutputs(
                 id=self._iteration_id,
                 ignored_seq_ids=ignored_seq_ids,
@@ -105,11 +111,11 @@ class VLLMScheduler(BaseScheduler):
         # Reserve new token slots for the running sequence groups.
         running: List[Sequence] = []
 
-        print(f"[VLLMScheduler._schedule] running list: {running}")
+        #print(f"[VLLMScheduler._schedule] running list: {running}")
 
         while self.running:
             seq = self.running.pop(0)
-            print(f"[VLLMScheduler._schedule] seq: {seq.seq_id}, status: {seq.get_status()}")
+            #print(f"[VLLMScheduler._schedule] seq: {seq.seq_id}, status: {seq.get_status()}")
             if not seq.is_paused():
                 # The sequence group is already in the RUNNING state.
                 running.append(seq)
@@ -140,10 +146,10 @@ class VLLMScheduler(BaseScheduler):
 
         self.running = running
 
-        for seq in self.running:
-            print(f"[VLLMScheduler._schedule] returning running list: {seq.seq_id}, status: {seq.get_status()}")
-        for seq in scheduled_seq_metadata_list:
-            print(f"[VLLMScheduler._schedule] returning scheduled list: {seq.seq_id}")
+        # for seq in self.running:
+        #     print(f"[VLLMScheduler._schedule] returning running list: {seq.seq_id}, status: {seq.get_status()}")
+        # for seq in scheduled_seq_metadata_list:
+        #     print(f"[VLLMScheduler._schedule] returning scheduled list: {seq.seq_id}")
 
         return SchedulerOutputs(
             id=self._iteration_id,
@@ -154,22 +160,22 @@ class VLLMScheduler(BaseScheduler):
     
 
     def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence]):
-        print(f"[VLLMScheduler.on_rebatching] in rebatching buffer: {self.rebatching_buffer}")
+        # print(f"[VLLMScheduler.on_rebatching] in rebatching buffer: {self.rebatching_buffer}")
         output_seq_ids = []
         for output_seq in output_seqs:
             output_seq_ids.append(output_seq.seq_id)
 
-            print(f"[VLLMScheduler.on_rebatching] in output list: {output_seq.seq_id}")
+            # print(f"[VLLMScheduler.on_rebatching] in output list: {output_seq.seq_id}")
 
             if output_seq.seq_id in self.rebatching_buffer:
                 assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
                 # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
-                self.running.append(output_seq)
+                self.running.insert(0, output_seq)
                 self.rebatching_buffer.remove(output_seq.seq_id)
 
-                print(f"[VLLMScheduler.on_rebatching] added to running list: {output_seq.seq_id}, status: {output_seq.get_status()}")
-            else:
-                print(f"[VLLMScheduler.on_rebatching] not in rebatching buffer: {output_seq.seq_id}")
+                #print(f"[VLLMScheduler.on_rebatching] added to running list: {output_seq.seq_id}, status: {output_seq.get_status()}")
+            # else:
+                #print(f"[VLLMScheduler.on_rebatching] not in rebatching buffer: {output_seq.seq_id}")
             
 
         for input_seq_metadata in scheduled_seq_metadata_list:
@@ -181,4 +187,4 @@ class VLLMScheduler(BaseScheduler):
                 if input_seq_metadata.seq in self.running:
                     self.running.remove(input_seq_metadata.seq)
 
-                print(f"[VLLMScheduler.on_rebatching] added to rebatching buffer: {input_seq_metadata.seq.seq_id}, status: {input_seq_metadata.seq.get_status()}!!!!!")
+                # print(f"[VLLMScheduler.on_rebatching] added to rebatching buffer: {input_seq_metadata.seq.seq_id}, status: {input_seq_metadata.seq.get_status()}!!!!!")
