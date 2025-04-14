@@ -6,6 +6,7 @@ import time
 import ray
 import wandb
 from tqdm import tqdm
+import pandas as pd
 
 from sarathi import LLMEngine, SamplingParams
 from sarathi.benchmark.config import Config
@@ -168,6 +169,9 @@ class BenchmarkRunner:
         num_output_tokens = 0
         start_time = time.monotonic()
 
+        finished_seq_id_lst = []
+        finished_output = []
+
         # Run the engine.
         while num_processed_requests < len(self._requests):
             elapsed_time = time.monotonic() - start_time
@@ -187,6 +191,8 @@ class BenchmarkRunner:
                     print(f"[BenchmarkRunner._run] Output id {output.seq_id} Finished=====================================")
                     print(output.text)
                     print("=====================================")
+                    finished_seq_id_lst.append(output.seq_id)
+                    finished_output.append(output.text)
                 # else:
                 #     print(f"[BenchmarkRunner._run] Output id {output.seq_id} not finished")
         end_time = time.monotonic()
@@ -195,7 +201,19 @@ class BenchmarkRunner:
         logger.info(
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
-        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {num_output_tokens / (end_time - start_time):.2f} tokens/sec")
+        output_throughput = num_output_tokens / (end_time - start_time)
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec")
+
+        df = pd.DataFrame({
+            "seq_id": finished_seq_id_lst,
+            "output": finished_output,
+            "time": end_time - start_time,
+            "throughput": output_throughput
+        })
+        df = df.sort_values(by="seq_id")
+        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
+
+
 
         if self._config.enable_profiling:
             self._llm_engine.stop_profiling()
