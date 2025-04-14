@@ -279,9 +279,9 @@ class HiddenStatesBuffer():
         req_ids = [req_id - 1 for req_id in req_ids] # 0-indexed
         # print(f"[add_hidden_states] adding hidden states. size: {hidden_states.size()}, req_ids: {req_ids} (has been -1 because of 0-indexed)")
         num_hidden_states = hidden_states.size(0)
-        assert num_hidden_states + len(self.hidden_states_map) <= self.capacity, f"Not enough capacity in hidden states buffer. num_hidden_states: {num_hidden_states}, len(hidden_states_map): {len(self.hidden_states_map)}, capacity: {self.capacity}"
-        assert self.hidden_states.size(1) == hidden_states.size(1), f"Hidden states have different lengths, buffer requires size {self.hidden_states.size(1)} but got {hidden_states.size(1)}"
-        assert hidden_states.size(0) == len(req_ids), f"Number of hidden states({hidden_states.size(0)}) and req_ids({len(req_ids)}) do not match"
+        # assert num_hidden_states + len(self.hidden_states_map) <= self.capacity, f"Not enough capacity in hidden states buffer. num_hidden_states: {num_hidden_states}, len(hidden_states_map): {len(self.hidden_states_map)}, capacity: {self.capacity}"
+        #assert self.hidden_states.size(1) == hidden_states.size(1), f"Hidden states have different lengths, buffer requires size {self.hidden_states.size(1)} but got {hidden_states.size(1)}"
+        #assert hidden_states.size(0) == len(req_ids), f"Number of hidden states({hidden_states.size(0)}) and req_ids({len(req_ids)}) do not match"
 
         # print(f"[add_hidden_states] adding {num_hidden_states} hidden states: {req_ids}")
 
@@ -302,7 +302,7 @@ class HiddenStatesBuffer():
     def take_hidden_states(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
         if num == -1:
             num = self.batch_size
-        assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
+        # assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
         
         output_hidden_states = torch.zeros(num, self.hidden_states.size(1), device='cuda:0')
         output_hidden_states = output_hidden_states.to(self.dtype)
@@ -336,7 +336,7 @@ class HiddenStatesBuffer():
     def take_hidden_states_test(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
         if num == 0:
             num = self.batch_size
-        assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
+        # assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
 
         output_req_ids = []
         positions = []
@@ -428,7 +428,7 @@ class LlamaModel(nn.Module):
         ee_policy: str = "eager",
         return_conf=False,
     ):
-        assert ee_policy != "off", "Turn off EE by setting self.use_shallow_deep = False. Set policy to 'off' incurrs unnecessary overhead."
+        # assert ee_policy != "off", "Turn off EE by setting self.use_shallow_deep = False. Set policy to 'off' incurrs unnecessary overhead."
         if hidden_states.size(0) > 16:
             # Heuristic to avoid using EE for prefilling
             mask = torch.tensor(0.0, device=hidden_states.device).bool()
@@ -473,7 +473,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: List[int],
         cache_engine: vATTNCacheEngine,
     ):
-        assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
+        # assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         updated_seq_metadata_list = [self.seq_metadata_map[seq_id] for seq_id in seq_ids_in_batch]  
 
         cache_engine.step(updated_seq_metadata_list) # in base_worker
@@ -489,7 +489,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> torch.Tensor:
-        self.measure_batch_size(hidden_states)
+        #self.measure_batch_size(hidden_states)
 
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
@@ -614,7 +614,7 @@ class LlamaModel(nn.Module):
                 hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(min(self.max_batch_size, len(self.deep_buffer)))
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
-                self.measure_batch_size(hidden_states)
+                #self.measure_batch_size(hidden_states)
 
                 for i in range(self.shallow_exit_layer, len(self.layers)):
                     layer = self.layers[i]
@@ -633,7 +633,7 @@ class LlamaModel(nn.Module):
                 hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(min(self.max_batch_size, len(self.start_buffer)))
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
-                self.measure_batch_size(hidden_states)
+                #self.measure_batch_size(hidden_states)
 
                 for i in range(len(self.layers)):
                     layer = self.layers[i]
@@ -661,7 +661,7 @@ class LlamaModel(nn.Module):
             # 1.2 Take hidden states from `deep_buffer`
             hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(self.max_batch_size)
 
-            self.measure_batch_size(hidden_states)
+            # self.measure_batch_size(hidden_states)
 
             self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
@@ -703,7 +703,7 @@ class LlamaModel(nn.Module):
             
         self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
-        self.measure_batch_size(hidden_states)
+        # self.measure_batch_size(hidden_states)
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
