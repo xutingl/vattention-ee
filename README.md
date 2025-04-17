@@ -208,3 +208,10 @@ If you use our work, please consider citing our paper:
 ## Acknowledgment
 
 This repository originally started as a fork of [Sarathi-Serve](https://github.com/microsoft/sarathi-serve) which in turn is a fork of the [vLLM project](https://vllm-project.github.io/). vAttention and Sarathi-Serve are research prototypes and do not have complete feature parity with open-source vLLM. We have only retained the most critical features and adopted the codebase for faster research iterations.
+
+## Vattention-EE 
+
+### Run
+```shell
+python run_ee.py --ee_policy=eager --max_batch_size=4  --num_requests=100 --shallow_exit_layer=32 --conf_threshold=0.6 > ../outputs_13b/req_100_batch_4/rebatching.txt
+```

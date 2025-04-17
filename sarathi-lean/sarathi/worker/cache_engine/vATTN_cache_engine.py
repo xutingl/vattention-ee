@@ -197,6 +197,8 @@ class vATTNCacheEngine(BaseCacheEngine):
                 self.curr_seq_lens[new_batch_idx] = context_len 
                 # b_idx.append(new_batch_idx)
                 b_idx_gen.append(new_batch_idx)
+        
+        print(f"[vATTNCacheEngine] Stepping with curr_seq_lens: {self.curr_seq_lens}. b_idx_gen: {b_idx_gen}")
 
         if self.vattn_async:
             # print(f"[vATTNCacheEngine] Stepping async with curr_seq_lens: {self.curr_seq_lens}")
@@ -206,6 +208,7 @@ class vATTNCacheEngine(BaseCacheEngine):
             vattention.step(self.curr_seq_lens, True)
 
         self.curr_batch_idx = torch.tensor(b_idx_prompt+b_idx_gen, dtype=torch.int32, device=self.device)
+        print(f"[vATTNCacheEngine] curr_batch_idx: {self.curr_batch_idx}. b_idx_gen: {b_idx_gen}")
         # print(f"[vATTNCacheEngine] curr_batch_idx: {self.curr_batch_idx}")
         get_attention_wrapper().set_batch_idx(self.curr_batch_idx, torch.tensor(b_idx_gen, dtype=torch.int32, device=self.device))
 
