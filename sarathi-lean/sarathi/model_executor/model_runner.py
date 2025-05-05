@@ -272,6 +272,11 @@ class ModelRunner:
             if self.sampler is not None:
                 output = self.sampler(output, seq_metadata_list)
 
+        # for seq_metadata in seq_metadata_list:
+        #     if seq_metadata.seq.seq_id == 1:
+        #         print(f"[ModelRunner] sampler output: {output}. output_seq_ids: {output_seq_ids}. seq 1 metadata: {seq_metadata}")
+        
+
         get_attention_wrapper().end_forward()
 
         return output, output_seq_ids, seq_metadata_list

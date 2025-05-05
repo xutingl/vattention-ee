@@ -213,5 +213,5 @@ This repository originally started as a fork of [Sarathi-Serve](https://github.c
 
 ### Run
 ```shell
-python run_ee.py --ee_policy=eager --max_batch_size=4  --num_requests=100 --shallow_exit_layer=32 --conf_threshold=0.6 > ../outputs_13b/req_100_batch_4/rebatching.txt
+python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=20 --shallow_exit_layer=32 --conf_threshold=0.6 > outputs_13b/req_20_batch_4/rebatching.txt
 ```
