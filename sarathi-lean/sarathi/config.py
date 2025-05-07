@@ -481,6 +481,7 @@ def _get_and_verify_dtype(
 
     dtype = dtype.lower()
     if dtype == "auto":
+        print(f"config dtype: {config_dtype}")
         if config_dtype == torch.float32:
             # Following the common practice, we use float16 for float32 models.
             torch_dtype = torch.float16

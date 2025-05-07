@@ -5,7 +5,7 @@ from typing import Type
 
 import torch
 import torch.nn as nn
-from transformers import PretrainedConfig
+from transformers import PretrainedConfig, GPTQConfig, AutoModelForCausalLM, BitsAndBytesConfig
 
 from sarathi.config import ModelConfig
 from sarathi.model_executor.models import *  # pylint: disable=wildcard-import
@@ -14,7 +14,8 @@ from sarathi.model_executor.weight_utils import initialize_dummy_weights
 # TODO(woosuk): Lazy-load the model classes.
 _MODEL_REGISTRY = {
     "FalconForCausalLM": FalconForCausalLM,
-    "LlamaForCausalLM": LlamaForCausalLM,
+    # "LlamaForCausalLM": LlamaForCausalLM,
+    "LlamaForCausalLM": AutoModelForCausalLM,
     "LLaMAForCausalLM": LlamaForCausalLM,  # For decapoda-research/llama-*
     "InternLMForCausalLM": InternLMForCausalLM,
     "MistralForCausalLM": MistralForCausalLM,
@@ -43,7 +44,7 @@ def _get_model_architecture(config: PretrainedConfig) -> Type[nn.Module]:
     )
 
 
-def get_model(model_config: ModelConfig) -> nn.Module:
+def get_model_old(model_config: ModelConfig) -> nn.Module:
     model_class = _get_model_architecture(model_config.hf_config)
     if model_config.model == '01-ai/Yi-34B':
         model_config.hf_config.hidden_size = 8192
@@ -66,3 +67,48 @@ def get_model(model_config: ModelConfig) -> nn.Module:
                 model_config.revision,
             )
     return model.eval()
+
+def get_model_gptq(model_config: ModelConfig) -> nn.Module:
+    model_class = _get_model_architecture(model_config.hf_config)
+    if model_config.model == '01-ai/Yi-34B':
+        model_config.hf_config.hidden_size = 8192
+        model_config.hf_config.num_attention_heads = 64
+    with _set_default_torch_dtype(model_config.dtype):
+        # Create a model instance.
+        # The weights will be initialized as empty tensors.
+        with torch.device("cuda"):
+            model = model_class.from_pretrained(
+                model_config.model,
+                config=model_config.hf_config,
+                revision="main",
+                device_map="auto",
+                cache_dir=model_config.download_dir,
+                #quantization_config=GPTQConfig(4)
+            )
+    return model.eval()
+
+def get_model(model_config: ModelConfig) -> nn.Module:
+    model_class = _get_model_architecture(model_config.hf_config)
+    if model_config.model == '01-ai/Yi-34B':
+        model_config.hf_config.hidden_size = 8192
+        model_config.hf_config.num_attention_heads = 64
+    with _set_default_torch_dtype(model_config.dtype):
+        # Create a model instance.
+        # The weights will be initialized as empty tensors.
+        with torch.device("cuda"):
+            bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                #bnb_4bit_quant_type="nf4",    # I've also tried removing this line
+                bnb_4bit_compute_dtype=torch.float16,
+                #bnb_4bit_use_double_quant=True,    # I've also tried removing this line
+            )
+            model = model_class.from_pretrained(
+                model_config.model,
+                config=model_config.hf_config,
+                device_map="auto",
+                cache_dir=model_config.download_dir,
+                quantization_config=bnb_config,
+            )
+    return model.eval()
+
+
