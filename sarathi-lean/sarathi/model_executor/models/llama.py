@@ -62,6 +62,7 @@ from sarathi.core.datatypes.sequence import Sequence, SequenceMetadata
 import random
 import time
 # from torch.profiler import profile, record_function, ProfilerActivity
+from decimal import Decimal
 
 
 class LlamaMLP(nn.Module):
@@ -275,7 +276,8 @@ class HiddenStatesBuffer():
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
         self.dtype = torch.float16
-        self.spent_time = 0
+        self.time_spent_adding = 0
+        self.time_spent_taking = 0
     
     def add_hidden_states_old(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
         self.dtype = hidden_states.dtype
@@ -307,7 +309,7 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        self.spent_time += time.time() - start_time
+        self.time_spent_adding += time.time() - start_time
 
         # for req_id in req_ids:
         #     if req_id == 1:
@@ -378,7 +380,7 @@ class HiddenStatesBuffer():
         #     if req_id == 1:
         #         print(f"[take_hidden_states] taking hidden states of req 1: {output_hidden_states[output_req_ids.index(req_id)]}\n")
 
-        self.spent_time += time.time() - start_time
+        self.time_spent_taking += time.time() - start_time
         return output_hidden_states, output_req_ids, output_positions
 
     """
@@ -470,6 +472,7 @@ class LlamaModel(nn.Module):
         self.batch_size_lst = [0]
 
         self.avg_exited_conf = 0.0
+        self.conf_sum = 0.0
         self.exited_cnt = 0
 
         self.update_kvcache_time_cnt = 0
@@ -617,7 +620,8 @@ class LlamaModel(nn.Module):
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
                     
                     batch_szie = len(seq_ids_in_batch)
-                    self.avg_exited_conf = ((self.avg_exited_conf * self.exited_cnt) + conf * batch_szie) / (self.exited_cnt + batch_szie)
+                    conf = torch.mean(conf).item()
+                    self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_szie)) / (Decimal(self.exited_cnt) + Decimal(batch_szie))
                     self.exited_cnt += batch_szie
                     print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
                     
@@ -846,11 +850,13 @@ class LlamaModel(nn.Module):
 
                         # if 1 in seq_ids_in_batch:
                         #     print(f"[LlamaModel.forward] All need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")
-
+                        self.conf_sum += sum(conf)
                         conf = torch.mean(conf)
-                        self.avg_exited_conf = ((self.avg_exited_conf * self.exited_cnt) + conf * incoming_batch_size) / (self.exited_cnt + incoming_batch_size)
+                        conf = conf.item()
+                        self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf) * Decimal(incoming_batch_size)) / Decimal((self.exited_cnt + incoming_batch_size))
+
                         self.exited_cnt += incoming_batch_size
-                        print(f"[LlamaModel.forward] All need to EE with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exit_cnt: {self.exited_cnt}", flush=True)
+                        print(f"[LlamaModel.forward] All need to EE with confidence {conf}. incoming_batch_size:{incoming_batch_size}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}, exit_cnt: {self.exited_cnt}", flush=True)
                     else:
 
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
@@ -868,9 +874,12 @@ class LlamaModel(nn.Module):
                         for req_idx, skip in enumerate(skip_mask):
                             if skip:
                                 conf_i = conf[req_idx]
-                                self.avg_exited_conf = ((self.avg_exited_conf * self.exited_cnt) + conf_i) / (self.exited_cnt + 1)
+                                conf_i = conf_i.item()
+                                print(f"[LlamaModel.forward] prev avg_exitecd_conf:{self.avg_exited_conf}, conf_i: {conf_i}, exited_cnt: {self.exited_cnt}")
+                                self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf_i)) / Decimal((self.exited_cnt + 1))
+                                self.conf_sum += conf_i
                                 self.exited_cnt += 1
-                                print(f"[LlamaModel.forward] Need to EE with confidence {conf_i}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}. exit_cnt: {self.exited_cnt}", flush=True)
+                                print(f"[LlamaModel.forward] Need to EE with confidence {conf_i}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}. exit_cnt: {self.exited_cnt}", flush=True)
                                 # continue # Skip because already handled above
                                 # token_pos_idx = positions[req_idx]
                                 # for l in range(i, len(self.layers)):
@@ -932,7 +941,7 @@ class LlamaModel(nn.Module):
         # print("================================================")
         # if 1 in seq_ids_in_batch:
         #     print(f"[LlamaModel.forward] returning 2: seq_ids_in_batch: {seq_ids_in_batch}. Seq 1 hidden states: {hidden_states[seq_ids_in_batch.index(1)]}")
-        print(f"[LlamaModel.forward] hidden states buffer spent time: {self.start_buffer.spent_time:.2f}. deep buffer spent time: {self.deep_buffer.spent_time:.2f}. update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
+        print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
         return hidden_states, seq_ids_in_batch
 
 
