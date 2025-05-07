@@ -101,6 +101,14 @@ class BaseLLMEngine:
             revision=model_config.revision,
         )
 
+        # Hard coded version
+        # self.tokenizer = get_tokenizer(
+        #     "meta-llama/Llama-2-70b-chat-hf",
+        #     tokenizer_mode="auto",
+        #     trust_remote_code=True,
+        #     revision=None,
+        # )
+
         self.seq_manager = EngineSequenceManager(self.tokenizer)
         self.seq_counter = Counter()
 
