@@ -265,7 +265,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -465,8 +465,8 @@ class LlamaModel(nn.Module):
         self.exited_rates = [0, 1] # [0]: exited, [1]: not exited. Initialized `not exited` to 1 to avoid division by 0.
 
         self.max_batch_size = config.max_num_seqs
-        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1, 5120) # Buffers the hidden states of the token arrived at first layer
-        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1, 5120) # Buffers the hidden states that EE'ed
+        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1, 8192) # Buffers the hidden states of the token arrived at first layer
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1, 8192) # Buffers the hidden states that EE'ed
         self.seq_metadata_map: Dict[int, SequenceMetadata] = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
 
         self.batch_size_lst = [0]
@@ -619,11 +619,11 @@ class LlamaModel(nn.Module):
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
                     
-                    batch_szie = len(seq_ids_in_batch)
-                    conf = torch.mean(conf).item()
-                    self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_szie)) / (Decimal(self.exited_cnt) + Decimal(batch_szie))
-                    self.exited_cnt += batch_szie
-                    print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
+                    # batch_szie = len(seq_ids_in_batch)
+                    # conf = torch.mean(conf).item()
+                    # self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_szie)) / (Decimal(self.exited_cnt) + Decimal(batch_szie))
+                    # self.exited_cnt += batch_szie
+                    # print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
                     
                     break
                 else:
@@ -850,13 +850,13 @@ class LlamaModel(nn.Module):
 
                         # if 1 in seq_ids_in_batch:
                         #     print(f"[LlamaModel.forward] All need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")
-                        self.conf_sum += sum(conf)
-                        conf = torch.mean(conf)
-                        conf = conf.item()
-                        self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf) * Decimal(incoming_batch_size)) / Decimal((self.exited_cnt + incoming_batch_size))
+                        # self.conf_sum += sum(conf)
+                        # conf = torch.mean(conf)
+                        # conf = conf.item()
+                        # self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf) * Decimal(incoming_batch_size)) / Decimal((self.exited_cnt + incoming_batch_size))
 
-                        self.exited_cnt += incoming_batch_size
-                        print(f"[LlamaModel.forward] All need to EE with confidence {conf}. incoming_batch_size:{incoming_batch_size}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}, exit_cnt: {self.exited_cnt}", flush=True)
+                        # self.exited_cnt += incoming_batch_size
+                        # print(f"[LlamaModel.forward] All need to EE with confidence {conf}. incoming_batch_size:{incoming_batch_size}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}, exit_cnt: {self.exited_cnt}", flush=True)
                     else:
 
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
@@ -873,13 +873,14 @@ class LlamaModel(nn.Module):
 
                         for req_idx, skip in enumerate(skip_mask):
                             if skip:
-                                conf_i = conf[req_idx]
-                                conf_i = conf_i.item()
-                                print(f"[LlamaModel.forward] prev avg_exitecd_conf:{self.avg_exited_conf}, conf_i: {conf_i}, exited_cnt: {self.exited_cnt}")
-                                self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf_i)) / Decimal((self.exited_cnt + 1))
-                                self.conf_sum += conf_i
-                                self.exited_cnt += 1
-                                print(f"[LlamaModel.forward] Need to EE with confidence {conf_i}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}. exit_cnt: {self.exited_cnt}", flush=True)
+                                pass
+                                # conf_i = conf[req_idx]
+                                # conf_i = conf_i.item()
+                                # print(f"[LlamaModel.forward] prev avg_exitecd_conf:{self.avg_exited_conf}, conf_i: {conf_i}, exited_cnt: {self.exited_cnt}")
+                                # self.avg_exited_conf = ((Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt)) + Decimal(conf_i)) / Decimal((self.exited_cnt + 1))
+                                # self.conf_sum += conf_i
+                                # self.exited_cnt += 1
+                                # print(f"[LlamaModel.forward] Need to EE with confidence {conf_i}. avg exited conf: {self.avg_exited_conf}; {self.conf_sum / self.exited_cnt}. exited rates: {self.exited_rates}. exit_cnt: {self.exited_cnt}", flush=True)
                                 # continue # Skip because already handled above
                                 # token_pos_idx = positions[req_idx]
                                 # for l in range(i, len(self.layers)):
@@ -941,7 +942,8 @@ class LlamaModel(nn.Module):
         # print("================================================")
         # if 1 in seq_ids_in_batch:
         #     print(f"[LlamaModel.forward] returning 2: seq_ids_in_batch: {seq_ids_in_batch}. Seq 1 hidden states: {hidden_states[seq_ids_in_batch.index(1)]}")
-        print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
+
+        # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
         return hidden_states, seq_ids_in_batch
 
 

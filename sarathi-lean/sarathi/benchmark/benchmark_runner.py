@@ -83,7 +83,7 @@ class BenchmarkRunner:
             pipeline_parallel_size=self._config.model_pipeline_parallel_degree,
             attention_backend=self._config.model_attention_backend,
             seed=42,
-            dtype="auto",
+            dtype="float16",
             load_format=self._config.model_load_format,
             gpu_memory_utilization=self._config.gpu_memory_utilization,
             max_model_len=self._config.model_max_model_len,
@@ -212,7 +212,7 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
         # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_1_csv/ee.csv", index=False)
+        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
 
 
 

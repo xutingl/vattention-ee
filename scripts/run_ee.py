@@ -9,7 +9,7 @@ import cProfile
 
 def main():
     # configurable
-    gpu_mem_util = 0.9
+    gpu_mem_util = 0.99
 
     models = utils.models
     attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
