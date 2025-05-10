@@ -179,7 +179,7 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs = self._llm_engine.step()
+            step_outputs, exited_rates = self._llm_engine.step()
             num_steps += 1
             #print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
 
@@ -202,7 +202,7 @@ class BenchmarkRunner:
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
         output_throughput = num_output_tokens / (end_time - start_time)
-        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec")
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}")
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
@@ -212,7 +212,7 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
         # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
+        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
 
 
 

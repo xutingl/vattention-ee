@@ -23,8 +23,8 @@ def main():
 
 
     # models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb_sync']
-    # models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
-    models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
+    models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
+    # models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'yi-6b-1'}, ['fa_vattn_2mb']
     num_requests = utils.args.num_requests
     qps_values = [utils.args.qps]

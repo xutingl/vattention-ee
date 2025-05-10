@@ -424,7 +424,7 @@ class BaseLLMEngine:
         # print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
         # print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
@@ -452,7 +452,7 @@ class BaseLLMEngine:
             seq_metadata_list,
             sampler_outputs,
             start_time,
-        )
+        ), exited_rates
 
     def _run_workers(
         self,

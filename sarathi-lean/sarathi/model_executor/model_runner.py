@@ -248,7 +248,7 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids = self.model(
+                output, output_seq_ids, exited_rates = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
@@ -279,4 +279,4 @@ class ModelRunner:
 
         get_attention_wrapper().end_forward()
 
-        return output, output_seq_ids, seq_metadata_list
+        return output, output_seq_ids, seq_metadata_list, exited_rates
