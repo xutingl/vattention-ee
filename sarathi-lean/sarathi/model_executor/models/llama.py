@@ -630,11 +630,11 @@ class LlamaModel(nn.Module):
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
                     
-                    # batch_szie = len(seq_ids_in_batch)
-                    # conf = torch.mean(conf).item()
-                    # self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_szie)) / (Decimal(self.exited_cnt) + Decimal(batch_szie))
-                    # self.exited_cnt += batch_szie
-                    # print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
+                    
+                    conf = torch.mean(conf).item()
+                    self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_size)) / (Decimal(self.exited_cnt) + Decimal(batch_size))
+                    self.exited_cnt += batch_size
+                    print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
                     
                     break
                 else:

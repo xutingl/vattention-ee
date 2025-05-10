@@ -272,7 +272,7 @@ class ModelRunner:
         # print(f"[ModelRunner] output length: {len(output)}")
         with self._sampler_e2e_timer:
             if self.sampler is not None:
-                output = self.sampler(output, seq_metadata_list, lm_logits)
+                output, entropy = self.sampler(output, seq_metadata_list, lm_logits)
 
         # for seq_metadata in seq_metadata_list:
         #     if seq_metadata.seq.seq_id == 1:
@@ -281,4 +281,6 @@ class ModelRunner:
 
         get_attention_wrapper().end_forward()
 
-        return output, output_seq_ids, seq_metadata_list, exited_rates
+        is_ee = lm_logits is not None
+
+        return output, output_seq_ids, seq_metadata_list, exited_rates, entropy, is_ee

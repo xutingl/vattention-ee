@@ -7,6 +7,7 @@ import ray
 import wandb
 from tqdm import tqdm
 import pandas as pd
+from decimal import Decimal
 
 from sarathi import LLMEngine, SamplingParams
 from sarathi.benchmark.config import Config
@@ -172,6 +173,11 @@ class BenchmarkRunner:
         finished_seq_id_lst = []
         finished_output = []
 
+        avg_entropy = Decimal(0)
+        num_entropy = Decimal(0)
+        avg_entropy_ee = Decimal(0)
+        num_entropy_ee = Decimal(0)
+
         # Run the engine.
         while num_processed_requests < len(self._requests):
             elapsed_time = time.monotonic() - start_time
@@ -179,7 +185,15 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates = self._llm_engine.step()
+            step_outputs, exited_rates, entropy, is_ee = self._llm_engine.step()
+            if entropy is not None:
+                if is_ee:
+                    avg_entropy_ee = (avg_entropy_ee * num_entropy_ee + Decimal(entropy) * Decimal(len(step_outputs))) / (num_entropy_ee + Decimal(len(step_outputs)))
+                    num_entropy_ee += Decimal(len(step_outputs))
+                
+                avg_entropy = (avg_entropy * num_entropy + Decimal(entropy) * Decimal(len(step_outputs))) / (num_entropy + Decimal(len(step_outputs)))
+                num_entropy += Decimal(len(step_outputs))
+
             num_steps += 1
             #print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
 
@@ -202,7 +216,7 @@ class BenchmarkRunner:
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
         output_throughput = num_output_tokens / (end_time - start_time)
-        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}")
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg entropy: {avg_entropy}. Avg entropy ee: {avg_entropy_ee}")
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,

@@ -1,6 +1,7 @@
 """A layer that samples the next tokens from the model's outputs."""
 
 from typing import Dict, List, Optional, Tuple
+import math
 
 import torch
 import torch.nn as nn
@@ -53,6 +54,15 @@ class Sampler(nn.Module):
             # Get the logits for the next tokens.
             logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
 
+        # Measuring conf score
+        probs = torch.softmax(logits, dim=-1, dtype=torch.float)
+        top_2 = torch.topk(probs, dim=-1, k=2)[0]
+
+        conf = (top_2[..., 0] - top_2[..., 1]).squeeze()
+        print(f"conf: {conf}")
+        conf = conf.mean().item()
+
+
         # Apply temperature scaling.
         temperatures = _get_temperatures(seq_metadata_list)
         assert len(temperatures) == logits.shape[0]
@@ -76,8 +86,11 @@ class Sampler(nn.Module):
         # Use log_softmax to ensure numerical stability.
         logprobs = torch.log_softmax(logits, dim=-1, dtype=torch.float)
 
+
+        # entropy = -torch.sum(probs * logprobs, dim=-1).mean().item()
+
         # Sample the next tokens.
-        return _sample(probs, logprobs, seq_metadata_list)
+        return _sample(probs, logprobs, seq_metadata_list), conf
 
 
 def _get_logits(
