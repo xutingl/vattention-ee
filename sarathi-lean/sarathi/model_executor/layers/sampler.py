@@ -42,12 +42,16 @@ class Sampler(nn.Module):
         self,
         hidden_states: torch.Tensor,
         seq_metadata_list: List[SequenceMetadata],
+        lm_logits: Optional[torch.Tensor] = None,
     ) -> SamplerOutputs:
-        # Get the hidden states that we use for sampling.
-        hidden_states = _prune_hidden_states(hidden_states, seq_metadata_list)
+        if lm_logits is not None:
+            logits = lm_logits
+        else:
+            # Get the hidden states that we use for sampling.
+            hidden_states = _prune_hidden_states(hidden_states, seq_metadata_list)
 
-        # Get the logits for the next tokens.
-        logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
+            # Get the logits for the next tokens.
+            logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
 
         # Apply temperature scaling.
         temperatures = _get_temperatures(seq_metadata_list)

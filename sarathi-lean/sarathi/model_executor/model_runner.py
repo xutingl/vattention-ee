@@ -57,6 +57,8 @@ class ModelRunner:
             self.sampler = Sampler(
                 self.model.lm_head.weight, self.model.config.vocab_size
             )
+        
+        self.model.set_sampler(self.sampler)
 
         self._prepare_inputs_e2e_timer = CpuTimer(
             CpuOperationMetrics.PREPARE_INPUTS_E2E, rank=self.rank
@@ -248,7 +250,7 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids, exited_rates = self.model(
+                output, output_seq_ids, exited_rates, lm_logits = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
@@ -270,7 +272,7 @@ class ModelRunner:
         # print(f"[ModelRunner] output length: {len(output)}")
         with self._sampler_e2e_timer:
             if self.sampler is not None:
-                output = self.sampler(output, seq_metadata_list)
+                output = self.sampler(output, seq_metadata_list, lm_logits)
 
         # for seq_metadata in seq_metadata_list:
         #     if seq_metadata.seq.seq_id == 1:

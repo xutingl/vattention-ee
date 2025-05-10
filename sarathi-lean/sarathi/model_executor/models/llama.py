@@ -36,6 +36,7 @@ from sarathi.model_executor.attention import get_attention_wrapper
 from sarathi.model_executor.layers.activation import SiluAndMul
 from sarathi.model_executor.layers.layernorm import RMSNorm
 from sarathi.model_executor.layers.rotary_embedding import get_rope
+from sarathi.model_executor.layers.sampler import Sampler, _get_logits
 from sarathi.model_executor.parallel_utils.parallel_state import (
     get_pipeline_model_parallel_rank,
     get_pipeline_model_parallel_world_size,
@@ -478,6 +479,8 @@ class LlamaModel(nn.Module):
         self.update_kvcache_time_cnt = 0
 
         self.process_ee_time = 0
+
+        self.sampler: Sampler = None
     
     def softmax_confidence(
         self,
@@ -580,11 +583,16 @@ class LlamaModel(nn.Module):
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
         check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) == self.max_batch_size
+
+        has_ee = False
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if check_for_ee and i == self.shallow_exit_layer:
                 #need_skip = random.random() < 0.4
-                lm_logits, _ = lm_head(self.norm(hidden_states))
+                # lm_logits, _ = lm_head(self.norm(hidden_states))
+
+                lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
+
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
@@ -595,6 +603,7 @@ class LlamaModel(nn.Module):
                 #need_skip=False
 
                 if need_skip:
+                    has_ee = True
                     # print(f"[LlamaModel.forward_without_rebatching] trying to exit with confidence {conf}.")
                     self.exited_rates[0] += batch_size
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
@@ -647,7 +656,9 @@ class LlamaModel(nn.Module):
 
         # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
-        return hidden_states, seq_ids_in_batch, self.exited_rates
+        if has_ee:
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None
     
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
@@ -721,7 +732,7 @@ class LlamaModel(nn.Module):
                     hidden_states = self.norm(hidden_states)
                 # print(f"[LlamaModel.forward] returning flush_buffer 1: deep_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates
+                return hidden_states, seq_ids_in_batch, self.exited_rates, None
             elif len(self.start_buffer) > 0:
                 # Take hidden states from `start_buffer`
                 hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(min(self.max_batch_size, len(self.start_buffer)))
@@ -741,10 +752,10 @@ class LlamaModel(nn.Module):
                     hidden_states = self.norm(hidden_states)
                 # print(f"[LlamaModel.forward] returning flush_buffer 2: start_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates
+                return hidden_states, seq_ids_in_batch, self.exited_rates, None
             else:
                 #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
-                return None, None, self.exited_rates
+                return None, None, self.exited_rates, None
 
         # 1. We check `deep_buffer` first to see if there are enough hidden states to form a batch. If there are, we will process and return them. The incoming hidden states are added to `start_buffer`.
         if len(self.deep_buffer) >= self.max_batch_size:
@@ -781,7 +792,7 @@ class LlamaModel(nn.Module):
             #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
             # if 1 in seq_ids_in_batch:
             #     print(f"[LlamaModel.forward] Deep finish of req 1. seq_ids_in_batch: {seq_ids_in_batch}")
-            return hidden_states, seq_ids_in_batch, self.exited_rates
+            return hidden_states, seq_ids_in_batch, self.exited_rates, None
 
         # 2. Requests in the `start_buffer` has a higher priority than incoming requests. Pop requests from `start_buffer` and swap incoming requests to `start_buffer`.
         num_req_in_start_buffer = len(self.start_buffer)
@@ -818,10 +829,13 @@ class LlamaModel(nn.Module):
 
         # self.measure_batch_size(hidden_states)
 
+        has_ee = False
+
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if cache_engine and i == self.shallow_exit_layer and hidden_states.size(0) <= self.max_batch_size: # Avoid EE in profiling (cache_engine is None) and prefilling (batch size is too large)
-                lm_logits, _ = lm_head(self.norm(hidden_states))
+                # lm_logits, _ = lm_head(self.norm(hidden_states))
+                lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
@@ -831,6 +845,8 @@ class LlamaModel(nn.Module):
                 
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
+
+                    has_ee = True
 
                     if torch.all(skip_mask):
                         self.exited_rates[0] += incoming_batch_size
@@ -869,6 +885,9 @@ class LlamaModel(nn.Module):
 
                         self.exited_rates[0] += len(req_indices)
                         self.exited_rates[1] += (incoming_batch_size - len(req_indices))
+
+                        lm_logits = lm_logits[req_indices]
+                        assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
 
                         # if 1 in seq_ids_in_batch:
                         #     print(f"[LlamaModel.forward] need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")
@@ -949,7 +968,10 @@ class LlamaModel(nn.Module):
         #     print(f"[LlamaModel.forward] returning 2: seq_ids_in_batch: {seq_ids_in_batch}. Seq 1 hidden states: {hidden_states[seq_ids_in_batch.index(1)]}")
 
         # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
-        return hidden_states, seq_ids_in_batch, self.exited_rates
+
+        if has_ee:
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None
 
 
 class LlamaForCausalLM(nn.Module):
@@ -994,12 +1016,12 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
+        hidden_states, output_seq_ids, exited_rates, lm_logits = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)
 
-        return hidden_states, output_seq_ids, exited_rates
+        return hidden_states, output_seq_ids, exited_rates, lm_logits
 
     _column_parallel_layers = []
     _row_parallel_layers = ["o_proj", "down_proj"]
@@ -1128,3 +1150,6 @@ class LlamaForCausalLM(nn.Module):
                 row_parallel_weights,
                 tensor_model_parallel_rank,
             )
+    
+    def set_sampler(self, sampler: Optional[Sampler] = None):
+        self.model.sampler = sampler
