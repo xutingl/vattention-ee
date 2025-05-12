@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -631,10 +631,10 @@ class LlamaModel(nn.Module):
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
                     
                     
-                    conf = torch.mean(conf).item()
-                    self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_size)) / (Decimal(self.exited_cnt) + Decimal(batch_size))
-                    self.exited_cnt += batch_size
-                    print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
+                    # conf = torch.mean(conf).item()
+                    # self.avg_exited_conf = (Decimal(self.avg_exited_conf) * Decimal(self.exited_cnt) + Decimal(conf) * Decimal(batch_size)) / (Decimal(self.exited_cnt) + Decimal(batch_size))
+                    # self.exited_cnt += batch_size
+                    # print(f"[LLamaModel.forward_without_rebatching] Exited with confidence {conf}. avg exited conf: {self.avg_exited_conf}. exited rates: {self.exited_rates}, exited_cnt: {self.exited_cnt}", flush=True)
                     
                     break
                 else:
@@ -887,7 +887,7 @@ class LlamaModel(nn.Module):
                         self.exited_rates[1] += (incoming_batch_size - len(req_indices))
 
                         lm_logits = lm_logits[req_indices]
-                        assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
+                        # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
 
                         # if 1 in seq_ids_in_batch:
                         #     print(f"[LlamaModel.forward] need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")

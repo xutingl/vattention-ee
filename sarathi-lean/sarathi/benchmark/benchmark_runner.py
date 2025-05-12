@@ -173,10 +173,10 @@ class BenchmarkRunner:
         finished_seq_id_lst = []
         finished_output = []
 
-        avg_entropy = Decimal(0)
-        num_entropy = Decimal(0)
-        avg_entropy_ee = Decimal(0)
-        num_entropy_ee = Decimal(0)
+        avg_conf_score = Decimal(0)
+        num_conf_score = Decimal(0)
+        avg_conf_score_ee = Decimal(0)
+        num_conf_score_ee = Decimal(0)
 
         # Run the engine.
         while num_processed_requests < len(self._requests):
@@ -185,14 +185,14 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, entropy, is_ee = self._llm_engine.step()
-            if entropy is not None:
+            step_outputs, exited_rates, conf_score, is_ee = self._llm_engine.step()
+            if conf_score is not None:
                 if is_ee:
-                    avg_entropy_ee = (avg_entropy_ee * num_entropy_ee + Decimal(entropy) * Decimal(len(step_outputs))) / (num_entropy_ee + Decimal(len(step_outputs)))
-                    num_entropy_ee += Decimal(len(step_outputs))
+                    avg_conf_score_ee = (avg_conf_score_ee * num_conf_score_ee + Decimal(conf_score) * Decimal(len(step_outputs))) / (num_conf_score_ee + Decimal(len(step_outputs)))
+                    num_conf_score_ee += Decimal(len(step_outputs))
                 
-                avg_entropy = (avg_entropy * num_entropy + Decimal(entropy) * Decimal(len(step_outputs))) / (num_entropy + Decimal(len(step_outputs)))
-                num_entropy += Decimal(len(step_outputs))
+                avg_conf_score = (avg_conf_score * num_conf_score + Decimal(conf_score) * Decimal(len(step_outputs))) / (num_conf_score + Decimal(len(step_outputs)))
+                num_conf_score += Decimal(len(step_outputs))
 
             num_steps += 1
             #print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
@@ -216,17 +216,21 @@ class BenchmarkRunner:
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
         output_throughput = num_output_tokens / (end_time - start_time)
-        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg entropy: {avg_entropy}. Avg entropy ee: {avg_entropy_ee}")
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}")
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
             "time": end_time - start_time,
-            "throughput": output_throughput
+            "throughput": output_throughput,
+            "num_ee_tokens": exited_rates[0],
+            "num_no_ee_tokens": exited_rates[1],
+            "avg_conf_score": float(avg_conf_score),
+            "avg_conf_score_ee": float(avg_conf_score_ee),
         })
         df = df.sort_values(by="seq_id")
         # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
+        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
 
 
 
