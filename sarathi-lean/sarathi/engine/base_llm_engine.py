@@ -143,6 +143,10 @@ class BaseLLMEngine:
         self.ee_policy = model_config.ee_policy
         self.rebatching = self.ee_policy == "rebatching"
 
+        self.prefill_spent_time = 0
+        self.decode_spent_time = 0
+    
+
     def _validate_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
 
@@ -300,13 +304,18 @@ class BaseLLMEngine:
         start_time: float,
     ) -> List[RequestOutput]:
         with self._process_model_outputs_timer:
-            self.seq_manager.on_step_completed(
+            is_prefill = self.seq_manager.on_step_completed(
                 scheduler_outputs,
                 sampler_outputs,
             )
             self.scheduler.on_step_completed()
 
         end_time = time.perf_counter()
+
+        if is_prefill:
+            self.prefill_spent_time += end_time - start_time
+        else:
+            self.decode_spent_time += end_time - start_time
 
         self.metrics_store.on_batch_end(
             seq_metadata_list=seq_metadata_list,
@@ -538,3 +547,12 @@ class BaseLLMEngine:
 
     def cleanup(self) -> None:
         self._run_workers("cleanup")
+    
+    def get_seq(self, seq_id: int) -> Sequence:
+        """Get the sequence with the given ID."""
+        if seq_id in self.seq_manager.seq_map:
+            return self.seq_manager.seq_map[seq_id]
+        elif seq_id in self.seq_manager.finished_seq_map:
+            return self.seq_manager.finished_seq_map[seq_id]
+        else:
+            raise ValueError(f"Sequence with ID {seq_id} not found.")

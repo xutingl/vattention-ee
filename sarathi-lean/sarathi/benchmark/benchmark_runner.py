@@ -212,17 +212,36 @@ class BenchmarkRunner:
         end_time = time.monotonic()
         pbar.close()
 
+        req_spent_times = []
+        req_num_output_tokens = []
+        for finished_seq_id in finished_seq_id_lst:
+            seq = self._llm_engine.get_seq(finished_seq_id)
+            req_spent_times.append(seq.state.e2e_time)
+            req_num_output_tokens.append(seq.state.num_output_tokens)
+        
+        prefill_time = self._llm_engine.prefill_spent_time
+        decode_time = self._llm_engine.decode_spent_time
+        tpot = decode_time / sum(req_num_output_tokens)
+
+
+            
+
+
         logger.info(
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
         output_throughput = num_output_tokens / (end_time - start_time)
         logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}")
+        logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
             "time": end_time - start_time,
             "throughput": output_throughput,
+            "prefill_time": prefill_time,
+            "decode_time": decode_time,
+            "tpot": tpot,
             "num_ee_tokens": exited_rates[0],
             "num_no_ee_tokens": exited_rates[1],
             "avg_conf_score": float(avg_conf_score),
@@ -230,7 +249,7 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
         # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_20_batch_4_csv/ee_batch1.csv", index=False)
+        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
 
 
 

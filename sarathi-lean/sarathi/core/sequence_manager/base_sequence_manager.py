@@ -19,6 +19,7 @@ class BaseSequenceManager(ABC):
     def __init__(self):
         self.seq_map = {}
         self.finished_seq_map = {}
+        self.decoding_seq = set() # A set of seq_ids that are currently being decoded (completed prefill). If a seq_id is in this set, it means that the seq has finished prefill. If a seq_id is not in this set but its _prompt_processing_completed_at is not None, it means that the seq has finished prefill in this step, so this step is a prefill step.
 
     @synchronized
     def add_seq(self, seq: Sequence) -> None:
@@ -115,7 +116,11 @@ class BaseSequenceManager(ABC):
         self,
         scheduler_outputs: SchedulerOutputs,
         sampler_outputs: Optional[SamplerOutputs],
-    ) -> None:
+    ) -> bool:
+        
+        # Wheather this step is a prefill step. It is a prefill step iff at least one
+        # of the sequences in the scheduler_outputs is a prefill sequence.
+        is_prefill = False
         for scheduled_seq_metadata, sampler_output in zip(
             scheduler_outputs.scheduled_seq_metadata_list, sampler_outputs
         ):
@@ -133,6 +138,18 @@ class BaseSequenceManager(ABC):
                 sampler_output,
                 scheduled_seq_metadata.prompt_chunk_len,
             )
+            if not is_prefill:
+                if seq.state.prompt_processing_completed_at is None or ((not seq.state.prompt_processing_completed_at is None) and (not seq in self.decoding_seq)):
+                    is_prefill = True
+            
+            if not seq in self.decoding_seq:
+                if not seq.state.prompt_processing_completed_at is None:
+                    self.decoding_seq.add(seq)
+        
+        return is_prefill
+
+                
+
 
     def generate_request_outputs(
         self,
