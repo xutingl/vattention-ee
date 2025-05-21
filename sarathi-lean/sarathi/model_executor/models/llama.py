@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -280,26 +280,8 @@ class HiddenStatesBuffer():
         self.time_spent_adding = 0
         self.time_spent_taking = 0
     
-    def add_hidden_states_old(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
-        self.dtype = hidden_states.dtype
-        # print(f"[add_hidden_states] adding hidden states. size: {hidden_states.size()}, req_ids: {req_ids} (has been -1 because of 0-indexed)")
-        num_hidden_states = hidden_states.size(0)
-        # assert num_hidden_states + len(self.hidden_states_map) <= self.capacity, f"Not enough capacity in hidden states buffer. num_hidden_states: {num_hidden_states}, len(hidden_states_map): {len(self.hidden_states_map)}, capacity: {self.capacity}"
-        #assert self.hidden_states.size(1) == hidden_states.size(1), f"Hidden states have different lengths, buffer requires size {self.hidden_states.size(1)} but got {hidden_states.size(1)}"
-        #assert hidden_states.size(0) == len(req_ids), f"Number of hidden states({hidden_states.size(0)}) and req_ids({len(req_ids)}) do not match"
-
-        # print(f"[add_hidden_states] adding {num_hidden_states} hidden states: {req_ids}")
-
-        # Find available slots in hidden_states and put hidden states in them
-        for i in range(num_hidden_states):
-            slot = self.available_slots.pop()
-            self.hidden_states[slot] = hidden_states[i]
-            self.positions[slot] = positions[i]
-            self.hidden_states_map[req_ids[i]] = slot
         
     def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
-        # if 1 in req_ids:
-        #     print(f"[add_hidden_states] adding {len(req_ids)} hidden states with req_ids: {req_ids}. hidden_states_map: {self.hidden_states_map}")
         start_time = time.time()
         num_hidden_states = hidden_states.size(0)
         slots = []
@@ -312,51 +294,16 @@ class HiddenStatesBuffer():
 
         self.time_spent_adding += time.time() - start_time
 
-        # for req_id in req_ids:
-        #     if req_id == 1:
-        #         print(f"[add_hidden_states] adding hidden states of req 1: {self.hidden_states[self.hidden_states_map[req_id]]}\n")
+        
             
-    """
-    Args:
-        num: number of hidden states to take. If 0, take all hidden states in the buffer.
-    Returns:
-        output_hidden_states: hidden states taken from the buffer. <num, hidden_state_length>
-        output_req_ids: req_ids corresponding to the hidden states. <num>
-        positions: positions corresponding to the hidden states. <num>
-    """
-    def take_hidden_states_old(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
-        if num == -1:
-            num = self.batch_size
-        # assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
-        
-        output_hidden_states = torch.zeros(num, self.hidden_states.size(1), device='cuda:0')
-        output_hidden_states = output_hidden_states.to(self.dtype)
-        output_req_ids = []
-        positions = []
-        
-        # FIFO order: take hidden states from the left of the hidden_states_map
-        num_taken = 0
-        for req_id, slot in list(self.hidden_states_map.items())[:num]:
-            output_hidden_states[num_taken] = self.hidden_states[slot]
-            self.available_slots.add(slot)
-            self.hidden_states_map.pop(req_id)
-            output_req_ids.append(req_id)
-            positions.append(self.positions[slot])
-            num_taken += 1
-        # print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
-        # print(f"[take_hidden_states_test] taking {len(output_hidden_states)} hidden states: {output_req_ids}")
-
-        # output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
-        output_positions = torch.tensor(positions, device='cuda:0')
-        return output_hidden_states, output_req_ids, output_positions
     
     """
     Args:
         num: number of hidden states to take. If 0, take all hidden states in the buffer.
     Returns:
-        output_hidden_states: hidden states taken from the buffer. <num, hidden_state_length>
-        output_req_ids: req_ids corresponding to the hidden states. <num>
-        positions: positions corresponding to the hidden states. <num>
+        output_hidden_states: Tensor. hidden states taken from the buffer. <num, hidden_state_length>
+        output_req_ids: List[int]. req_ids corresponding to the hidden states. <num>
+        output_positions: Tensor. positions corresponding to the hidden states. <num>
     """
     def take_hidden_states(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
         start_time = time.time()
@@ -377,48 +324,10 @@ class HiddenStatesBuffer():
             
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
-        # for req_id in output_req_ids:
-        #     if req_id == 1:
-        #         print(f"[take_hidden_states] taking hidden states of req 1: {output_hidden_states[output_req_ids.index(req_id)]}\n")
 
         self.time_spent_taking += time.time() - start_time
         return output_hidden_states, output_req_ids, output_positions
 
-    """
-    Args:
-        num: number of hidden states to take. If 0, take all hidden states in the buffer.
-    Returns:
-        output_hidden_states: hidden states taken from the buffer. <num, hidden_state_length>
-        output_req_ids: req_ids corresponding to the hidden states. <num>
-        positions: positions corresponding to the hidden states. <num>
-    """
-    def take_hidden_states_test(self, num: int=0) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: 
-        if num == 0:
-            num = self.batch_size
-        # assert num <= len(self.hidden_states_map), "Not enough hidden states in buffer"
-
-        output_req_ids = []
-        positions = []
-
-        output_slot_idx = []
-        
-        # FIFO order: take hidden states from the left of the hidden_states_map
-        num_taken = 0
-        for req_id, slot in list(self.hidden_states_map.items())[:num]:
-            output_slot_idx.append(slot)
-            
-            self.available_slots.add(slot)
-            self.hidden_states_map.pop(req_id)
-            output_req_ids.append(req_id)
-            positions.append(self.positions[slot])
-            num_taken += 1
-        output_hidden_states = self.hidden_states[output_slot_idx]
-
-        # print(f"[take_hidden_states] output_hidden_states size: {output_hidden_states.size()}")
-        output_req_ids = torch.tensor(output_req_ids, device='cuda:0')
-        output_positions = torch.tensor(positions, device='cuda:0')
-        return output_hidden_states, output_req_ids, output_positions
-        
     def __len__(self):
         return len(self.hidden_states_map)
 
@@ -537,25 +446,35 @@ class LlamaModel(nn.Module):
         if batch_size <= self.max_batch_size:
             self.batch_size_lst.append(batch_size)
     
+    """
+    For non-rebatching policies, requests information for the current batch is passed to cache_engine in `base_worker.py` and `model_runner.py`.
+    For Rebatching, becuase we are updating request in current batch, we notify the cache_engine to update the kv cache using this function (and skip the update in the above 2 files).
+    """
     def update_seqs_in_kvcache(
         self,
         seq_ids_in_batch: List[int],
         cache_engine: vATTNCacheEngine,
-    ):  
+    ) -> None:  
         start_time = time.time()
         # assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         # updated_seq_metadata_list = [self.seq_metadata_map[seq_id] for seq_id in seq_ids_in_batch] 
         updated_seq_metadata_list = []
         for seq_id in seq_ids_in_batch:
-            # if seq_id == 1:
-            #     print(f"[LlamaModel.update_seqs_in_kvcache] seq_id: {seq_id}. All seq_idss_in_batch: {seq_ids_in_batch}. output_ids: {self.seq_metadata_map[seq_id].seq.get_output_token_ids()}")
+            
             updated_seq_metadata_list.append(self.seq_metadata_map[seq_id])
 
-        cache_engine.step(updated_seq_metadata_list) # in base_worker
-        get_attention_wrapper().begin_forward(updated_seq_metadata_list) # in model_runner
+        cache_engine.step(updated_seq_metadata_list) # Originally in base_worker
+        get_attention_wrapper().begin_forward(updated_seq_metadata_list) # Originally in model_runner
 
         self.update_kvcache_time_cnt += time.time() - start_time
-    
+
+    """
+    Returns:
+    - hidden_states: <batch_size, hidden_size>
+    - seq_ids_in_batch: <batch_size>
+    - exited_rates: List[int]: [exited cnt, not exited cnt]
+    - lm_logits: Tensor: logits of the last layer, only returned if this forward is EE.
+    """
     def forward_without_rebatching(
         self,
         hidden_states: torch.Tensor,
@@ -565,7 +484,7 @@ class LlamaModel(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
-    ) -> torch.Tensor:
+    ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         #self.measure_batch_size(hidden_states)
 
         batch_size = hidden_states.size(0) if hidden_states.size(0) <= self.max_batch_size else self.max_batch_size
@@ -671,6 +590,8 @@ class LlamaModel(nn.Module):
     Returns:
     - hidden_states: <batch_size, hidden_size>
     - seq_ids_in_batch: <batch_size>
+    - exited_rates: List[int]: [exited cnt, not exited cnt]
+    - lm_logits: Tensor: logits of the last layer, only returned if this forward is EE.
     """
     def forward(
         self,
@@ -681,17 +602,13 @@ class LlamaModel(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None, # <batch_size> # The seq_id of the seqences in the batch
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        # if kv_caches is not None and kv_caches[0] is not None:
-        #     kv_caches = list(zip(*kv_caches))
-        # Rebatching disabled
-        # print(f"policy: {self.ee_policy}, batch size: {hidden_states.size(0)}, max batch size: {self.max_batch_size}")
-        if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size:
+    ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
+        
+        if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size: # Rebatching disabled
             return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
         
         # print(f"\n[LlamaModel.forward] Incoming seq_ids_in_batch: {seq_ids_in_batch}. positions: {positions}")
-        # if 1 in seq_ids_in_batch:
-        #     print(f"[LlamaModel.forward] Incoming hidden states of req 1 before embedding: {hidden_states[seq_ids_in_batch.index(1)]}")
+        
 
         # Rebatching enabled
 
@@ -703,14 +620,11 @@ class LlamaModel(nn.Module):
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
 
-        # if 1 in seq_ids_in_batch:
-        #     print(f"[LlamaModel.forward] Incoming hidden states of req 1 after embedding: {hidden_states[seq_ids_in_batch.index(1)]}")
 
         incoming_batch_size = len(seq_ids_in_batch)
 
-        # print(f"[LlamaModel.forward] input seq_ids_in_batch: {seq_ids_in_batch}")
 
-        # 0. If we receive an empty batch, we process any leftover hidden states in the buffer.
+        # 0. Flush: If we receive an empty batch, we process any leftover hidden states in the buffer.
         flush_buffer = incoming_batch_size == 0
         if flush_buffer:
             if len(self.deep_buffer) > 0:
@@ -763,8 +677,7 @@ class LlamaModel(nn.Module):
             # print(f"[LlamaModel.forward] incoming hidden states size: {hidden_states.size()}. hidden states: {hidden_states}")
             # print(f"[LlamaModel.forward] incoming seq_ids_in_batch: {seq_ids_in_batch}")
             # print(f"[LlamaModel.forward] deep_buffer map: {self.deep_buffer.hidden_states_map}")
-            # if 1 in seq_ids_in_batch:
-            #     print(f"[LlamaModel.forward] [3] adding hidden states of req 1 to start buffer: {hidden_states[seq_ids_in_batch.index(1)]}")
+            
             self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch, positions)
             # 1.2 Take hidden states from `deep_buffer`
             hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(self.max_batch_size)
@@ -790,8 +703,7 @@ class LlamaModel(nn.Module):
             # print(f"seq ids in deep buffer: {self.deep_buffer.hidden_states_map.keys()}")
             # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}\n")
             #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-            # if 1 in seq_ids_in_batch:
-            #     print(f"[LlamaModel.forward] Deep finish of req 1. seq_ids_in_batch: {seq_ids_in_batch}")
+            
             return hidden_states, seq_ids_in_batch, self.exited_rates, None
 
         # 2. Requests in the `start_buffer` has a higher priority than incoming requests. Pop requests from `start_buffer` and swap incoming requests to `start_buffer`.
@@ -800,31 +712,25 @@ class LlamaModel(nn.Module):
             num_req_to_take = min(num_req_in_start_buffer, self.max_batch_size)
 
             if incoming_batch_size + num_req_to_take <= self.max_batch_size:
+                # Take hidden states from `start_buffer` and add them to incoming hidden states. No need to add anything back to `start_buffer`
                 # Concat hidden states in `start_buffer` and incoming hidden states
                 taking_hidden_states, taking_seq_ids_in_batch, taking_positions = self.start_buffer.take_hidden_states(num_req_to_take)
-                # if 1 in taking_seq_ids_in_batch:
-                #     print(f"[LlamaModel.forward] [4.1] took hidden states of req 1: {taking_hidden_states[taking_seq_ids_in_batch.index(1)]}")
+                
                 hidden_states = torch.cat([hidden_states, taking_hidden_states], dim=0)
                 # seq_ids_in_batch = torch.cat([seq_ids_in_batch, taking_seq_ids_in_batch], dim=0)
                 seq_ids_in_batch.extend(taking_seq_ids_in_batch)
                 positions = torch.cat([positions, taking_positions], dim=0)
-            if num_req_to_take > incoming_batch_size:
-                # if 1 in seq_ids_in_batch:
-                #     print(f"[LlamaModel.forward] [4] adding hidden states of req 1 to start buffer: {hidden_states[seq_ids_in_batch.index(1)]}")
-                self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch, positions)
-                hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(num_req_to_take)
-                # if 1 in seq_ids_in_batch:
-                #     print(f"[LlamaModel.forward] [4.2] took hidden states of req 1: {hidden_states[seq_ids_in_batch.index(1)]}")
-            else:
-                # if 1 in seq_ids_in_batch:
-                #     print(f"[LlamaModel.forward] [5] adding hidden states of req 1 to start buffer: {hidden_states[seq_ids_in_batch.index(1)]}")
-                self.start_buffer.add_hidden_states(hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take])
-                hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take] = self.start_buffer.take_hidden_states(num_req_to_take)
-                # if 1 in seq_ids_in_batch:
-                #     print(f"[LlamaModel.forward] [4.3] took hidden states of req 1: {hidden_states[seq_ids_in_batch.index(1)]}")
+            else: # incoming_batch_size + num_req_to_take > max batch size. 
+                if num_req_to_take > incoming_batch_size:
+                    # Swap whole incoming hidden states with `start_buffer` hidden states
+                    self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch, positions)
+                    hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(num_req_to_take)
+                else:
+                    # Swap partial incoming hidden states with `start_buffer` hidden states
+                    self.start_buffer.add_hidden_states(hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take])
+                    hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take] = self.start_buffer.take_hidden_states(num_req_to_take)
+                
 
-        # if 1 in seq_ids_in_batch:
-        #     print(f"[LlamaModel.forward] [4] updating kvcache with seq_ids_in_batch: {seq_ids_in_batch}")
         self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
         # self.measure_batch_size(hidden_states)
@@ -866,8 +772,7 @@ class LlamaModel(nn.Module):
                         cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
 
-                        # if 1 in seq_ids_in_batch:
-                        #     print(f"[LlamaModel.forward] All need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")
+                        
                         # self.conf_sum += sum(conf)
                         # conf = torch.mean(conf)
                         # conf = conf.item()
@@ -889,8 +794,6 @@ class LlamaModel(nn.Module):
                         lm_logits = lm_logits[req_indices]
                         # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
 
-                        # if 1 in seq_ids_in_batch:
-                        #     print(f"[LlamaModel.forward] need to EE, skip mask: {skip_mask}. seq_ids_in_batch: {seq_ids_in_batch}")
 
                         req_idx_in_batch_to_buffer = []
                         seq_ids_in_batch_to_buffer = []
@@ -940,9 +843,7 @@ class LlamaModel(nn.Module):
                         positions = positions[skip_mask]
                         # print(f"EE'ed seq_ids: {seq_ids_in_batch}")
 
-                        # if 1 in seq_ids_in_batch:
-                        #     # print req 1's hidden states
-                        #     print(f"[LlamaModel.forward] req 1 has EE and hidden states: {hidden_states[seq_ids_in_batch.index(1)]}")
+                        
                     
                     break
                 else:
@@ -964,8 +865,6 @@ class LlamaModel(nn.Module):
         # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}")
         # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
         # print("================================================")
-        # if 1 in seq_ids_in_batch:
-        #     print(f"[LlamaModel.forward] returning 2: seq_ids_in_batch: {seq_ids_in_batch}. Seq 1 hidden states: {hidden_states[seq_ids_in_batch.index(1)]}")
 
         # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
 
