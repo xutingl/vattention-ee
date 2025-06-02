@@ -248,8 +248,8 @@ class BenchmarkRunner:
             "avg_conf_score_ee": float(avg_conf_score_ee),
         })
         df = df.sort_values(by="seq_id")
-        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
+        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
+        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
 
 
 

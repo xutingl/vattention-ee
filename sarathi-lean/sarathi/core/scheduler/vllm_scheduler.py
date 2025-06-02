@@ -54,6 +54,16 @@ class VLLMScheduler(BaseScheduler):
 
         # print(f"[VLLMScheduler._schedule] Start of iteration: {self._iteration_id}:")
         # print(f"[VLLMScheduler._schedule] running list: {self.running}")
+        
+
+        # Need to run requests in the rebatching buffer first
+        if len(self.rebatching_buffer) >= self.scheduler_config.max_num_seqs:
+            return SchedulerOutputs(id=self._iteration_id,
+                                    ignored_seq_ids=[],
+                                    preempted_seq_ids=[],
+                                    scheduled_seq_metadata_list=[])
+
+
        
         while self.waiting:
             seq = self.waiting[0]

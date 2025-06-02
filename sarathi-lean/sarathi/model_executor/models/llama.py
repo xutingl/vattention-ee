@@ -375,8 +375,9 @@ class LlamaModel(nn.Module):
         self.exited_rates = [0, 1] # [0]: exited, [1]: not exited. Initialized `not exited` to 1 to avoid division by 0.
 
         self.max_batch_size = config.max_num_seqs
-        self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1) # Buffers the hidden states of the token arrived at first layer
-        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1) # Buffers the hidden states that EE'ed
+        # self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1) # Buffers the hidden states of the token arrived at first layer
+        self.start_buffer = [] # Start buffer will no loger be used. Scheduler will send flush request (an empty schedule) to flush deep buffer. So no request will be moved to start buffer.
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1) # Buffers the hidden states that EE'ed
         self.seq_metadata_map: Dict[int, SequenceMetadata] = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
 
         self.batch_size_lst = [0]
