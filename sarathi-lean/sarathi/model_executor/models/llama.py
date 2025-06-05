@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -756,7 +756,7 @@ class LlamaModel(nn.Module):
                     has_ee = True
 
                     if torch.all(skip_mask):
-                        self.exited_rates[0] += incoming_batch_size
+                        self.exited_rates[0] += len(seq_ids_in_batch)
                         # 3.1 If all requests want to EE, no rebatching is done.
                         # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
                         # Copy layer i-1's kv cache for the prev token to layer i - last layer.
@@ -790,7 +790,7 @@ class LlamaModel(nn.Module):
                         cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
 
                         self.exited_rates[0] += len(req_indices)
-                        self.exited_rates[1] += (incoming_batch_size - len(req_indices))
+                        self.exited_rates[1] += (len(seq_ids_in_batch) - len(req_indices))
 
                         lm_logits = lm_logits[req_indices]
                         # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
@@ -848,7 +848,7 @@ class LlamaModel(nn.Module):
                     
                     break
                 else:
-                    self.exited_rates[1] += incoming_batch_size
+                    self.exited_rates[1] += len(seq_ids_in_batch)
                     # pass
                 
             hidden_states = layer(

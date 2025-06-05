@@ -248,8 +248,17 @@ class BenchmarkRunner:
             "avg_conf_score_ee": float(avg_conf_score_ee),
         })
         df = df.sort_values(by="seq_id")
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
-        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
+
+        csv_path = "/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/"
+
+        if self._config.replica_scheduler_max_batch_size == 1:
+            csv_file = f"{csv_path}/ee_batch1.csv"
+            print(f"Saving results to {csv_file}")
+            df.to_csv(csv_file, index=False)
+        else:
+            csv_file = f"{csv_path}/{self._config.ee_policy}.csv"
+            print(f"Saving results to {csv_file}")
+            df.to_csv(csv_file, index=False)
 
 
 
