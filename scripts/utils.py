@@ -39,6 +39,9 @@ models = {
     'llama-2-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'caisarl76/llama2-70B-8bit', 'logentry': 'llama2-70b-ee'}, # 8 bit quant
 
+    # llama 3 3b temporary fix
+    'llama-3-3b-1': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.2-3B', 'logentry': 'llama-3-3b-ee-eager'},
+    'llama-3-3b-2': {'tp': 2, 'hfrecord': 'meta-llama/Llama-3.2-3B', 'logentry': 'llama-3-3b'},
 }
 
 # vattention allocates memory in power of two while fa_paged/fi_paged

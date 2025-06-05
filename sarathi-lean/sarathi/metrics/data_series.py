@@ -277,32 +277,36 @@ class DataSeries:
 
         self.print_distribution_stats(df, plot_name)
 
-        fig = px.histogram(df, x=self.y_name, nbins=25)
+        # fig = px.histogram(df, x=self.y_name, nbins=25)
 
-        # wandb histogram is highly inaccurate so we need to generate the histogram
-        # ourselves and then use wandb bar chart
+        # # wandb histogram is highly inaccurate so we need to generate the histogram
+        # # ourselves and then use wandb bar chart
 
-        histogram_df = df[self.y_name].value_counts(bins=25, sort=False).sort_index()
-        histogram_df = histogram_df.reset_index()
-        histogram_df.columns = ["Bins", "count"]
-        histogram_df["Bins"] = histogram_df["Bins"].apply(lambda x: x.mid)
-        histogram_df = histogram_df.sort_values(by=["Bins"])
-        # convert to percentage
-        histogram_df["Percentage"] = histogram_df["count"] * 100 / len(df)
-        # drop bins with less than 0.1% of the total count
-        histogram_df = histogram_df[histogram_df["Percentage"] > 0.1]
+        # if len(df[self.y_name].unique()) == 1:
+        #     # All values are the same, create a single bin
+        #     histogram_df = pd.Series({df[self.y_name].iloc[0]: len(df)})
+        # else:
+        #     histogram_df = df[self.y_name].value_counts(bins=25, sort=False).sort_index()
+        # histogram_df = histogram_df.reset_index()
+        # histogram_df.columns = ["Bins", "count"]
+        # histogram_df["Bins"] = histogram_df["Bins"].apply(lambda x: x.mid)
+        # histogram_df = histogram_df.sort_values(by=["Bins"])
+        # # convert to percentage
+        # histogram_df["Percentage"] = histogram_df["count"] * 100 / len(df)
+        # # drop bins with less than 0.1% of the total count
+        # histogram_df = histogram_df[histogram_df["Percentage"] > 0.1]
 
-        if wandb.run:
-            wandb.log(
-                {
-                    f"{plot_name}_histogram": wandb.plot.bar(
-                        wandb.Table(dataframe=histogram_df),
-                        "Bins",
-                        "Percentage",  # wandb plots are horizontal
-                        title=plot_name,
-                    )
-                },
-                step=0,
-            )
+        # if wandb.run:
+        #     wandb.log(
+        #         {
+        #             f"{plot_name}_histogram": wandb.plot.bar(
+        #                 wandb.Table(dataframe=histogram_df),
+        #                 "Bins",
+        #                 "Percentage",  # wandb plots are horizontal
+        #                 title=plot_name,
+        #             )
+        #         },
+        #         step=0,
+        #     )
 
-        fig.write_image(f"{path}/{plot_name}.png")
+        # fig.write_image(f"{path}/{plot_name}.png")

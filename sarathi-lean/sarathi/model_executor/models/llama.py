@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=2560): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b, 2560 for llama-3-3b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -582,9 +582,10 @@ class LlamaModel(nn.Module):
                 # print(f"[LlamaModel.forward_without_rebatching] prefilling with seq_ids_in_batch: {seq_ids_in_batch}. batch size: {hidden_states.size(0)}")
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
-        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) == self.max_batch_size
+        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None
 
         has_ee = False
+
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if check_for_ee and i == self.shallow_exit_layer:
@@ -829,6 +830,7 @@ class LlamaModel(nn.Module):
 
         # self.measure_batch_size(hidden_states)
 
+        batch_size = hidden_states.size(0)
         has_ee = False
 
         for i in range(len(self.layers)):
@@ -1136,10 +1138,21 @@ class LlamaForCausalLM(nn.Module):
 
             param = state_dict[name]
 
-            if "embed_tokens" in name or "lm_head" in name:
+            
+            if "embed_tokens" in name:
+                # print(f"[DEBUG] Loading {name} into {param.shape}")
                 load_padded_tensor_parallel_vocab(
                     param, loaded_weight, tensor_model_parallel_rank
                 )
+                # print(f"[DEBUG] embed_tokens weight sum after copy: {param.sum().item()}")
+                continue
+
+            if "lm_head" in name:
+                # print(f"[DEBUG] Loading {name} into {param.shape}")
+                load_padded_tensor_parallel_vocab(
+                    param, loaded_weight, tensor_model_parallel_rank
+                )
+                # print(f"[DEBUG] LM head weight sum after copy: {param.sum().item()}")
                 continue
 
             load_tensor_parallel_weights(
@@ -1150,6 +1163,9 @@ class LlamaForCausalLM(nn.Module):
                 row_parallel_weights,
                 tensor_model_parallel_rank,
             )
+            if self.lm_head is not None and self.model.embed_tokens is not None:
+                self.lm_head.weight = self.model.embed_tokens.weight
+                # print(f"[DEBUG] LM head weight sum after copy: {self.lm_head.weight.data.sum()}")
     
     def set_sampler(self, sampler: Optional[Sampler] = None):
         self.model.sampler = sampler
