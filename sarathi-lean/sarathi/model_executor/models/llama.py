@@ -390,6 +390,8 @@ class LlamaModel(nn.Module):
 
         self.process_ee_time = 0
 
+        self.prefill_batch_size_limit = 64 # If emprical batch size is larger than this, we will not use EE. This is to avoid overhead of EE in prefill.
+
         self.sampler: Sampler = None
     
     def softmax_confidence(
@@ -408,14 +410,14 @@ class LlamaModel(nn.Module):
         return_conf=False,
     ):
         # assert ee_policy != "off", "Turn off EE by setting self.use_shallow_deep = False. Set policy to 'off' incurrs unnecessary overhead."
-        if hidden_states.size(0) > 16:
-            # Heuristic to avoid using EE for prefilling
-            mask = torch.tensor(0.0, device=hidden_states.device).bool()
-            conf = torch.tensor(0.0, device=hidden_states.device)
-            if not return_conf:
-                return mask, False
-            else:
-                return mask, conf, False
+        # if hidden_states.size(0) > self.prefill_batch_size_limit:
+        #     # Heuristic to avoid using EE for prefilling
+        #     mask = torch.tensor(0.0, device=hidden_states.device).bool()
+        #     conf = torch.tensor(0.0, device=hidden_states.device)
+        #     if not return_conf:
+        #         return mask, False
+        #     else:
+        #         return mask, conf, False
         logits = logits[~torch.any(logits.isnan(),dim=1)]
         conf = self.softmax_confidence(logits)
         conf = conf[~torch.isnan(conf)]
@@ -502,7 +504,7 @@ class LlamaModel(nn.Module):
                 # print(f"[LlamaModel.forward_without_rebatching] prefilling with seq_ids_in_batch: {seq_ids_in_batch}. batch size: {hidden_states.size(0)}")
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
-        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) == self.max_batch_size
+        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) <= self.max_batch_size
 
         has_ee = False
         for i in range(len(self.layers)):
@@ -605,7 +607,8 @@ class LlamaModel(nn.Module):
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         
-        if seq_ids_in_batch is None or self.ee_policy != "rebatching" or hidden_states.size(0) > self.max_batch_size: # Rebatching disabled
+        if self.ee_policy != "rebatching" or hidden_states.size(0) > self.prefill_batch_size_limit: # Rebatching disabled
+            # print(f"[LlamaModel.forward] Rebatching disabled. seq_ids_in_batch: {seq_ids_in_batch}. hidden_states size: {hidden_states.size()}")
             return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
         
         # print(f"\n[LlamaModel.forward] Incoming seq_ids_in_batch: {seq_ids_in_batch}. positions: {positions}")
@@ -703,7 +706,7 @@ class LlamaModel(nn.Module):
             # print(f"case 1 seq_ids_in_batch: {seq_ids_in_batch}")
             # print(f"seq ids in deep buffer: {self.deep_buffer.hidden_states_map.keys()}")
             # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}\n")
-            #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
+            #print(f"[LlamaModel.forward] 2222222  ee_rates: {self.exited_rates}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
             
             return hidden_states, seq_ids_in_batch, self.exited_rates, None
 
@@ -740,7 +743,7 @@ class LlamaModel(nn.Module):
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
-            if cache_engine and i == self.shallow_exit_layer and hidden_states.size(0) <= self.max_batch_size: # Avoid EE in profiling (cache_engine is None) and prefilling (batch size is too large)
+            if cache_engine and i == self.shallow_exit_layer and hidden_states.size(0) <= self.prefill_batch_size_limit: # Avoid EE in profiling (cache_engine is None) and prefilling (batch size is too large)
                 # lm_logits, _ = lm_head(self.norm(hidden_states))
                 lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
                 skip_mask, conf, need_skip = self.get_skip_mask(
@@ -756,6 +759,7 @@ class LlamaModel(nn.Module):
                     has_ee = True
 
                     if torch.all(skip_mask):
+                        # print(f"[LlamaModel.forward] All requests want to EE. No rebatching done. seq_ids_in_batch: {seq_ids_in_batch}. exited rates: {self.exited_rates}")
                         self.exited_rates[0] += len(seq_ids_in_batch)
                         # 3.1 If all requests want to EE, no rebatching is done.
                         # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
@@ -791,6 +795,8 @@ class LlamaModel(nn.Module):
 
                         self.exited_rates[0] += len(req_indices)
                         self.exited_rates[1] += (len(seq_ids_in_batch) - len(req_indices))
+
+                        # print(f"[LlamaModel.forward] partial {seq_ids_in_batch}. exited rates: {self.exited_rates}")
 
                         lm_logits = lm_logits[req_indices]
                         # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
@@ -848,6 +854,7 @@ class LlamaModel(nn.Module):
                     
                     break
                 else:
+                    # print(f"[LlamaModel.forward] no ee {seq_ids_in_batch}. exited rates: {self.exited_rates}")
                     self.exited_rates[1] += len(seq_ids_in_batch)
                     # pass
                 
