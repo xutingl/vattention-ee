@@ -70,7 +70,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
+        self._config.download_dir = "/workspace/vattention-ee/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -248,10 +248,16 @@ class BenchmarkRunner:
             "avg_conf_score_ee": float(avg_conf_score_ee),
         })
         df = df.sort_values(by="seq_id")
-        df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
+        # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/{self._config.ee_policy}.csv", index=False)
         # df.to_csv(f"/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_csv/ee_batch1.csv", index=False)
 
-
+        # Save output to a unique CSV file based on model, batch size, and conf_threshold
+        ee_policy = self._config.ee_policy
+        conf_threshold = self._config.conf_threshold
+        shallow_exit_layer = self._config.shallow_exit_layer
+        csv_filename = f"{ee_policy}_{conf_threshold}_{shallow_exit_layer}.csv"
+        # csv_path = os.path.join(self._config.output_dir, csv_filename)
+        df.to_csv(f"/workspace/vattention-ee/outputs_70b_daniel/req_500_batch_8_csv/{csv_filename}", index=False)
 
         if self._config.enable_profiling:
             self._llm_engine.stop_profiling()
