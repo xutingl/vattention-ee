@@ -170,7 +170,8 @@ class VLLMScheduler(BaseScheduler):
     
 
     def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence]):
-        # print(f"[VLLMScheduler.on_rebatching] in rebatching buffer: {self.rebatching_buffer}")
+        
+        # Loop through outputs. If a request is in the rebatching buffer, and is outputted, then it is moved to the running list.
         output_seq_ids = []
         for output_seq in output_seqs:
             output_seq_ids.append(output_seq.seq_id)
@@ -187,7 +188,7 @@ class VLLMScheduler(BaseScheduler):
             # else:
                 #print(f"[VLLMScheduler.on_rebatching] not in rebatching buffer: {output_seq.seq_id}")
             
-
+        # Loop through the scheduled list (input list): if a request is in the input list but not in the output list, then it is moved to the rebatching buffer.
         for input_seq_metadata in scheduled_seq_metadata_list:
             if input_seq_metadata.seq.seq_id not in output_seq_ids:
                 # This sequence is in the input but not in the output --> it is in the rebatching buffer
