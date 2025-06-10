@@ -8,6 +8,7 @@ import wandb
 from tqdm import tqdm
 import pandas as pd
 from decimal import Decimal
+from pathlib import Path
 
 from sarathi import LLMEngine, SamplingParams
 from sarathi.benchmark.config import Config
@@ -205,8 +206,9 @@ class BenchmarkRunner:
                     print(f"[BenchmarkRunner._run] Output id {output.seq_id} Finished=====================================")
                     print(output.text)
                     print("=====================================")
+                    raw_string = fr"{output.text}"
                     finished_seq_id_lst.append(output.seq_id)
-                    finished_output.append(output.text)
+                    finished_output.append(raw_string)
                 # else:
                 #     print(f"[BenchmarkRunner._run] Output id {output.seq_id} not finished")
         end_time = time.monotonic()
@@ -249,7 +251,8 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
 
-        csv_path = "/workspace/xutingl/vattention-ee/outputs_70b/req_500_batch_8_csv/"
+        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_conf07_csv/")
+        csv_path.mkdir(parents=True, exist_ok=True)
 
         if self._config.replica_scheduler_max_batch_size == 1:
             csv_file = f"{csv_path}/ee_batch1.csv"
