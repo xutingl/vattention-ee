@@ -38,6 +38,7 @@ models = {
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'TheBloke/Llama-2-70B-GPTQ', 'logentry': 'llama2-70b-ee'}, # 4 bit quant
     'llama-2-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'caisarl76/llama2-70B-8bit', 'logentry': 'llama2-70b-ee'}, # 8 bit quant
+    'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'}
 
 }
 

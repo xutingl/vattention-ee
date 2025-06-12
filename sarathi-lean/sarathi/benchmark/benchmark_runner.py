@@ -85,7 +85,7 @@ class BenchmarkRunner:
             pipeline_parallel_size=self._config.model_pipeline_parallel_degree,
             attention_backend=self._config.model_attention_backend,
             seed=42,
-            dtype="float16",
+            dtype="float16", # "bfloat16" for llama3
             load_format=self._config.model_load_format,
             gpu_memory_utilization=self._config.gpu_memory_utilization,
             max_model_len=self._config.model_max_model_len,
@@ -251,7 +251,7 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
 
-        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_70b/req_100_batch_4_conf07_csv/")
+        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_70b_llama3/req_100_batch_4_conf09_csv/")
         csv_path.mkdir(parents=True, exist_ok=True)
 
         if self._config.replica_scheduler_max_batch_size == 1:

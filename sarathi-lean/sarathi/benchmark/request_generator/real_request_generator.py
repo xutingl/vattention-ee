@@ -11,10 +11,10 @@ from datasets import load_dataset
 
 class RealRequestGenerator(BaseRequestGenerator):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, config, prompt_length: int = 1000):
+        super().__init__(config)
 
-        self.prompt_length = 1000
+        self.prompt_length = prompt_length
         self.squad = load_dataset("rajpurkar/squad_v2", split="validation")
         self.cnn = load_dataset("abisee/cnn_dailymail", "3.0.0", split="validation")
     

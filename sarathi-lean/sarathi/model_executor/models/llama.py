@@ -271,12 +271,12 @@ class HiddenStatesBuffer():
         self.capacity = capacity
         # [WARNING!] hard code device
         self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
-        self.hidden_states = self.hidden_states.to(torch.float16)
+        self.hidden_states = self.hidden_states.to(torch.bfloat16)
         self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
         self.positions = self.positions.to(torch.int64)
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
-        self.dtype = torch.float16
+        self.dtype = torch.bfloat16
         self.time_spent_adding = 0
         self.time_spent_taking = 0
     
@@ -1043,11 +1043,31 @@ class LlamaForCausalLM(nn.Module):
 
             param = state_dict[name]
 
-            if "embed_tokens" in name or "lm_head" in name:
+            # ---------- llama2 ----------
+            # if "embed_tokens" in name or "lm_head" in name:
+            #     load_padded_tensor_parallel_vocab(
+            #         param, loaded_weight, tensor_model_parallel_rank
+            #     )
+            #     continue
+            # ---------- llama2 ----------
+            
+            # ---------- llama3 ----------
+            if "embed_tokens" in name:
+                # print(f"[DEBUG] Loading {name} into {param.shape}")
+                load_padded_tensor_parallel_vocab(
+                    param, loaded_weight, tensor_model_parallel_rank
+                )
+                # print(f"[DEBUG] embed_tokens weight sum after copy: {param.sum().item()}")
+                continue
+
+            if "lm_head" in name:
+                # print(f"[DEBUG] Loading {name} into {param.shape}")
                 load_padded_tensor_parallel_vocab(
                     param, loaded_weight, tensor_model_parallel_rank
                 )
                 continue
+            # ---------- llama3 ----------
+
 
             load_tensor_parallel_weights(
                 param,
@@ -1057,6 +1077,10 @@ class LlamaForCausalLM(nn.Module):
                 row_parallel_weights,
                 tensor_model_parallel_rank,
             )
+            
+            # ---------- For small models that tie word embeddings (i.e. self.config.tie_word_embeddings == True) ----------
+            # if self.config.tie_word_embeddings and self.lm_head is not None and self.model.embed_tokens is not None:
+            #     self.lm_head.weight = self.model.embed_tokens.weight
     
     def set_sampler(self, sampler: Optional[Sampler] = None):
         self.model.sampler = sampler

@@ -552,7 +552,8 @@ def _get_and_verify_max_len(
             )
         assert "factor" in rope_scaling
         scaling_factor = rope_scaling["factor"]
-        if rope_scaling["type"] == "yarn":
+        rope_type = rope_scaling.get("type", rope_scaling.get("rope_type", None))
+        if rope_type == "yarn":
             derived_max_model_len = rope_scaling["original_max_position_embeddings"]
         derived_max_model_len *= scaling_factor
 
