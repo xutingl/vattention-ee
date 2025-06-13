@@ -101,7 +101,7 @@ class vATTNCacheEngine(BaseCacheEngine):
     Copy the KV cache for the given request indices and token indices, from the source layer to all the layers after it.
     """
     def copy_kv_cache(self, src_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
-        return
+        
 
         target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
         src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]  # shape: [batch, heads, dim]
