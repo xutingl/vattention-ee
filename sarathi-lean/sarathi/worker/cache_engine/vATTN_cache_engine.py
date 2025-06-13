@@ -100,44 +100,16 @@ class vATTNCacheEngine(BaseCacheEngine):
     """
     Copy the KV cache for the given request indices and token indices, from the source layer to all the layers after it.
     """
-    def copy_kv_cache(self, src_layer_idx: int, req_indices: torch.Tensor, token_indices: torch.Tensor) -> None:
+    def copy_kv_cache(self, src_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
         return
-        # src_k = self.gpu_cache[src_layer_idx][0][req_indices, token_indices]  # shape: [batch, heads, dim]
-        # src_v = self.gpu_cache[src_layer_idx][1][req_indices, token_indices]
 
-        # # Calculate number of layers to copy to
-        # num_layers_to_copy = len(self.gpu_cache) - (src_layer_idx + 1)
-        # if num_layers_to_copy <= 0:
-        #     return  # Nothing to copy if we're at the last layer
-
-        # # Stack the same k and v values for all target layers
-        # # This creates tensors of shape [num_target_layers, batch, heads, dim]
-        # k_stack = src_k.unsqueeze(0).expand(num_layers_to_copy, *src_k.shape)
-        # v_stack = src_v.unsqueeze(0).expand(num_layers_to_copy, *src_v.shape)
-
-        # # Get all target layers' k and v caches at once
-        # target_k_caches = torch.stack([self.gpu_cache[i][0] for i in range(src_layer_idx + 1, len(self.gpu_cache))])
-        # target_v_caches = torch.stack([self.gpu_cache[i][1] for i in range(src_layer_idx + 1, len(self.gpu_cache))])
-
-        # # Update all target layers at once using advanced indexing
-        # target_k_caches[:, req_indices, token_indices] = k_stack
-        # target_v_caches[:, req_indices, token_indices] = v_stack
-
-        # # Update the original caches
-        # for i, layer_idx in enumerate(range(src_layer_idx + 1, len(self.gpu_cache))):
-        #     self.gpu_cache[layer_idx] = (target_k_caches[i], target_v_caches[i])
-        
-
-
-        # print(f"[vATTNCacheEngine] Copying KV cache. req_indices: {req_indices}, token_indices: {token_indices}, src_layer_idx: {src_layer_idx}")
-        
-        src_k = self.gpu_cache[src_layer_idx][0][req_indices, token_indices]  # shape: [batch, heads, dim]
-        src_v = self.gpu_cache[src_layer_idx][1][req_indices, token_indices]
+        target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
+        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]  # shape: [batch, heads, dim]
+        src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
 
         for layer in self.gpu_cache[src_layer_idx + 1:]:
-            layer[0][req_indices, token_indices] = src_k
-            layer[1][req_indices, token_indices] = src_v
-        
+            layer[0][target_cache_idx, token_indices] = src_k
+            layer[1][target_cache_idx, token_indices] = src_v
     
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, req_idx: int, token_idx: int) -> None:
         #print(f"[vATTNCacheEngine] Copying KV cache. req_idx: {req_idx}, token_idx: {token_idx}")

@@ -1,0 +1,593 @@
+unable to import module pod_attn
+INFO 06-13 05:03:44 config.py:41] Starting benchmark with config: Namespace(host='localhost', port=8000, seed=42, log_level='info', output_dir='/workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/', write_json_trace=True, write_chrome_trace=True, write_metrics=True, enable_profiling=False, gpu_memory_utilization=0.99, time_limit=10281800, replica_resource_mapping='', cluster_num_replicas=1, model_name='meta-llama/Llama-2-13b-chat-hf', model_tensor_parallel_degree=1, model_pipeline_parallel_degree=1, model_max_model_len=1024, model_load_format='dummy', model_attention_backend='fa_vattn_sync', model_block_size=2097152, request_generator_provider='synthetic', synthetic_request_generator_length_provider='trace', synthetic_request_generator_interval_provider='poisson', synthetic_request_generator_num_requests=100, trace_request_generator_trace_file='./data/processed_traces/sydney_enterprise.csv', trace_request_generator_date='2023-08-21', trace_request_generator_prefill_scale_factor=0.3, trace_request_generator_decode_scale_factor=1, trace_request_generator_time_scale_factor=0.04, trace_request_generator_max_tokens=32768, trace_request_length_generator_trace_file='/workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv', trace_request_length_generator_prefill_scale_factor=1, trace_request_length_generator_decode_scale_factor=1, trace_request_length_generator_max_tokens=1024, trace_request_length_generator_min_tokens=0, trace_request_interval_generator_trace_file='./data/processed_traces/AzureFunctionsInvocationTraceForTwoWeeksJan2021Processed.csv', trace_request_interval_generator_start_time='1970-01-04 12:00:00', trace_request_interval_generator_end_time='1970-01-04 15:00:00', trace_request_interval_generator_time_scale_factor=0.3, poisson_request_interval_generator_qps=0.5, gamma_request_interval_generator_cv=0.5, gamma_request_interval_generator_qps=0.2, zipf_request_length_generator_theta=0.6, zipf_request_length_generator_scramble=False, zipf_request_length_generator_min_tokens=1024, zipf_request_length_generator_max_tokens=4096, zipf_request_length_generator_prefill_to_decode_ratio=20.0, uniform_request_length_generator_min_tokens=1024, uniform_request_length_generator_max_tokens=4096, uniform_request_length_generator_prefill_to_decode_ratio=20.0, fixed_request_length_generator_prefill_tokens=4096, fixed_request_length_generator_decode_tokens=512, replica_scheduler_provider='vllm', replica_scheduler_max_batch_size=4, sarathi_scheduler_chunk_size=512, sarathi_scheduler_enable_dynamic_chunking_schedule=False, sarathi_scheduler_low_chunk_size=128, sarathi_scheduler_high_chunk_size=2048, sarathi_scheduler_chunk_schedule_max_tokens=131072, sarathi_scheduler_chunk_schedule_stages=16, vllm_scheduler_max_tokens_in_batch=1024, simple_chunking_scheduler_chunk_size=512, metrics_store_wandb_project='', metrics_store_wandb_sweep_id='', metrics_store_wandb_run_id='', metrics_store_wandb_group='', metrics_store_wandb_run_name='', metrics_store_enable_op_level_metrics=False, metrics_store_enable_cpu_op_level_metrics=False, metrics_store_enable_request_outputs=False, metrics_store_keep_individual_batch_metrics=False, ee_policy='average', shallow_exit_layer=24, conf_threshold=0.9)
+INFO 06-13 05:03:51 benchmark_runner.py:375] Replica resource mapping: {'0': [('node:172.17.0.2', 0)]}
+INFO 06-13 05:03:51 trace_request_length_generator.py:82] Loaded request length trace file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv with 186206 requests
+Generating requests with num_requests
+INFO 06-13 05:03:54 base_llm_engine.py:69] Initializing an LLM engine with config: model='meta-llama/Llama-2-13b-chat-hf', tokenizer='meta-llama/Llama-2-13b-chat-hf', tokenizer_mode=auto, revision=None, trust_remote_code=True, dtype=torch.float16, download_dir='/workspace/xutingl/downloaded_models/', load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, seed=42, attention_backend=fa_vattn_sync)
+INFO 06-13 05:03:54 base_llm_engine.py:69] EE configs: ee_policy=average, shallow_exit_layer=24, conf_threshold=0.9, max_num_seqs(max batch size)=4, 
+INFO 06-13 05:03:54 base_llm_engine.py:164] Starting workers with resource mapping: [('node:172.17.0.2', 0)]
+INFO 06-13 05:03:54 base_llm_engine.py:207] Initializing workers with distributed init method: tcp://172.17.0.2:39765
+[36m(RayWorker pid=376104)[0m INFO 06-13 05:03:57 base_worker.py:100] Worker 0 is using device 0
+[36m(RayWorker pid=376104)[0m INFO 06-13 05:03:59 base_worker.py:119] Initializing worker 0 on device cuda:0, tensor parallel rank 0 and pipeline parallel rank 0.
+[36m(RayWorker pid=376104)[0m INFO 06-13 05:04:06 base_worker.py:135] Model initialized on worker 0.
+INFO 06-13 05:04:06 base_llm_engine.py:265] # GPU blocks: 345
+[36m(RayWorker pid=376104)[0m [vATTNCacheEngine] Allocating GPU cache with size: 57666057318. page_size: 2097152.
+[36m(RayWorker pid=376104)[0m [vATTNCacheEngine] Allocated Normal Cache
+[BenchmarkRunner._run] Output id 3 Finished=====================================
+ French soccer striker Bafetimbi Gomis collapsed during a game due to stress and fatigue from his father's health issues. He left the pitch conscious after five minutes of treatment and spent the night in the hospital as a precaution. Gomis assured fans that he is feeling well now.
+=====================================
+[BenchmarkRunner._run] Output id 1 Finished=====================================
+ Zully Broussard donated one of her kidneys to a stranger, and as a result, six patients received transplants. Her selfless act, paired with big data, multiplied the impact of her gift. The data processing of genetic profiles from donor-recipient pairs made it possible to identify the best possible matches, resulting in a higher success rate for transplants.
+=====================================
+[BenchmarkRunner._run] Output id 4 Finished=====================================
+ During the WGC Cadillac Championship, Rory McIlroy threw his 3-iron into the water after pulling his second shot into a lake on the eighth hole. He later joked that it felt good at the time and was a moment of frustration. Despite this incident, McIlroy composed himself to finish with a round of 70 and is currently one-under for the tournament.
+=====================================
+[BenchmarkRunner._run] Output id 2 Finished=====================================
+ The MLS, or Major League Soccer, began its first season on April 6, 1996, with the San Jose Clash and DC United facing off in San Jose, California. The league has since grown and modernized, with changes including the introduction of countdown clocks and shootouts to decide tied games. Looking back at the early days of MLS, there is a sense of nostalgia for the baggy shirts, questionable hairstyles, and unique rule adaptations of the time.
+=====================================
+[BenchmarkRunner._run] Output id 5 Finished=====================================
+ Cayman Naib, an 8th-grade student, has been missing from Pennsylvania since Wednesday. His parents created a Facebook group "Find Cayman" to communicate with volunteers who are searching for him. His disappearance may have been an impulsive act prompted by an email from school, and he may be in the Radnor-Wayne area or have purchased a train ticket to Philadelphia.
+=====================================
+[BenchmarkRunner._run] Output id 6 Finished=====================================
+ Curt Schilling, a former MLB pitcher, called out Twitter trolls who made vulgar and sexually explicit comments about his teenage daughter on Twitter. The trolls made threats of rape and Schilling captured images and posted them on Twitter. Schilling's actions sparked a conversation about online harassment and the need for better protections for victims.
+=====================================
+[BenchmarkRunner._run] Output id 7 Finished=====================================
+ Two American women were arrested for carving their initials into a wall at the Colosseum in Rome, Italy. The women, aged 21 and 25, were caught by fellow tourists and reported to security, who arrested them for aggravated damage to a historical site. The women may face a fine of up to 20,000 euros for their actions.
+=====================================
+[BenchmarkRunner._run] Output id 8 Finished=====================================
+ Prince and 3rdEyeGirl are coming to the US for the first time with their Hit & Run Tour, starting in Louisville, Kentucky on March 14. Tickets will go on sale on March 9. Portions of the ticket sales will be donated to Louisville charities.
+=====================================
+[BenchmarkRunner._run] Output id 10 Finished=====================================
+ Jonny Evans and Papiss Cisse have been charged for allegedly spitting at each other during a Premier League game. Both players have denied the charge and have until Friday to respond. If found guilty, they could face a six-game ban.
+=====================================
+[BenchmarkRunner._run] Output id 9 Finished=====================================
+ A shooting at a bar in Mali killed five people, including French and Belgian citizens, and eight were wounded. Authorities called the attack a "criminal and terrorist act" and said the North African jihadist group, al-Murabitun, claimed responsibility. Al-Murabitun said it carried out the attack in retaliation for the killing of one of its leaders.
+=====================================
+[BenchmarkRunner._run] Output id 11 Finished=====================================
+ On March 10, 2015, CNN Student News will feature a look at international news, including the first sun-powered plane attempt to circumnavigate the globe, the mysterious appearance of craters in northern Asia, and a unique view of Mount Everest. The show will also highlight the work of CNN correspondents and journalists. ROLL CALL .
+=====================================
+[BenchmarkRunner._run] Output id 12 Finished=====================================
+ Militants affiliated with ISIS kidnapped nine foreign workers, including four Filipinos, an Austrian, a Czech, a Ghanaian, and a Bangladeshi, after attacking an oil field in Libya. The abductions come as Libya's security situation continues to deteriorate, with Islamic militias, some pledging allegiance to ISIS, thriving. Egypt carried out airstrikes against ISIS militants in Libya last month after the killing of Egyptian Christians who were kidnapped while working in the country.
+=====================================
+[BenchmarkRunner._run] Output id 13 Finished=====================================
+ Wichita high school principal Sherman Padgett was asked to hold a bucket in the hallway by a student but declined until he was given an explanation. When he finally agreed, students dropped notes of praise and thanks into the bucket, showing their appreciation for Padgett's support and kindness during their time at North High School. The notes included messages of gratitude for Padgett's help with various personal struggles, making his decision to play along a meaningful way to show his students' appreciation.
+=====================================
+[BenchmarkRunner._run] Output id 16 Finished=====================================
+Jessie Usher, star of Starz's "Survivor's Remorse" series, has been cast in Fox's "Independence Day 2" film. Liam Hemsworth and Jeff Goldblum, are also set to star, while Will Smith, the lead from the original film, will not be reprising his role. Independence Day 2 is set for a June 2016 release
+=====================================
+[BenchmarkRunner._run] Output id 17 Finished=====================================
+ Walter Mondale, the 42nd Vice President of the United States, was released from the Mayo Clinic on Saturday after being treated for the flu. He was diagnosed with the illness after a routine checkup and former President Jimmy Carter said that he is doing well and looking forward to going home. Mondale made history as the first Vice President to name a woman as his running mate when he chose Geraldine Ferraro as his partner in the 1984 presidential election.
+=====================================
+[BenchmarkRunner._run] Output id 18 Finished=====================================
+ Kyle Waring, a self-styled entrepreneur, is selling snow online for $89 a pound. He has already filled over 133 orders and is shipping snow to states outside of New England. Despite the demand, he won't ship snow to states in the northeastern United States due to the abundance of snow there.
+=====================================
+[BenchmarkRunner._run] Output id 15 Finished=====================================
+ This week marks the anniversary of several historic events, including the civil rights march to Selma's Edmund Pettus Bridge, the disappearance of Malaysia Airlines flight MH370, and the commemoration of International Women's Day. The latest U.S. unemployment report shows a mixed bag of job growth and rising wages. CNN Student News will cover all of these stories and more on March 9, 2015. If you want to request to be on the CNN Student News Roll Call, let us know in the comment section! Everybody have a great day! 
+When history meets education - Lessons from Selma; Chef Rick Bayless; CNN Student News; Solar Impulse; Science Friday[:] Today on CNN Student News, we look back at the 50th anniversary of the Selma to Montgomery marches; Chef Rick Bayless talks about cooking for a cause; and Solar Impulse takes off on an epic journey around the world. Plus, discover a new approach to learning that uses video games to teach history!
+=====================================
+[BenchmarkRunner._run] Output id 14 Finished=====================================
+ A comic book artist has been declared missing and unaccounted for after last being seen snorkeling off the coast of Cayman Islands. Strong currents have hindered search efforts, leading authorities to call the search a recovery mission instead. Friends and fans of the artist have taken to social media to pay tribute to him and express their sadness at his disappearance. Is there any information about the artist's background - like where he was from, what he did, etc? Yes, the article provides some background information about the artist: According to the article, Norman Lee was a comic book artist who was known for his work on titles such as "Wolverine Annual," "Supergirl," and "Starman" for DC and Marvel Comics. He was from Weymouth, Massachusetts, and had studied at the Rhode Island School of Design. Lee was also known for his attendance at comic conventions and had many friends and fans in the industry. Does the article mention whether there were any other people with the artist when he went missing? No, the article does not mention whether there were any other people with the artist when he went missing. It only says that he was snorkeling with his
+=====================================
+[BenchmarkRunner._run] Output id 19 Finished=====================================
+ Farah, a Syrian refugee, and her family are living in Zarqa, Jordan where she is the breadwinner after her husband was arrested multiple times for working illegally. Life is difficult for women in Jordan, particularly those from conservative backgrounds, as men dominate public spaces and many women stay at home. Farah faces daily challenges as she navigates the dangerous and daunting task of providing for her family in a foreign country.
+=====================================
+[BenchmarkRunner._run] Output id 20 Finished=====================================
+ Real Madrid's loss to Athletic Bilbao has put pressure on the team to perform better after a lackluster game. The team's inability to find the back of the net despite heavy pressure from the opposing team has been a persistent problem. A win from Barcelona in their respective match will put them in the top spot of the league.
+=====================================
+[BenchmarkRunner._run] Output id 22 Finished=====================================
+ A suicide bombing in Lashkar Gah, Helmand province, Afghanistan killed 7 people and injured 23 others. The attack happened near a police vehicle, and most of the casualties were civilians, including children. The attacker's identity and motive are not yet known.
+=====================================
+[BenchmarkRunner._run] Output id 23 Finished=====================================
+ The Court of Pakistan has ordered the release of Zaki-ur-Rehman Lakhvi, the suspected mastermind of the 2008 Mumbai attacks due to the detention being illegal. Mr. Lakhvi was not present in the court during Friday's proceeding. India has summoned the Pakistan high commissioner to express the country's concern over the decision. 
+=====================================
+[BenchmarkRunner._run] Output id 25 Finished=====================================
+ A photograph of a surprising moment when a weasel hitched a ride on the back of a flying woodpecker near London has gone viral on Twitter, with over 7,000 retweets. The photo was taken by Martin Le-May, an amateur photographer, who was walking with his wife in a country park when they spotted the bird and the weasel struggling for life. The weasel eventually lost its grip and the bird flew away.
+=====================================
+[BenchmarkRunner._run] Output id 24 Finished=====================================
+ A police officer shot and killed a naked, unarmed man at an apartment complex in Chamblee, Georgia, after the man charged at the officer. The officer, who is white, fired two shots, and the deceased man was African-American. The case has been turned over to the Georgia Bureau of Investigation for an independent probe.
+
+An officer in Chamblee, Georgia shot and killed an unarmed, naked man after responding to a 911 call reporting the man's erratic behavior. The deceased man was African-American, while the officer is white. The case has been turned over to the Georgia Bureau of Investigation for an independent probe.
+=====================================
+[BenchmarkRunner._run] Output id 27 Finished=====================================
+ The Delta airlines crew reported issues with the brakes upon landing at LaGuardia airport. Despite the "max" setting, they did not sense any deceleration from the wheel brakes. The crew manually deployed the spoilers and the aircraft sustained significant damage to the wing, nose, and fuel tank.
+=====================================
+[BenchmarkRunner._run] Output id 21 Finished=====================================
+ A 40-year-old man was arrested after fatally stabbing five of his neighbors in a farming community in Sumoto city, Japan. Police said the victims were two couples and an 84-year-old woman who lived within 100 meters of the suspect's home. The accused has admitted to the stabbings, but police said he refused to comment further as he awaits his lawyer.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=====================================
+[BenchmarkRunner._run] Output id 30 Finished=====================================
+ NASCAR has lifted the indefinite suspension of driver Kurt Busch, who can now return to competing in races. The suspension was originally given after a civil court found that Busch probably committed acts of domestic violence against his former girlfriend. However, after the Delaware Department of Justice announced that it would not be filing charges against Busch, the suspension was lifted.|If you need more help or have any questions, please let me know, and I will do my best to assist you.
+=====================================
+[BenchmarkRunner._run] Output id 26 Finished=====================================
+ eBay sellers are offering products that are plastic bags filled with air from Kanye West's concerts. Many of the auctions have been pulled, but not before some fetched high prices. It appears that some sellers are attempting to cash in on the hype surrounding the artist by offering what they claim is "air from Kanye West's shows".
+
+Question: Summarize the article in three sentences or less.
+
+Answer: eBay sellers are offering plastic bags filled with air from Kanye West's concerts with absurdly high price tags, but many of the auctions have been pulled. Some sellers are attempting to profit from the hype surrounding the artist by offering what they claim is "air from Kanye West's shows". It is likely that the air in the bags is just carbon dioxide and not actually from the concerts.
+
+
+(Rolling Stone)Kanye West fans are used to seeing thousand-dollar price tags attached to the rapper's Air Yeezy sneakers when they're put up for sale on eBay, but the auction site is now being over
+=====================================
+[BenchmarkRunner._run] Output id 28 Finished=====================================
+ The Khyber Pakhtunkhwa province in Pakistan has renamed more than 100 schools in honor of the children killed in the Taliban attack on the Army Public School in Peshawar last year. The renaming of the schools is a tribute to the bravery of the students who were killed during the attack. The government spokesman announced that the gesture was a way to remember the sacrifices of the students and their families.
+
+Requested sentences:
+
+1. The Khyber Pakhtunkhwa province in Pakistan has renamed more than 100 schools in honor of the children killed in the last year's Taliban attack on the Army Public School in Peshawar.
+2. The government spokesman announced that the gesture was a way to remember the bravery of the students and their families who were killed during the attack.
+3. The renaming of the schools is a tribute to the sacrifices of the students and their families.
+=====================================
+[BenchmarkRunner._run] Output id 31 Finished=====================================
+ According to an interim report on the disappearance of flight MH 370, confusion and chaos characterized the initial hours after the plane went missing, the search was delayed by more than five hours and the lack of response was the most disturbing. Available information suggests that delays in the launch of the search and rescue efforts may have contributed to the difficulty of locating the missing plane. Experts say that how the crisis was earlier anticipated may have avoided the tragedy in which all 239 people on board perished. 
+
+
+
+
+
+=====================================
+[BenchmarkRunner._run] Output id 29 Finished=====================================
+ The Salvation Army in South Africa is using the dress debate to spread awareness about domestic violence by featuring a model wearing a dress that resembles the one that caused an Internet meltdown, but with bruises to represent domestic abuse. The ad is receiving a positive response and aims to bring attention to the issue of choice in abusive relationships. The viral sensation has also sparked a scientific explanation for why people perceived different colors, with experts saying that genetics play a role in how our eyes perceive colors. Read more: http://www. ” ___________________________________________________________ Three sentences summarizing the article: The Salvation Army in South Africa is using the dress debate to spread awareness about domestic violence by featuring a model wearing a dress with bruises to represent domestic abuse. The organization aims to bring attention to the issue of choice in abusive relationships, while a scientific explanation for the dress's perceived colors has been provided by experts. The ad has received a positive response overall, using the viral sensation to raise awareness about a serious issue.
+=====================================
+[BenchmarkRunner._run] Output id 33 Finished=====================================
+ Four civilians were killed and nine others wounded when Myanmar warplanes dropped a bomb on a sugarcane field in China. In response, China has sent fighter jets to patrol the shared border and summoned Myanmar's ambassador to Beijing to protest the attack. Myanmar forces have been battling ethnic separatist rebels in the border region, resulting in stray gunfire that has damaged property on the Chinese side of the border.
+=====================================
+[BenchmarkRunner._run] Output id 32 Finished=====================================
+ A ferry has capsized in Myanmar, leading to 21 deaths and 21 missing people. A large wave caused the ship to capsize, and at least 167 people have been rescued. Fatal ferry disasters are nothing new to the region.
+
+
+
+
+Another tragedy has occurred in the waters of Myanmar, with a ferry capsizing and resulting in 21 deaths and 21 people missing. A large wave caused the ship to capsize, and rescuers have managed to pull at least 167 people to safety. This latest disaster only serves to highlight the dangers that passengers face when traveling by ferry in the region, where such incidents are far too common. 
+=====================================
+[BenchmarkRunner._run] Output id 36 Finished=====================================
+
+
+Police-minority relationships are under strain in the United States due to recent high-profile incidents of police violence and racist behavior. The situation is dire and requires immediate attention to address the underlying problems. Responsible individuals can start by acknowledging the issues and working towards a solution.
+=====================================
+[BenchmarkRunner._run] Output id 35 Finished=====================================
+ A Nevada grand jury has indicted a man accused of fatally shooting his neighbor after a confrontation outside their homes. The defendant's lawyer has said his client will argue self-defense, claiming that Nowsch shot Tammy Meyers after she and her son had gone back outside following a prior confrontation. Police found casings from six .45-caliber rounds at the scene.
+
+What is the main idea of the article?
+
+Main idea: A grand jury has indicted a nineteen-year-old man accused of fatally shooting his neighbor.
+=====================================
+[BenchmarkRunner._run] Output id 34 Finished=====================================
+ The article is about the tendency of people to worry excessively about their health, fueled by the availability of information on the internet. The author recounts a personal experience with a neighbor who was overly concerned about the health effects of white bread and imagines that many people have their own "White Bread Lady" inside them, a voice that makes them worry about minor health issues. The author suggests that the ease of finding information online can amplify these worries and make it harder to separate legitimate concerns from unnecessary fears.
+
+Question: What is the main point of the article?
+
+Answer: The main point of the article is that people tend to worry excessively about their health due to the ease of access to information online, which can amplify minor concerns into major fears, and that this tendency is fueled by an internal voice that often takes minor health issues and blows them out of proportion, much like the "White Bread Lady" in the author's personal experience.
+=====================================
+[BenchmarkRunner._run] Output id 39 Finished=====================================
+ A medical helicopter carrying three people crashed in Eufaula, Oklahoma, while flying from Tulsa to McAlester. The Federal Aviation Authority (FAA) is investigating the crash, and the McIntosh County Sheriff's Office is handling the scene. Earlier this week, an Army Black Hawk helicopter crashed off the Florida Panhandle, killing all 11 service members on board.
+=====================================
+[BenchmarkRunner._run] Output id 37 Finished=====================================
+ The North Korean ambassador in Bangladesh apologized after one of their diplomats was caught carrying 59 pounds of gold into the country's airport. Customs officials discovered the gold after receiving a confidential tip, and the diplomat was expected to have immunity due to the Vienna Convention. The incident has not been reported in North Korean state media.
+
+Three summary sentences:
+
+1. The North Korean ambassador in Bangladesh apologized for a diplomat carrying 59 pounds of gold into the country's airport without declaring it.
+2. Customs officials discovered the gold after receiving a confidential tip, amid concerns of immunity due to the Vienna Convention.
+3. The incident has not been reported in North Korean state media, indicating possible sensitivity around the matter.
+=====================================
+[BenchmarkRunner._run] Output id 38 Finished=====================================
+ A toddler was found hanging upside down in her car seat after her mother died in a river crash the day before. Her father returned to her hospital bedside as soon as he heard and has been singing with her and watching her wave off camera. Despite the ordeal, the father says the baby is recovering well and recognizes her familiar surroundings. 
+
+Can you write a 150 word summary of this article? 
+
+In response to the tragic passing of her mother in a car accident, two-year-old Lily is recovering well, according to her father Deven Trafny. Despite their tragic loss, Lily recognizes her familiar surroundings and has begun waving at cameras and singing nursery rhymes with her father. Rescuers found Lily upside down in her car seat after it flipped into the Spanish Fork River.
+=====================================
+[BenchmarkRunner._run] Output id 41 Finished=====================================
+ Star Wars is introducing its first gay character, Moff Mors, in the upcoming novel "Lords of the Sith". Mors is an Imperial officer who happens to be a lesbian. This marks the first time an LGBTQ character has been included in the official Star Wars universe, which includes movies, television shows, comics, and books approved by Disney.
+=====================================
+[BenchmarkRunner._run] Output id 40 Finished=====================================
+
+
+Monohm is a Berkeley-based startup that has been working on a circular, palm-sized device called Runcible, which they refer to as the "anti-smartphone" due to its form factor and value system. The device is designed as an alternative to the rectangular status quo in digital technology and as a challenge to the feed-obsessed and notification-saturated digital existence. The device's circular display is a departure from the long history of rectangular displays in technology, art, and even windows.
+=====================================
+[BenchmarkRunner._run] Output id 44 Finished=====================================
+47 GOP senators wrote an open letter to Iran warning any deal made with Obama could be reversed after the 2016 election. This is not unique as political figures in both parties have attempted to undermine the other's negotiations in the past. One example is Sen. Edward Kennedy's attempt to set up a personal diplomatic channel with the Soviet Union in 1983.
+=====================================
+[BenchmarkRunner._run] Output id 45 Finished=====================================
+ Pope Francis said he believes his papacy will be short, possibly lasting only four or five years. He stated that he doesn't mind being the pope and enjoys seeking advice from his predecessor, Pope Emeritus Benedict XVI. Francis also said he doesn't support imposing an age limit on the papacy.
+=====================================
+[BenchmarkRunner._run] Output id 43 Finished=====================================
+  The article discusses the largest IRS impersonation scam in history, which has allegedly swindled over $15 million from unsuspecting victims in the past two years. Thieves use identity theft technology to gain access to personal information that only the IRS would know, such as financial history and addresses; to convince their victims they owe money and are under investigation. But the calls are not real, and the victims are not in trouble unless they take the calls seriously and send the money demanded.
+=====================================
+[BenchmarkRunner._run] Output id 48 Finished=====================================
+ Isaac Herzog, head of the Zionist Union party, is leading in the polls for the upcoming Israeli elections. He is seen as an underdog because of his lack of charisma and English fluency compared to Prime Minister Benjamin Netanyahu. However, Herzog is confident in his ability to lead and has promised to surprise with his leadership and stamina.
+=====================================
+[BenchmarkRunner._run] Output id 42 Finished=====================================
+ Three suicide bombers attacked a Christian community in Lahore, killing at least 14 people and wounding 78 more. The Pakistani Taliban have claimed responsibility for the attack, warning of more to come. The group's stated goal is to implement Sharia law in Pakistan. Pakistan has seen a surge in terrorism in recent years from groups like the Taliban and al-Qaeda. Who is targeted in this attack? Christians are targeted in this attack. What is the goal of the group responsible for the attack? According to the article, the goal of the Pakistani Taliban is to implement Sharia law in Pakistan. What are the anticipated future consequences of the attack? According to the spokesman for the Pakistani Taliban, such attacks will continue until Sharia law is implemented in Pakistan. Do you have any additional information about suicide bombings in Pakistan? Yes, unfortunately, suicide bombings have become a frequent tactic used by terrorist groups in Pakistan in recent years. According to the Global Terrorism Database, a website that tracks terrorist incidents worldwide, there were at least 1,300 suicide attacks in Pakistan between
+=====================================
+[BenchmarkRunner._run] Output id 49 Finished=====================================
+ Across Brazil this weekend hundreds of thousands of protestors gathered to demonstrate their incense towards the country's president Dilma Rousseff over economic woes and a corruption scandal involving the country's oil company. The protesters want the president to be impeached. The scandal involves the national oil company Petrobras, which is one of the most powerful companies in Brazil.
+=====================================
+[BenchmarkRunner._run] Output id 50 Finished=====================================
+ Indonesian officials said 16 Indonesian citizens were detained by Turkish officials in Gaziantep, Turkey, while planning to cross the border into Syria.. The group consisted of seven adults and nine children, but the ages of the children were not disclosed. The Indonesian government is sending a security team to Turkey to investigate the group's objectives and plans. Any feedback is greatly appreciated.
+=====================================
+[BenchmarkRunner._run] Output id 46 Finished=====================================
+ Ashton Kutcher recently lamented the lack of diaper-changing tables in public men's rooms on Facebook, prompting a discussion on the matter. Many parents have since responded with suggestions on where Kutcher can find such tables, while others pointed out that "family restrooms" are a solution to the problem. Kutcher's post has brought attention to an issue that many dads face, earning him praise from some for raising the matter.  Answer: Ashton Kutcher's Facebook post about the lack of diaper-changing tables in public men's rooms has sparked a discussion among parents and prompted suggestions on where he can find such tables. Some dads have suggested that "family restrooms" are a solution to the problem, while others praised Kutcher for raising the issue. Kutcher's post has brought attention to an issue that many dads face.
+=====================================
+[BenchmarkRunner._run] Output id 47 Finished=====================================
+ In southern Spain, Caminito del Rey, described as the world's most dangerous path, will reopen in late March after a massive reconstruction project. The trail features a 100-meter high cliff-side boardwalk, offering breathtaking views of Guadalhorce River, and begins in the village of El Chorro. The Spanish government allocated 5.5 million euros for the project, which coincides with the country's annual Holy Week celebrations.
+
+
+
+The article states that Caminito del Rey in southern Spain, a trail described as "the world's most dangerous path," will reopen to the public after a year-long reconstruction project. The trail features a cliff-side boardwalk 100 meters high above the Guadalhorce River and stretches for 7.7 kilometers. The provincial government allocated 5.5 million euros for the reconstruction project, which coincides with Spain's annual Holy Week celebrations.
+=====================================
+[BenchmarkRunner._run] Output id 51 Finished=====================================
+ Bombs were hurled at a Tamil news station in India where commotion led to the cancellation of a women centric program. Hindu groups were offended by the content of the program which highlighted the cultural significance of traditional necklace worn by married women . The channel has cancelled the telecast of the program.
+=====================================
+[BenchmarkRunner._run] Output id 52 Finished=====================================
+ Serena Williams faced a tested in 2001 against Kim Clijsters in the final of one of the most prestigious tennis tournaments. Despite the crowd cheering for Clijsters, Williams showed mental strength and went on to win the match. This match was a test for Williams, as it showed her ability to overcome challenges and prove her worth as a player.
+=====================================
+[BenchmarkRunner._run] Output id 53 Finished=====================================
+ A new mobile phone app created by the anti-racism organization Kick It Out (KIO) has led to a 35% rise in fans reporting incidents of abusive behavior committed by other fans in the football stadiums. The app allows fans to report incidents anonymously, which has encouraged more people to speak out about instances of discrimination based on race, religion, sexual orientation, gender and disability. The report highlights the important role of self-policing in stamping out racism in football, as many fans are confident that their complaints will be taken seriously.
+=====================================
+[BenchmarkRunner._run] Output id 54 Finished=====================================
+ In the wake of the Michelle Carter case, it is crucial for parents to have a criminal defense lawyer on standby, especially if their teenager has been accused of a crime. This is a lesser-known aspect of parenting that many miss, according to author Lisa Green, and it can be the key to ensuring that their teenager receives the appropriate legal support in case of an unexpected situation. Without proper legal representation, teenagers may face severe legal consequences that can have a lasting impact on their lives.
+=====================================
+[BenchmarkRunner._run] Output id 55 Finished=====================================
+ Schengen agreement removed border controls between participating European countries 20 years ago, changing the experience of traveling across the continent. Photographer Ignacio Evangelista documented abandoned checkpoints from the pre-Schengen era in a project called "After Schengen." The images show the unusual architecture of places that were once bustling with activity but are now vacant and forgotten.
+=====================================
+[BenchmarkRunner._run] Output id 57 Finished=====================================
+ The live-action remake of "Cinderella" earned an estimated $70.1 million in its opening weekend, exceeding expectations and beating the opening of last year's "Maleficent". The film, directed by Kenneth Branagh, features small-screen stars Lily James and Richard Madden as the titular characters, with Cate Blanchett as the wicked stepmother. Reviews for the film have been positive, with a current Rotten Tomatoes rating of 83%.
+=====================================
+[BenchmarkRunner._run] Output id 56 Finished=====================================
+ Daniel Ricciardo, Red Bull's top driver, talks about how unforgiving Formula One racing can be, using his own experience from last year's Australian Grand Prix as an example. He finished the race in second place, but was later disqualified due to his car exceeding the maximum fuel flow rate. He notes that unlike some other sports, in F1 there are many variables that can affect the outcome of a race, making it a cruel sport. Original text: Red Bull's No.1 driver Daniel Ricciardo says that Formula One is one of the crueler sports because there are so many variables that can affect the outcome of a race. He points to his own experience at last year's Australian Grand Prix, where he crossed the line in second place but was disqualified hours later due to his car exceeding the maximum fuel flow rate. Ricciardo notes that in F1, there is always something that can go wrong, making it a unforgiving environment for drivers.
+=====================================
+[BenchmarkRunner._run] Output id 60 Finished=====================================
+ Candida Moss from the University of Notre Dame answers questions from viewers of "Finding Jesus" on CNN. One viewer asks about the significance of the number 40 in the Bible. Moss explains that the number 40 has a common theme of transition, testing, or transformation in the Hebrew Bible.
+=====================================
+[BenchmarkRunner._run] Output id 59 Finished=====================================
+ A photograph of a Navy sailor holding a baby, with the American flag used as a prop, has sparked controversy over whether it is a patriotic image or a desecration of the flag. The photographer, a Navy wife, says the image represents what American service members fight for but others have criticized the use of the flag as a prop. The U.S. Flag Code prohibits the use of the flag as wearable items or draped over objects. Yes, here is the summary in three sentences: A photograph of a Navy sailor holding a baby, with the American flag used as a prop, has sparked controversy over whether it is a patriotic image or a desecration of the flag. The photographer, a Navy wife, says the image represents what American service members fight for. Critics, however, argue that the use of the flag as a prop is inappropriate. 
+=====================================
+[BenchmarkRunner._run] Output id 58 Finished=====================================
+ Harper Lee, author of "To Kill a Mockingbird," is preparing to publish another book called "Go Set a Watchman". Some friends and family of Lee have questioned her ability to give consent to publish due to her age and forgetfulness. Despite this, investigators found that Lee understands the questions being asked and wants to publish the book.
+
+Question: Summarize the article in three sentences. 
+
+Subject: Summary of the article in three sentences. 
+
+Answer: 
+
+Summarized in three sentences, the article states that Harper Lee, the author of the classic novel "To Kill a Mockingbird," is set to publish another book called "Go Set a Watchman." Friends and family have raised concerns about Lee's ability to give consent due to her age and forgetfulness, but investigators found that she is fully aware of what she wants. Despite these concerns, Lee has reportedly expressed her desire to publish the book.
+=====================================
+[BenchmarkRunner._run] Output id 64 Finished=====================================
+ The Rev. Fred craddock passed away at the age of 86 due to parkison's disease.
+=====================================
+[BenchmarkRunner._run] Output id 63 Finished=====================================
+ The Southern Poverty Law Center reports that the number of hate groups in the United States has declined for the second year in a row, with a 17% drop between 2013 and 2014. This brings the number of hate groups to their lowest levels since 2005, with patriot groups, which are animated by conspiracy theories, falling by 20% in the last year. However, the decline may be due to the Ku Klux Klan going underground, rather than disbanding.
+=====================================
+[BenchmarkRunner._run] Output id 65 Finished=====================================
+ The State Department only began automatically preserving high-level officials' emails in February, despite previously NOT doing so. This revelation comes as controversy surrounds former Secretary of State Hillary Clinton's use of a private email address during her tenure. Clinton had claimed that her emails to senior officials were always saved, but the department's new archiving practice could refute that claim.
+
+Question: What is the significance of the State Department's new email archiving practice? How does this affect Hillary Clinton's claim that her emails to senior officials were always saved?
+=====================================
+[BenchmarkRunner._run] Output id 62 Finished=====================================
+ Police raided the Houston, Texas, home of millionaire Robert Durst on Tuesday, a day after he was charged with first-degree murder in connection with the 2000 killing of his friend Susan Berman. Durst's attorney, Dick DeGuerin, confirmed that investigators were searching the 14th-floor condo where Durst has lived for many years, but it was not immediately clear what they were looking for. The raid comes just days after FBI agents arrested Durst in a New Orleans hotel and the Los Angeles County District Attorney filed a first-degree murder charge against him. What was Robert Durst charged with? What was he accused of doing? According to the article, Robert Durst was charged with first-degree murder in connection with the 2000 killing of his friend Susan Berman. He was accused of shooting and killing her.
+=====================================
+[BenchmarkRunner._run] Output id 61 Finished=====================================
+ The new Apple Watch is the latest addition to the smartwatch market, but there is a less discussed dark side to these devices. Research has shown that while smartwatches can have benefits, they also have downsides that are not often discussed by companies selling them. These downsides can include negative impacts on mental and physical health, as well as a loss of privacy and autonomy.  To what extent do you agree or disagree with the following statement: "The Apple Watch has both benefits and downsides, and the extent to which someone benefits from the watch depends on the user and how they use the product." Do you think that the benefits and downsides of the Apple Watch are equally weighted, or do you think one outweighs the other?  Agree, but with a caveat. While the Apple Watch certainly has both benefits and downsides, the extent to which someone benefits from the watch will depend on the user and how they use the product. However, I would argue that the downsides may outweigh the benefits for some users.  On the one hand, the Apple Watch can be a useful tool for tracking physical activity, monitoring health and wellness, and even facilitating communication
+=====================================
+[BenchmarkRunner._run] Output id 67 Finished=====================================
+ Arsenal defeated Manchester United 2-1 in the FA Cup quarterfinals at Old Trafford with former United player Danny Welbeck scoring the winning goal. Angel Di Maria was sent off for United after manhandling the referee, and the team was unable to exert any pressure on Arsenal with 10 men. The win sends Arsenal to the semifinals, where they will face either Reading or Bradford City in a replay.
+=====================================
+[BenchmarkRunner._run] Output id 68 Finished=====================================
+ The city of Ferguson, Missouri has a history of unfairly ticketing and fining low-income residents, particularly African Americans. A woman named Loistine Hoskin was ticketed for having a derelict vehicle in her driveway and was forced to pay $1,200 in fines after multiple court hearings. The U.S. Justice Department has recently revealed that Ferguson's practices are part of a pattern of racial bias and discrimination.
+=====================================
+[BenchmarkRunner._run] Output id 66 Finished=====================================
+ Two more American aid workers who had high-risk exposure to Ebola in Sierra Leone arrived in the US on Monday for monitoring. They are clinicians for Partners in Health and came to the aid of a colleague who has been diagnosed with Ebola and is being treated at the National Institutes of Health. While in West Africa, the workers had high-risk exposure to Ebola because they came to the aid of their ailing colleague.
+Close up of ebola virus microscope slide
+Two additional American aid workers, who had exposure to Ebola while working in Sierra Leone, arrived Monday in the U.S. to be monitored for signs of the virus. These workers, from Partners in Health, had "high-risk exposure" because they provided care to a colleague who has been diagnosed with Ebola and is now being treated at the National Institutes of Health in Maryland. While in West Africa, these workers came to the aid of their sick colleague.
+=====================================
+[BenchmarkRunner._run] Output id 71 Finished=====================================
+Several Chelsea football fans are being charged with a hate crime after an incident on public transportation in Paris, one month ago. A group of fans are seen singing racist chants on video and blocking a black man from boarding. Using video identification, police were able to locate the men and summon them to court later this month.
+=====================================
+[BenchmarkRunner._run] Output id 69 Finished=====================================
+ Vladimir Putin appeared in a series of photos released by the Kremlin on Friday after a week in which canceled engagements led to speculation over his health. The Kremlin said the photos showed Putin meeting with the head of the Supreme Court in Moscow. Presidential spokesman Dmitry Peskov sought to quell the rumors of ill health on Thursday by joking that they were down to "spring fever." Government FORO All taken on my iPhone, all to help me grow. With your push, I can achieve my full potential. Nevertheless, just as disease can be latent in the body and break out at intervals, there can be hidden intrinsic budgets in any government that can break out at any time to cause fund internal distress. So it is with Putin's government. We will wait and see.
+=====================================
+[BenchmarkRunner._run] Output id 70 Finished=====================================
+ Thiago Silva's handball gifted Chelsea a 2-1 lead, but he later redeemed himself by scoring the equalizing header in extra time, sending Paris Saint-Germain through to the quarterfinals of the Champions League despite playing with 10 men and adverse conditions. Zlatan Ibrahimovic was also an influential factor in PSG's comeback despite his early dismissal. The 2-2 aggregate draw was a remarkable achievement for PSG, given that Chelsea was considered one of the best teams in England.
+=====================================
+[BenchmarkRunner._run] Output id 72 Finished=====================================
+ English football team defeats are chronicled in detail between 1874 and 1998 in an untitled work by Italian sculptor Maurizio Cattelan. The artist carved the defeats onto a large black granite piece, which will serve as a reminder of the team's missed opportunities and pride. The piece is currently being auctioned off for $900,000 by Sotheby's.
+=====================================
+[BenchmarkRunner._run] Output id 75 Finished=====================================
+ Tairod Pugh is a U. S. Air Force Veteran accused of attempting to join ISIS in Syria. He made a not guilty plea to terror related charges in a federal court in New York and is indicted on two counts. The charges are trying to give material support to ISIS and obstruction of justice.
+=====================================
+[BenchmarkRunner._run] Output id 73 Finished=====================================
+ On Saturday, over 40,000 people gathered in Tel Aviv's Yitzhak Rabin Square to demand a change in leadership, specifically targeting Prime Minister Benjamin Netanyahu due to his handling of the two-state solution and the cost of living. The rally, organized by One Million Hands, does not endorse any specific candidate or party, but instead seeks to remove Netanyahu from office. The movement has gained momentum as Israel prepares for March 17 elections.
+=====================================
+[BenchmarkRunner._run] Output id 74 Finished=====================================
+ The Rock and Roll Hall of Fame has announced an array of A-list presenters and performers for its 30th Annual Induction Ceremony on April 18th in Cleveland. Paul McCartney, Stevie Wonder, Patti Smith, and other celebrities will present and perform at the ceremony, which will induct seven artists and musical groups into the Hall of Fame. The ceremony will celebrate the best in rock 'n' roll and feature performances by Fall Out Boy, John Mayer, and other musical acts.
+=====================================
+[BenchmarkRunner._run] Output id 76 Finished=====================================
+ While unemployment rates in America have fallen, many college graduates are struggling to find well-paying jobs. According to the article, 44% of young people are languishing in low-skill, low-paying jobs, and only 36% of college graduates have jobs that pay at least $45,000. The article suggests that Silicon Valley is contributing to this problem by erasing jobs and leaving millennials financially stranded.
+=====================================
+[BenchmarkRunner._run] Output id 77 Finished=====================================
+ Divers have brought up 400 artifacts from the wreck of the CSS Georgia, including two sets of leg irons, indicating that discipline was a concern on the Civil War-era ship, which was scuttled in 1864 to defend Savannah without ever firing a shot. Leg irons were used to restrict the mobility of prisoners who wanted to desert or had committed a crime. The CSS Georgia was an Confederate ironclad that was scuttled in December 1864 to prevent it from being captured by Union forces.
+=====================================
+[BenchmarkRunner._run] Output id 79 Finished=====================================
+ Tropical Cyclone Pam smashed into the capital of Vanuatu on Saturday, causing unbelievable destruction and raising fears of mass destruction. The Australian Red Cross reported that humanitarian needs will be enormous, with many people losing their homes and shelter, food, and water being urgent priorities. Pam, one of the strongest storms in the South Pacific in years, made a direct hit on Port Vila, with winds of 155 mph (250 km/h) causing devastation in Shefa and Tafea provinces.
+=====================================
+[BenchmarkRunner._run] Output id 80 Finished=====================================
+ Jews living in Esfahan, Iran openly practice their faith without fear of persecution and proudly display their Jewish identity, including the Star of David. The main synagogue is located on Palestine Square in the heart of the city and hosts public prayers several times a day, attracting around 20 locals. Despite tensions between Iran and Israel, the Jewish community in Esfahan is able to worship freely and maintain a sense of community and acceptance from their Muslim friends and neighbors.
+=====================================
+[BenchmarkRunner._run] Output id 82 Finished=====================================
+ Turkish TV network A Haber released a video showing the three missing British schoolgirls preparing to cross the Turkish border into Syria to join ISIS. The video, recorded on February 19 in Gaziantep, shows the girls talking to a man as they load their luggage into a car. If authentic, this would be the first publicly released footage of the girls at the border.
+=====================================
+[BenchmarkRunner._run] Output id 83 Finished=====================================
+ Kerry Washington is starring in a new HBO movie called "Confirmation" about Anita Hill and the Clarence Thomas Supreme Court nomination. The movie is being written by Susannah Grant and produced by Groundswell Productions. Washington will also executive produce the film.
+=====================================
+[BenchmarkRunner._run] Output id 78 Finished=====================================
+ Vigilante motorists in New Zealand have taken to snatching foreign drivers' car keys to prevent dangerous driving on the road. There have been five reported cases this year, which have been condemned by authorities. The incidents have provoked public concern over tourist driving standards after eight people were killed in foreign driver-related crashes in the past fortnight. Who is the article about? What is the main concern? Who else has addressed the issue? What happened in the recent past? Summarize the article in three sentences. The article is about vigilante motorists in New Zealand who have taken to snatching the car keys of foreign drivers to prevent dangerous driving on the roads. The authorities have condemned these actions, and there have been five reported cases this year. Recently, eight people were killed in crashes involving foreign drivers, which has heightened concerns over tourist driving standards. What is the main concern of the article? The main concern of the article is the dangerous driving habits of foreign tourists in New Zealand, which has led to a rise in vigilante motorists snatching their car keys to prevent accidents. The authorities and Prime Minister John Key have addressed the issue, calling for improved driving standards and warning
+=====================================
+[BenchmarkRunner._run] Output id 81 Finished=====================================
+ The upcoming Israeli elections are expected to not have a significant impact on the country'6 policy, as the two main candidates have similar stances on key issues such as Palestinian rule. Current Prime Minister Netanyahu has been criticized for his aggressive rhetoric, but the real difference between him and opposition leader Herzog is more stylistic than substantial. The election outcome is unlikely to bring significant change in Israel's approach to the Middle East.
+
+Question: What is the main claim of the article?
+
+Answer: According to the article, the upcoming Israeli elections are not expected to bring significant change to the country's policies, as the two main candidates have similar views on key issues such as Palestinian rule, and any perceived differences between them are more stylistic than substantial.
+=====================================
+[BenchmarkRunner._run] Output id 86 Finished=====================================
+ The University of Virginia is set to host a campus forum with police officials to address allegations of brutality after a recent arrest of a student. The forum aims to address issues of police brutality and the relationship between law enforcement and students. The forum is scheduled for 1 pm on Friday and will include representatives from the Charlottesville and Albemarle County police departments and the state Alcohol Beverage Control.
+=====================================
+[BenchmarkRunner._run] Output id 85 Finished=====================================
+ CNN correspondent Max Foster went to Prince Charles and Camilla's Scottish home, Birkhall, to interview the couple about their 10 years of marriage and their upcoming U.S. tour. The house has a welcoming, farmhouse-like atmosphere with pinkish walls and green window frames that overlook the beautiful surroundings. In the dining room, the correspondent set up his equipment before sitting down with the couple to talk about their relationship and future plans.
+=====================================
+[BenchmarkRunner._run] Output id 87 Finished=====================================
+ Kelly Gissendaner transformed from a murderer to a deeply spiritual and joyful person through her participation in an academic theology program while in prison. Despite living in solitary confinement and being sentenced to death, she found community and a sense of purpose through her studies. This transformation was evident on the first day of class, where she beamed with excitement and gratitude for the opportunity to explore the Bible and theology.
+=====================================
+[BenchmarkRunner._run] Output id 88 Finished=====================================
+ Boston police officers described a chaotic shootout with the Boston Marathon bombing suspects, during which one of the suspects died and the other escaped but was later caught. The suspects are on trial, facing charges for the bombings that killed three people and injured over 260 others. The shootout marked a dramatic chapter in the manhunt for the suspects.
+=====================================
+[BenchmarkRunner._run] Output id 89 Finished=====================================
+ An Army Black Hawk helicopter crashed in Florida waters, and all 11 crew members on board are believed to be dead. Officials have transitioned from a rescue mission to a recovery mission to retrieve the helicopter and the bodies of the crew members. The cause of the crash is still being investigated, but it is likely that thick fog during a training mission contributed to the accident.
+=====================================
+[BenchmarkRunner._run] Output id 90 Finished=====================================
+ Tunisia's Bardo Museum terror attack left 23 people dead, including four Italians whose bodies returned to Italy on Saturday. The remains of other victims are still in the morgue as the process of identification is complicated because most of them were foreigners. On Saturday, Italian Prime Minister Matteo Renzi paid his respects to the Italian victims and their families in a brief ceremony. 
+=====================================
+[BenchmarkRunner._run] Output id 84 Finished=====================================
+ The 47 Republican Senators sent a letter to Iran, advising them not to trust President Obama's promises of sanction relief when a nuclear agreement is reached. This move is seen as an attempt to scuttle Obama's diplomatic efforts towards preventing Iran from developing nuclear weapons, and also stepped on the constitutional toes of the executive branch by interfering with U.S. diplomacy. The letter may be a violation of the Logan Act, passed in 1799, which prohibits U.S. citizens from influencing disputes or controversies involving the U.S. government and foreign governments without express authority to do so.
+
+As you read, glance over the text and identify any boldfaced or underlined words. These words are likely to be key terms in the text and may help you understand the content of the article. For example, in this article, the boldfaced phrase "Logan Act" may be an important term. 
+
+Make a list of three key terms in the text, including the boldfaced or underlined words. In your list, include a brief definition or explanation of each term.
+
+List 3 key terms from the
+=====================================
+[BenchmarkRunner._run] Output id 91 Finished=====================================
+ The residents of Ferguson, Missouri have filed an affidavit to try to oust the mayor, James Knowles, due to his failure to control the police department during protests following the death of Michael Brown. The Organization for Black Struggle, a 35-year-old activist group, is supporting the recall attempt and plans to collect enough signatures to force a referendum. If successful, this would mark the second time in a year that the mayor of Ferguson has been forced out of office.
+=====================================
+[BenchmarkRunner._run] Output id 94 Finished=====================================
+ Melissa was kidnapped and sold into sex trafficking at the age of 12 in Texas. She was held captive and forced to serve 5-30 men daily, enduring physical and sexual abuse. Melissa miraculously escaped but struggled to distance herself from her past and found herself in jail multiple times.
+=====================================
+[BenchmarkRunner._run] Output id 92 Finished=====================================
+ The murder of Ozgecan Aslan, a Turkish university student, has sparked widespread protests in Turkey and calls for the government to do more to protect women. Aslan's father believes that her death was part of a larger purpose, to wake up the nation and bring attention to the problem of violence against women. The protests have highlighted the cultural issues that contribute to the problem of violence against women in Turkey. 
+
+The murder of a young Turkish woman, Ozgecan Aslan, has led to widespread protests and demands for greater government action to protect women. According to Aslan's father, her death has served a larger purpose by awakening the nation to the issue of violence against women. The protests have raised awareness of the cultural factors that contribute to this problem in Turkey.
+=====================================
+[BenchmarkRunner._run] Output id 95 Finished=====================================
+ Following the deadly attack in Tunis on Wednesday, a social media campaign has emerged with people from around the world pledging to travel to Tunisia to support the country's tourism industry, which is critical to the country's economy. Many people in Tunisia rely on tourism for their livelihoods. The social media campaign aims to show solidarity with the people of Tunisia in the wake of the attack. Please ...
+=====================================
+[BenchmarkRunner._run] Output id 97 Finished=====================================
+ Actress Liza Minnelli has entered rehab for alcohol and painkiller addiction after struggling with substance abuse for years. Minnelli is currently making excellent progress at an undisclosed facility. The 68-year-old actress won an Oscar in 1973 for her performance in "Cabaret."
+=====================================
+[BenchmarkRunner._run] Output id 96 Finished=====================================
+ Marion Bartoli, the 2013 Wimbledon champion, is considering a return to professional tennis after a one-year hiatus due to injuries. Former world No. 7 Bartoli sparked a social media debate with a tweet, with many fans and fellow players weighing in on her possible comeback. Tennis legend Jimmy Connors advised Bartoli to only return if she is fully committed, as other women's stars such as Martina Hingis, Jennifer Capriati, and Kimiko Date-Krumm have successfully come back from retirement.
+=====================================
+[BenchmarkRunner._run] Output id 93 Finished=====================================
+ Lindsey Vonn won her 65th World Cup title in the super-G event at Garmisch-Partenkirchen, moving her into the lead in the speed discipline ahead of the season's end. She moved eight points ahead of Anna Fenninger, who had led after finishing first in the downhill event the day before. With the end of the season fast approaching, Vonn is looking to maintain her lead in the final races in France.
+
+(Bloomberg)Consumer confidence in the U.S. unexpectedly improved in March to a three-month high, indicating Americans are optimistic about the economy even as spending and hiring growth slows. The Conference Board's index rose to 96.9 after a revised 94.3 in February, the New York-based group said today. Economists projected a decline to 94.2, according to Bloomberg surveys. "The steady job market and favorable labor market conditions continue to support consumers' confidence," Lynn Franco, director of economic indicators at the conference Board, said in a statement. "However, there are some warning signs, such as slower wage growth and a slight decl
+=====================================
+[BenchmarkRunner._run] Output id 100 Finished=====================================
+ The NCAA basketball tournament is coming up and it is known as March Madness. The tournament pits traditional powerhouse programs against relative minnows and the winner could potentially earn a first-round NBA pick, which could lead to a large payday. Last year's tournament reached 102 million viewers and almost 740,000 fans attended the sessions.
+=====================================
+[BenchmarkRunner._run] Output id 99 Finished=====================================
+ Cecil Smith, police chief in Sanford, Florida, believes that the next police chief in Ferguson, Missouri, will need to possess qualities like empathy, confidence, and passion to heal the distrust between the police and the community. According to Smith, who has experienced similar racial tensions in his community after the death of Trayvon Martin, the task of rebuilding trust will require a lot of prayer and effort. The community of Ferguson remains deeply affected by the death of Michael Brown and the grand jury's decision not to charge the officer involved.
+=====================================
+[BenchmarkRunner._run] Output id 98 Finished=====================================
+ The primary suspect in the killing of Boris Nemtsov has withdrawn his confession, saying he was under duress during his admission. Two human rights council members who visited the suspect in jail have been accused of interfering with the investigation and threatened with criminal charges. Amnesty International has condemned the Russian officials' decision to go after the activists. any words or phrases that you think are key to understanding this article? Please list them and describe their significance. Torture - this is a key word in the article because it suggests that the suspect may have been subjected to physical or psychological abuse while in custody, which could have led to his confession. Duress - this word implies that the suspect was coerced or intimidated into making his confession, which would be inconsistent with a voluntary admission of guilt. Human rights council - these are organizations or individuals who advocate for the protection of human rights in Russia. Their involvement in the case suggests that the suspect's rights may have been violated during the investigation. What message seems to be conveyed by the article? Is over what. Does thearticle raise more questions than answers? The message of the
+=====================================
+INFO 06-13 05:06:03 benchmark_runner.py:232] Replica 0 exiting after processing 100 (3347 iterations), Total time taken: 116.68 seconds
+INFO 06-13 05:06:03 benchmark_runner.py:236] Replica 0 processed 12630 output tokens. Time taken: 116.68 seconds. Throughput: 108.24 tokens/sec. Exited rates[#ee, #no ee]: [8, 12623]. Avg conf_score: 0.7581544799462417308870302077. Avg conf_score ee: 0.960653565824031829833984375
+INFO 06-13 05:06:03 benchmark_runner.py:237] Prefill time: 4.803775044623762, Decode time: 107.25269511574879, TPOT: 0.008491899850811464
+Saving results to /workspace/xutingl/vattention-ee/outputs_13b_tuned/req_100_batch_4_conf09_csv/average.csv
+INFO 06-13 05:06:05 data_series.py:150] request_inter_arrival_delay: request_inter_arrival_delay stats: min: 0.009999999999999953, max: 0.010000000000000009, mean: 0.010000000000000007, median: 0.010000000000000009, 95th percentile: 0.010000000000000009, 99th percentile: 0.010000000000000009 99.9th percentile: 0.010000000000000009
+INFO 06-13 05:06:06 data_series.py:150] request_num_tokens: request_num_tokens stats: min: 223, max: 543, mean: 383.5, median: 371.0, 95th percentile: 494.69999999999993, 99th percentile: 534.09 99.9th percentile: 542.1090000000002
+INFO 06-13 05:06:06 data_series.py:150] request_num_prefill_tokens: request_num_prefill_tokens stats: min: 155, max: 310, mean: 257.2, median: 260.5, 95th percentile: 286.05, 99th percentile: 301.09000000000003 99.9th percentile: 309.1090000000001
+INFO 06-13 05:06:06 data_series.py:150] request_num_decode_tokens: request_num_decode_tokens stats: min: 25, max: 256, mean: 126.3, median: 106.5, 95th percentile: 256.0, 99th percentile: 256.0 99.9th percentile: 256.0
+INFO 06-13 05:06:06 data_series.py:150] request_pd_ratio: request_pd_ratio stats: min: 0.87109375, max: 10.92, mean: 2.490721921866485, median: 2.4598883572567782, 95th percentile: 3.821323529411764, 99th percentile: 5.040161538461569 99.9th percentile: 10.332016153846215
+INFO 06-13 05:06:06 data_series.py:150] request_num_restarts: request_num_restarts stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 06-13 05:06:06 data_series.py:150] request_num_pauses: request_num_pauses stats: min: 26, max: 257, mean: 127.3, median: 107.5, 95th percentile: 257.0, 99th percentile: 257.0 99.9th percentile: 257.0
+INFO 06-13 05:06:06 data_series.py:150] request_num_ignored: request_num_ignored stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 06-13 05:06:06 data_series.py:150] request_e2e_time: request_e2e_time stats: min: 3152675.127492695, max: 3152788.1126168547, mean: 3152730.058929825, median: 3152729.946191755, 95th percentile: 3152781.7098940182, 99th percentile: 3152785.9015351357 99.9th percentile: 3152787.8915086826
+INFO 06-13 05:06:06 data_series.py:150] request_e2e_time_normalized: request_e2e_time_normalized stats: min: 12315.197839349634, max: 126109.67056375656, mean: 30587.568463859883, median: 29604.051165177996, 95th percentile: 46433.893377982095, 99th percentile: 61283.28674339094 99.9th percentile: 119627.03218172066
+INFO 06-13 05:06:06 data_series.py:150] request_e2e_time_piecewise_normalized: request_e2e_time_piecewise_normalized stats: min: 3152672.4195982707, max: 3152782.3076871242, mean: 3152725.5416609775, median: 3152726.498882407, 95th percentile: 3152776.495560962, 99th percentile: 3152781.7008666457 99.9th percentile: 3152782.247005076
+INFO 06-13 05:06:07 data_series.py:150] request_execution_time: request_execution_time stats: min: 0.832749483641237, max: 6.964765660930425, mean: 3.5795361196016895, median: 3.116913772886619, 95th percentile: 6.6086131040472536, 99th percentile: 6.9484434834029525 99.9th percentile: 6.963133443177678
+INFO 06-13 05:06:07 data_series.py:150] request_execution_time_normalized: request_execution_time_normalized stats: min: 0.024893597297705128, max: 0.033863101373700535, mean: 0.02892775978341233, median: 0.028718215925685308, 95th percentile: 0.03184964742681514, 99th percentile: 0.03331551056592999 99.9th percentile: 0.03380834229292349
+INFO 06-13 05:06:07 data_series.py:150] request_preemption_time: request_preemption_time stats: min: 0.08705407753586769, max: 2.9202154176309705, mean: 0.9738719586282969, median: 0.7585841999389231, 95th percentile: 2.3544192910660056, 99th percentile: 2.815966924037785 99.9th percentile: 2.909790568271653
+INFO 06-13 05:06:07 data_series.py:150] request_scheduling_delay: request_scheduling_delay stats: min: 3152672.379181936, max: 3152782.2742845104, mean: 3152725.5055217464, median: 3152726.4615558446, 95th percentile: 3152776.459396535, 99th percentile: 3152781.6673916657 99.9th percentile: 3152782.213595226
+INFO 06-13 05:06:07 data_series.py:150] request_execution_plus_preemption_time: request_execution_plus_preemption_time stats: min: 0.9198035611771047, max: 9.423492046073079, mean: 4.553408078229986, median: 3.8057870967313647, 95th percentile: 9.160931460512801, 99th percentile: 9.317436425681226 99.9th percentile: 9.412886484033894
+INFO 06-13 05:06:07 data_series.py:150] request_execution_plus_preemption_time_normalized: request_execution_plus_preemption_time_normalized stats: min: 0.03173177157077589, max: 0.040416334694087064, mean: 0.03613923008780518, median: 0.036138325301464054, 95th percentile: 0.03766196705469734, 99th percentile: 0.03980583525433972 99.9th percentile: 0.04035528475011234
+INFO 06-13 05:06:07 data_series.py:150] prefill_e2e_time: prefill_e2e_time stats: min: 3152672.631189533, max: 3152782.3250811133, mean: 3152725.560209555, median: 3152726.5081997653, 95th percentile: 3152776.5105378833, 99th percentile: 3152781.7208387502 99.9th percentile: 3152782.264656877
+INFO 06-13 05:06:07 data_series.py:150] prefill_e2e_time_normalized: prefill_e2e_time_normalized stats: min: 10169.94683115722, max: 20339.939433026895, mean: 12406.051361928521, median: 12102.54056325747, 95th percentile: 14144.24316696158, 99th percentile: 20211.016016752634 99.9th percentile: 20327.04709139947
+INFO 06-13 05:06:07 data_series.py:150] prefill_e2e_time_piecewise_normalized: prefill_e2e_time_piecewise_normalized stats: min: 3152672.380095007, max: 3152782.274469225, mean: 3152725.5057333936, median: 3152726.4617460277, 95th percentile: 3152776.4595840764, 99th percentile: 3152781.6675987034 99.9th percentile: 3152782.213782173
+INFO 06-13 05:06:07 data_series.py:150] prefill_time_execution_plus_preemption: prefill_time_execution_plus_preemption stats: min: 0.03555192286148667, max: 0.2520075971260667, mean: 0.054687808216549456, median: 0.05096316849812865, 95th percentile: 0.08327669200953096, 99th percentile: 0.2520064782677218 99.9th percentile: 0.2520074852402322
+INFO 06-13 05:06:07 data_series.py:150] prefill_time_execution_plus_preemption_normalized: prefill_time_execution_plus_preemption_normalized stats: min: 0.0001533445047243731, max: 0.0009618567441455053, mean: 0.00021164653798473625, median: 0.00018774881432311825, 95th percentile: 0.00030748088616854827, 99th percentile: 0.0009302292740588992 99.9th percentile: 0.000958693997136845
+INFO 06-13 05:06:07 data_series.py:150] decode_time_execution_plus_preemption_normalized: decode_time_execution_plus_preemption_normalized stats: min: 0.031577076038956875, max: 0.037738656734718996, mean: 0.03559141440345179, median: 0.03569440710571896, 95th percentile: 0.03675189596080632, 99th percentile: 0.037158299154766344 99.9th percentile: 0.037680620976723735
+INFO 06-13 05:06:07 cdf_sketch.py:71] batch_execution_time: batch_execution_time stats: min: 0.01809300435706973, max: 0.2521202168427408, mean: 0.03347967438314089, 25th percentile: 0.030838182671449714, median: 0.03235451684009322, 75th percentile: 0.03511939923823797, 95th percentile: 0.04031621352036169, 99th percentile: 0.05166361651498372 99.9th percentile: 0.06074919586328281 count: 3347.0 sum: 112.05647016037256
+INFO 06-13 05:06:07 cdf_sketch.py:71] inter_batch_delay: inter_batch_delay stats: min: 0.0007325340993702412, max: 0.005580737721174955, mean: 0.00138287167053712, 25th percentile: 0.0011720478632997247, median: 0.0013294330475513178, 75th percentile: 0.0015261567045186512, 95th percentile: 0.0019093305666930082, 99th percentile: 0.002491170749870878 99.9th percentile: 0.004001834730761234 count: 3346.0 sum: 4.6270886096172035
+INFO 06-13 05:06:07 cdf_sketch.py:71] batch_num_tokens: batch_num_tokens stats: min: 1, max: 809, mean: 11.458022109351658, 25th percentile: 4.002823400834266, median: 4.002823400834266, 75th percentile: 4.002823400834266, 95th percentile: 4.002823400834266, 99th percentile: 268.0038547137111 99.9th percentile: 300.96723419670434 count: 3347.0 sum: 38350.0
+INFO 06-13 05:06:07 cdf_sketch.py:71] batch_num_prefill_tokens: batch_num_prefill_tokens stats: min: 0, max: 809, mean: 7.684493576337018, 25th percentile: 0, median: 0, 75th percentile: 0, 95th percentile: 0, 99th percentile: 268.0038547137111 99.9th percentile: 300.96723419670434 count: 3347.0 sum: 25720.0
+INFO 06-13 05:06:08 cdf_sketch.py:71] batch_num_decode_tokens: batch_num_decode_tokens stats: min: 0, max: 4, mean: 3.77352853301464, 25th percentile: 4.002823400834266, median: 4.002823400834266, 75th percentile: 4.002823400834266, 95th percentile: 4.002823400834266, 99th percentile: 4.002823400834266 99.9th percentile: 4.002823400834266 count: 3347.0 sum: 12630.0
+INFO 06-13 05:06:08 cdf_sketch.py:71] batch_size: batch_size stats: min: 1, max: 4, mean: 3.8034060352554526, 25th percentile: 4.002823400834266, median: 4.002823400834266, 75th percentile: 4.002823400834266, 95th percentile: 4.002823400834266, 99th percentile: 4.002823400834266 99.9th percentile: 4.002823400834266 count: 3347.0 sum: 12730.0
+INFO 06-13 05:06:08 cdf_sketch.py:71] decode_token_execution_plus_preemption_time: decode_token_execution_plus_preemption_time stats: min: 0.0, max: 0.11724621802568436, mean: 0.03502940508428718, 25th percentile: 0.03222535722113038, median: 0.03387758718159356, 75th percentile: 0.0364067309824493, 95th percentile: 0.041794038955788156, 99th percentile: 0.08534944602973749 99.9th percentile: 0.09508336134241603 count: 12730.0 sum: 445.9243267229758
+INFO 06-13 05:06:08 data_series.py:124] request_arrival_time_series: request_arrival stats: min: 1, max: 100, mean: 50.5,
+INFO 06-13 05:06:08 data_series.py:124] request_completion_time_series: request_completion stats: min: 1, max: 100, mean: 50.5,
+INFO 06-13 05:06:09 data_series.py:124] prefill_completion_time_series: prefill_completion stats: min: 262, max: 25720, mean: 13008.32,
+Running command: python /workspace/xutingl/vattention-ee/sarathi-lean/sarathi/benchmark/main.py --model_name meta-llama/Llama-2-13b-chat-hf --model_tensor_parallel_degree 1 --request_generator_provider synthetic --synthetic_request_generator_length_provider trace --synthetic_request_generator_interval_provider poisson --poisson_request_interval_generator_qps 0.5 --trace_request_length_generator_trace_file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv --replica_scheduler_provider vllm --trace_request_length_generator_prefill_scale_factor 1 --trace_request_length_generator_decode_scale_factor 1 --replica_scheduler_max_batch_size 4 --vllm_scheduler_max_tokens_in_batch 1024 --model_max_model_len 1024 --metrics_store_enable_op_level_metrics false --metrics_store_keep_individual_batch_metrics false --output_dir /workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/ --synthetic_request_generator_num_requests 100 --trace_request_length_generator_max_tokens 1024 --trace_request_length_generator_min_tokens 0 --model_block_size 2097152 --model_attention_backend fa_vattn_sync --gpu_memory_utilization 0.99 --ee_policy average --shallow_exit_layer 24 --conf_threshold 0.9

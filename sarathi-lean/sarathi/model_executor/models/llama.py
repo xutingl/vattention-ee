@@ -266,12 +266,12 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
         self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
-        self.hidden_states = self.hidden_states.to(torch.bfloat16)
+        self.hidden_states = self.hidden_states.to(torch.float16) # bfloat16 for llama3
         self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
         self.positions = self.positions.to(torch.int64)
         self.available_slots = set(range(self.capacity))
@@ -393,6 +393,8 @@ class LlamaModel(nn.Module):
         self.prefill_batch_size_limit = 64 # If emprical batch size is larger than this, we will not use EE. This is to avoid overhead of EE in prefill.
 
         self.sampler: Sampler = None
+
+        self.early_exit_head = None
     
     def softmax_confidence(
         self,
@@ -504,16 +506,17 @@ class LlamaModel(nn.Module):
                 # print(f"[LlamaModel.forward_without_rebatching] prefilling with seq_ids_in_batch: {seq_ids_in_batch}. batch size: {hidden_states.size(0)}")
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
         
-        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) <= self.max_batch_size
+        check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) <= self.prefill_batch_size_limit
 
         has_ee = False
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if check_for_ee and i == self.shallow_exit_layer:
                 #need_skip = random.random() < 0.4
-                # lm_logits, _ = lm_head(self.norm(hidden_states))
-
-                lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
+                if self.early_exit_head:
+                    lm_logits = self.early_exit_head(self.norm(hidden_states))
+                else:
+                    lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
 
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
@@ -545,9 +548,9 @@ class LlamaModel(nn.Module):
                     #     cache_engine.copy_kv_cache_starting_at_layer(i-1, req_idx, token_idx)
 
                     # Copy method 3
-                    req_indices = torch.arange(len(positions), device=positions.device)
                     token_indices = positions
-                    cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
+                    seq_ids_to_copy = seq_ids_in_batch
+                    cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
@@ -744,8 +747,11 @@ class LlamaModel(nn.Module):
         for i in range(len(self.layers)):
             layer = self.layers[i]
             if cache_engine and i == self.shallow_exit_layer and hidden_states.size(0) <= self.prefill_batch_size_limit: # Avoid EE in profiling (cache_engine is None) and prefilling (batch size is too large)
-                # lm_logits, _ = lm_head(self.norm(hidden_states))
-                lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
+                if self.early_exit_head:
+                    lm_logits = self.early_exit_head(self.norm(hidden_states))
+                else:
+                    lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
+
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
@@ -772,9 +778,9 @@ class LlamaModel(nn.Module):
                         
 
                         # Copy method 3
-                        req_indices = torch.arange(len(positions), device=positions.device)
                         token_indices = positions
-                        cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
+                        seq_ids_to_copy = seq_ids_in_batch
+                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
 
                         
@@ -788,17 +794,18 @@ class LlamaModel(nn.Module):
                     else:
 
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
-                        req_indices = torch.where(skip_mask)[0]
+                        exited_req_indices = torch.where(skip_mask)[0]
                         # print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
-                        token_indices = positions[req_indices]
-                        cache_engine.copy_kv_cache(i-1, req_indices, token_indices)
+                        token_indices = positions[exited_req_indices]
+                        seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
+                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
-                        self.exited_rates[0] += len(req_indices)
-                        self.exited_rates[1] += (len(seq_ids_in_batch) - len(req_indices))
+                        self.exited_rates[0] += len(exited_req_indices)
+                        self.exited_rates[1] += (len(seq_ids_in_batch) - len(exited_req_indices))
 
                         # print(f"[LlamaModel.forward] partial {seq_ids_in_batch}. exited rates: {self.exited_rates}")
 
-                        lm_logits = lm_logits[req_indices]
+                        lm_logits = lm_logits[exited_req_indices]
                         # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
 
 
@@ -904,6 +911,7 @@ class LlamaForCausalLM(nn.Module):
                 gather_output=False,
                 perform_initialization=False,
             )
+        self.early_exit_head = None
 
     def forward(
         self,
@@ -1081,6 +1089,20 @@ class LlamaForCausalLM(nn.Module):
             # ---------- For small models that tie word embeddings (i.e. self.config.tie_word_embeddings == True) ----------
             # if self.config.tie_word_embeddings and self.lm_head is not None and self.model.embed_tokens is not None:
             #     self.lm_head.weight = self.model.embed_tokens.weight
+        
+        # Load early exit head
+        if self.config.early_exit_head_path:
+            print(f"[LlamaForCausalLM.load_weights] Loading early exit head from {self.config.early_exit_head_path}")
+            # early_exit_head_path = "/workspace/xutingl/finetune-ee/output/early_exit_head.pt"
+            early_exit_head_path = self.config.early_exit_head_path
+            checkpoint = torch.load(early_exit_head_path)
+            early_exit_head = nn.Linear(self.config.hidden_size, self.config.vocab_size, bias=False)
+            early_exit_head.load_state_dict(checkpoint['early_exit_head_state_dict'])
+            self.early_exit_head = early_exit_head
+            self.early_exit_head.to("cuda:0")
+            self.model.early_exit_head = self.early_exit_head
+        else:
+            print(f"[LlamaForCausalLM.load_weights] No early exit head path provided. Using default head.")
     
     def set_sampler(self, sampler: Optional[Sampler] = None):
         self.model.sampler = sampler

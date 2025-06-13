@@ -23,8 +23,8 @@ def main():
 
 
     # models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb_sync']
-    # models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
-    models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
+    models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
+    # models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-3-70b'}, ['fa_vattn_2mb_sync']
 
     num_requests = utils.args.num_requests
@@ -33,6 +33,7 @@ def main():
     shallow_exit_layer = utils.args.shallow_exit_layer
     conf_threshold = utils.args.conf_threshold
     ee_policy = utils.args.ee_policy
+    early_exit_head_path = utils.args.early_exit_head_path
 
     for model in models:
         for qps in qps_values:
@@ -73,6 +74,7 @@ def main():
                         '--ee_policy', f'{ee_policy}',
                         '--shallow_exit_layer', f'{shallow_exit_layer}',
                         '--conf_threshold', f'{conf_threshold}',
+                        '--early_exit_head_path', f'{early_exit_head_path}',
                     ]
                 # assert dataset_name in dataset_path
                 print("Running command:", " ".join(command))

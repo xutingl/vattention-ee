@@ -69,6 +69,7 @@ class ModelConfig:
         shallow_exit_layer: Optional[int] = None,
         conf_threshold: Optional[float] = None,
         max_num_seqs: Optional[int] = None, # max batch size
+        early_exit_head_path: Optional[str] = None,
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -83,7 +84,7 @@ class ModelConfig:
         self.shallow_exit_layer = shallow_exit_layer
         self.conf_threshold = conf_threshold
         self.max_num_seqs = max_num_seqs
-
+        self.early_exit_head_path = early_exit_head_path
         self.hf_config = get_config(model, trust_remote_code, revision)
 
         self.hf_config.update(
@@ -92,6 +93,7 @@ class ModelConfig:
                 'shallow_exit_layer': shallow_exit_layer,
                 'conf_threshold': conf_threshold,
                 'max_num_seqs': max_num_seqs,
+                'early_exit_head_path': early_exit_head_path,
             }
         )
 

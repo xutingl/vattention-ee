@@ -122,6 +122,7 @@ class BenchmarkRunner:
             ee_policy=self._config.ee_policy,
             shallow_exit_layer=self._config.shallow_exit_layer,
             conf_threshold=self._config.conf_threshold,
+            early_exit_head_path=self._config.early_exit_head_path,
         )
 
     def _get_input_params(
@@ -251,17 +252,17 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
 
-        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_70b_llama3/req_100_batch_4_conf09_csv/")
+        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_13b_tuned/req_100_batch_4_conf09_csv/")
         csv_path.mkdir(parents=True, exist_ok=True)
 
         if self._config.replica_scheduler_max_batch_size == 1:
             csv_file = f"{csv_path}/ee_batch1.csv"
             print(f"Saving results to {csv_file}")
-            df.to_csv(csv_file, index=False)
+            df.to_csv(csv_file, index=False, escapechar='\\')
         else:
             csv_file = f"{csv_path}/{self._config.ee_policy}.csv"
             print(f"Saving results to {csv_file}")
-            df.to_csv(csv_file, index=False)
+            df.to_csv(csv_file, index=False, escapechar='\\')
 
 
 

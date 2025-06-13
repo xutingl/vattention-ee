@@ -72,6 +72,7 @@ class EngineArgs:
     ee_policy: str = "off"
     shallow_exit_layer: Optional[int] = None
     conf_threshold: Optional[float] = None
+    early_exit_head_path: Optional[str] = None
 
     def __post_init__(self):
         if self.tokenizer is None:
@@ -148,6 +149,7 @@ class EngineArgs:
             shallow_exit_layer=self.shallow_exit_layer,
             conf_threshold=self.conf_threshold,
             max_num_seqs=self.max_num_seqs,
+            early_exit_head_path=self.early_exit_head_path,
         )
         elem_size = torch.tensor([1], dtype=model_config.hf_config.dtype).element_size()
 
