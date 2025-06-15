@@ -12,7 +12,7 @@ parser.add_argument('--max_batch_size', '-b', type=int, default=8, help='Max bat
 parser.add_argument('--shallow_exit_layer', '-l', type=int, default=16, help='Shallow exit layer')
 parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Confidence threshold')
 parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
-parser.add_argument('--early_exit_head_path', '-p', type=str, default=None, help='Early exit head path')
+parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='Early exit head path')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))
