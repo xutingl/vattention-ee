@@ -252,7 +252,7 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
 
-        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_13b_tuned/req_100_batch_4_conf09_csv/")
+        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_13b_tuned/req_500_batch_8_conf09_csv/")
         csv_path.mkdir(parents=True, exist_ok=True)
 
         if self._config.replica_scheduler_max_batch_size == 1:

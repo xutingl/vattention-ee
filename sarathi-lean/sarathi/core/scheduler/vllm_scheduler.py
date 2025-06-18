@@ -133,7 +133,7 @@ class VLLMScheduler(BaseScheduler):
 
             assert seq.prompt_processing_finished
 
-            
+
             while not self.block_manager.can_append_slot():
                 if self.running:
                     # Preempt the lowest-priority sequence groups.
@@ -169,9 +169,12 @@ class VLLMScheduler(BaseScheduler):
         )
     
 
-    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence]):
+    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence], enforce_batch_size: bool = False):
         
         # Loop through outputs. If a request is in the rebatching buffer, and is outputted, then it is moved to the running list.
+        # If this happens, we need to move all existing sequences in the running list to `waiting`
+        # print(f"[VLLMScheduler.on_rebatching] output_seqs: {output_seqs}. running list: {self.running}")
+        rebatching_buffer_flushed = False
         output_seq_ids = []
         for output_seq in output_seqs:
             output_seq_ids.append(output_seq.seq_id)
@@ -179,14 +182,22 @@ class VLLMScheduler(BaseScheduler):
             # print(f"[VLLMScheduler.on_rebatching] in output list: {output_seq.seq_id}")
 
             if output_seq.seq_id in self.rebatching_buffer:
+                rebatching_buffer_flushed = True
+                break
+
+        if rebatching_buffer_flushed:
+            num_need_to_move = max(0, len(self.running) + len(output_seqs) - self.scheduler_config.max_num_seqs) if not enforce_batch_size else 0
+            for i in range(num_need_to_move):
+                seq = self.running.pop(0)
+                self.waiting.insert(0, seq)
+            
+
+            for output_seq in output_seqs:
                 assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
                 # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
-                self.running.insert(0, output_seq)
+                self.running.append(output_seq)
                 self.rebatching_buffer.remove(output_seq.seq_id)
 
-                #print(f"[VLLMScheduler.on_rebatching] added to running list: {output_seq.seq_id}, status: {output_seq.get_status()}")
-            # else:
-                #print(f"[VLLMScheduler.on_rebatching] not in rebatching buffer: {output_seq.seq_id}")
             
         # Loop through the scheduled list (input list): if a request is in the input list but not in the output list, then it is moved to the rebatching buffer.
         for input_seq_metadata in scheduled_seq_metadata_list:

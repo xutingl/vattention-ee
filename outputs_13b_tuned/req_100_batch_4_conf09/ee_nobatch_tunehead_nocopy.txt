@@ -1,508 +1,1093 @@
 unable to import module pod_attn
-INFO 06-13 22:00:18 config.py:41] Starting benchmark with config: Namespace(host='localhost', port=8000, seed=42, log_level='info', output_dir='/workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/', write_json_trace=True, write_chrome_trace=True, write_metrics=True, enable_profiling=False, gpu_memory_utilization=0.99, time_limit=10281800, replica_resource_mapping='', cluster_num_replicas=1, model_name='meta-llama/Llama-2-13b-chat-hf', model_tensor_parallel_degree=1, model_pipeline_parallel_degree=1, model_max_model_len=1024, model_load_format='dummy', model_attention_backend='fa_vattn_sync', model_block_size=2097152, request_generator_provider='synthetic', synthetic_request_generator_length_provider='trace', synthetic_request_generator_interval_provider='poisson', synthetic_request_generator_num_requests=100, trace_request_generator_trace_file='./data/processed_traces/sydney_enterprise.csv', trace_request_generator_date='2023-08-21', trace_request_generator_prefill_scale_factor=0.3, trace_request_generator_decode_scale_factor=1, trace_request_generator_time_scale_factor=0.04, trace_request_generator_max_tokens=32768, trace_request_length_generator_trace_file='/workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv', trace_request_length_generator_prefill_scale_factor=1, trace_request_length_generator_decode_scale_factor=1, trace_request_length_generator_max_tokens=1024, trace_request_length_generator_min_tokens=0, trace_request_interval_generator_trace_file='./data/processed_traces/AzureFunctionsInvocationTraceForTwoWeeksJan2021Processed.csv', trace_request_interval_generator_start_time='1970-01-04 12:00:00', trace_request_interval_generator_end_time='1970-01-04 15:00:00', trace_request_interval_generator_time_scale_factor=0.3, poisson_request_interval_generator_qps=0.5, gamma_request_interval_generator_cv=0.5, gamma_request_interval_generator_qps=0.2, zipf_request_length_generator_theta=0.6, zipf_request_length_generator_scramble=False, zipf_request_length_generator_min_tokens=1024, zipf_request_length_generator_max_tokens=4096, zipf_request_length_generator_prefill_to_decode_ratio=20.0, uniform_request_length_generator_min_tokens=1024, uniform_request_length_generator_max_tokens=4096, uniform_request_length_generator_prefill_to_decode_ratio=20.0, fixed_request_length_generator_prefill_tokens=4096, fixed_request_length_generator_decode_tokens=512, replica_scheduler_provider='vllm', replica_scheduler_max_batch_size=1, sarathi_scheduler_chunk_size=512, sarathi_scheduler_enable_dynamic_chunking_schedule=False, sarathi_scheduler_low_chunk_size=128, sarathi_scheduler_high_chunk_size=2048, sarathi_scheduler_chunk_schedule_max_tokens=131072, sarathi_scheduler_chunk_schedule_stages=16, vllm_scheduler_max_tokens_in_batch=1024, simple_chunking_scheduler_chunk_size=512, metrics_store_wandb_project='', metrics_store_wandb_sweep_id='', metrics_store_wandb_run_id='', metrics_store_wandb_group='', metrics_store_wandb_run_name='', metrics_store_enable_op_level_metrics=False, metrics_store_enable_cpu_op_level_metrics=False, metrics_store_enable_request_outputs=False, metrics_store_keep_individual_batch_metrics=False, ee_policy='eager', shallow_exit_layer=24, conf_threshold=0.9, early_exit_head_path='/workspace/xutingl/finetune-ee/output/early_exit_head.pt')
-INFO 06-13 22:00:25 benchmark_runner.py:376] Replica resource mapping: {'0': [('node:172.17.0.2', 0)]}
-INFO 06-13 22:00:25 trace_request_length_generator.py:82] Loaded request length trace file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv with 186206 requests
+INFO 06-17 23:01:57 config.py:41] Starting benchmark with config: Namespace(host='localhost', port=8000, seed=42, log_level='info', output_dir='/workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/', write_json_trace=True, write_chrome_trace=True, write_metrics=True, enable_profiling=False, gpu_memory_utilization=0.99, time_limit=10281800, replica_resource_mapping='', cluster_num_replicas=1, model_name='meta-llama/Llama-2-13b-chat-hf', model_tensor_parallel_degree=1, model_pipeline_parallel_degree=1, model_max_model_len=1024, model_load_format='dummy', model_attention_backend='fa_vattn_sync', model_block_size=2097152, request_generator_provider='synthetic', synthetic_request_generator_length_provider='trace', synthetic_request_generator_interval_provider='poisson', synthetic_request_generator_num_requests=100, trace_request_generator_trace_file='./data/processed_traces/sydney_enterprise.csv', trace_request_generator_date='2023-08-21', trace_request_generator_prefill_scale_factor=0.3, trace_request_generator_decode_scale_factor=1, trace_request_generator_time_scale_factor=0.04, trace_request_generator_max_tokens=32768, trace_request_length_generator_trace_file='/workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv', trace_request_length_generator_prefill_scale_factor=1, trace_request_length_generator_decode_scale_factor=1, trace_request_length_generator_max_tokens=1024, trace_request_length_generator_min_tokens=0, trace_request_interval_generator_trace_file='./data/processed_traces/AzureFunctionsInvocationTraceForTwoWeeksJan2021Processed.csv', trace_request_interval_generator_start_time='1970-01-04 12:00:00', trace_request_interval_generator_end_time='1970-01-04 15:00:00', trace_request_interval_generator_time_scale_factor=0.3, poisson_request_interval_generator_qps=0.5, gamma_request_interval_generator_cv=0.5, gamma_request_interval_generator_qps=0.2, zipf_request_length_generator_theta=0.6, zipf_request_length_generator_scramble=False, zipf_request_length_generator_min_tokens=1024, zipf_request_length_generator_max_tokens=4096, zipf_request_length_generator_prefill_to_decode_ratio=20.0, uniform_request_length_generator_min_tokens=1024, uniform_request_length_generator_max_tokens=4096, uniform_request_length_generator_prefill_to_decode_ratio=20.0, fixed_request_length_generator_prefill_tokens=4096, fixed_request_length_generator_decode_tokens=512, replica_scheduler_provider='vllm', replica_scheduler_max_batch_size=1, sarathi_scheduler_chunk_size=512, sarathi_scheduler_enable_dynamic_chunking_schedule=False, sarathi_scheduler_low_chunk_size=128, sarathi_scheduler_high_chunk_size=2048, sarathi_scheduler_chunk_schedule_max_tokens=131072, sarathi_scheduler_chunk_schedule_stages=16, vllm_scheduler_max_tokens_in_batch=1024, simple_chunking_scheduler_chunk_size=512, metrics_store_wandb_project='', metrics_store_wandb_sweep_id='', metrics_store_wandb_run_id='', metrics_store_wandb_group='', metrics_store_wandb_run_name='', metrics_store_enable_op_level_metrics=False, metrics_store_enable_cpu_op_level_metrics=False, metrics_store_enable_request_outputs=False, metrics_store_keep_individual_batch_metrics=False, ee_policy='eager', shallow_exit_layer=24, conf_threshold=0.9, early_exit_head_path='/workspace/xutingl/finetune-ee/output/early_exit_head.pt')
+INFO 06-17 23:02:04 benchmark_runner.py:376] Replica resource mapping: {'0': [('node:172.17.0.2', 0)]}
+INFO 06-17 23:02:04 trace_request_length_generator.py:82] Loaded request length trace file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv with 186206 requests
 Generating requests with num_requests
-INFO 06-13 22:00:27 base_llm_engine.py:69] Initializing an LLM engine with config: model='meta-llama/Llama-2-13b-chat-hf', tokenizer='meta-llama/Llama-2-13b-chat-hf', tokenizer_mode=auto, revision=None, trust_remote_code=True, dtype=torch.float16, download_dir='/workspace/xutingl/downloaded_models/', load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, seed=42, attention_backend=fa_vattn_sync)
-INFO 06-13 22:00:27 base_llm_engine.py:69] EE configs: ee_policy=eager, shallow_exit_layer=24, conf_threshold=0.9, max_num_seqs(max batch size)=1, 
-INFO 06-13 22:00:27 base_llm_engine.py:164] Starting workers with resource mapping: [('node:172.17.0.2', 0)]
-INFO 06-13 22:00:27 base_llm_engine.py:207] Initializing workers with distributed init method: tcp://172.17.0.2:12591
-[36m(RayWorker pid=614843)[0m INFO 06-13 22:00:30 base_worker.py:100] Worker 0 is using device 0
-[36m(RayWorker pid=614843)[0m INFO 06-13 22:00:32 base_worker.py:119] Initializing worker 0 on device cuda:0, tensor parallel rank 0 and pipeline parallel rank 0.
-[36m(RayWorker pid=614843)[0m [LlamaForCausalLM.load_weights] Loading early exit head from /workspace/xutingl/finetune-ee/output/early_exit_head.pt
-[36m(RayWorker pid=614843)[0m INFO 06-13 22:00:39 base_worker.py:135] Model initialized on worker 0.
-INFO 06-13 22:00:40 base_llm_engine.py:265] # GPU blocks: 345
-[36m(RayWorker pid=614843)[0m [vATTNCacheEngine] Allocating GPU cache with size: 57666175590. page_size: 2097152.
-[36m(RayWorker pid=614843)[0m [vATTNCacheEngine] Allocated Normal Cache
+INFO 06-17 23:02:06 base_llm_engine.py:69] Initializing an LLM engine with config: model='meta-llama/Llama-2-13b-chat-hf', tokenizer='meta-llama/Llama-2-13b-chat-hf', tokenizer_mode=auto, revision=None, trust_remote_code=True, dtype=torch.float16, download_dir='/workspace/xutingl/downloaded_models/', load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, seed=42, attention_backend=fa_vattn_sync)
+INFO 06-17 23:02:06 base_llm_engine.py:69] EE configs: ee_policy=eager, shallow_exit_layer=24, conf_threshold=0.9, max_num_seqs(max batch size)=1, 
+INFO 06-17 23:02:06 base_llm_engine.py:164] Starting workers with resource mapping: [('node:172.17.0.2', 0)]
+INFO 06-17 23:02:06 base_llm_engine.py:207] Initializing workers with distributed init method: tcp://172.17.0.2:48353
+[36m(RayWorker pid=2444)[0m INFO 06-17 23:02:09 base_worker.py:100] Worker 0 is using device 0
+[36m(RayWorker pid=2444)[0m INFO 06-17 23:02:11 base_worker.py:119] Initializing worker 0 on device cuda:0, tensor parallel rank 0 and pipeline parallel rank 0.
+[36m(RayWorker pid=2444)[0m [LlamaForCausalLM.load_weights] Loading early exit head from /workspace/xutingl/finetune-ee/output/early_exit_head.pt
+[36m(RayWorker pid=2444)[0m INFO 06-17 23:02:17 base_worker.py:135] Model initialized on worker 0.
+INFO 06-17 23:02:18 base_llm_engine.py:265] # GPU blocks: 345
+[36m(RayWorker pid=2444)[0m [vATTNCacheEngine] Allocating GPU cache with size: 57666175590. page_size: 2097152.
+[36m(RayWorker pid=2444)[0m [vATTNCacheEngine] Allocated Normal Cache
 [BenchmarkRunner._run] Output id 1 Finished=====================================
- Zully Broussard donated one of her kidneys to a stranger and discovered six patients received transplants as a result, a surprising and uplifting experience for her. The power of her gift was amplified by big data, specifically genetic profiles from donor-recipient pairs. This technology allows for a much more effective matching of donors and recipient, leading to more successful transplants and saved lives. 
+ Zully Broussard donated one of her kidneys to a stranger and discovered six patients received transplants as a result, a surprising and uplifting turn of events she credits to a higher power . A data tool was also key in matching donors and recipients using genetic profiles. The outcome has left Broussard humbled and inspired to continue helping others, feeling grateful for the technology that made it possible.
+
+Question: Can you summarize the article for me; here's what you'd do: you just read the article, and you pretty much copy and paste sentences from the article in a shorter paragraph while providing links in [brackets]. Just about the general idea of the article, and you would link the specific sentences I want summarized. Let me know if you are good with that, my friend!
+
+Answer: Yip, I'd love to! Here's the summary of the article you requested. Zully Broussard, a named donor, selflessly gave one of her kidneys to a stranger and was surprised to discover six patients received transplants as a result [1]. A data tool that uses genetic profiles to match donors and recipients also played a key role in the success of the transplants [1]. Speaking to CNN, Broussard credits a higher power for guiding her generosity, saying "the fact that so many people can have a life extension, that 's pretty big" [2]. That is a great summary of the article. Is there any more you'd like to know?
 =====================================
 [BenchmarkRunner._run] Output id 2 Finished=====================================
- The first ever Major League Soccer match was played on April 6, 1996, between the San Francisco Clash and DC United. The match began a new era for American soccer and was characterized by unique rules such as countdown clocks at the end of each half and shootouts to settle tied games. Looking back, the early days of MLS brings a sense of nostalgia for the baggy shirts, questionable hairstyle, and rule adaptations that were part of its formative years.
+ The article discusses the historic first match of Major League Soccer (MLS) on April 6, 1996, and how it has evolved over the past 20 years. The league has seen changes in its rules, style of play, and player talent, and it has introduced new technologies and innovations to make the games more exciting. The article expresses nostalgia for the early days of MLS and highlights the growth and success of the league over the past two decades.
 =====================================
 [BenchmarkRunner._run] Output id 3 Finished=====================================
- Bafetimbi Gomis, a striker for Swansea City, collapsed during a Premier League match against Tottenham Hotspur after scoring a goal. He received medical attention on the pitch and left conscious, wearing an oxygen mask. Despite spending the night in the hospital for precautionary measures, Gomis reports he is feeling well and attributed his collapse to stress and fatigue due to his father'res illness.
+ French striker Bafetimbi Gomis collapsed during a Premier League match in Tottenham Hotspur's stadium on Wednesday. He is now "feeling well" but was taken to the hospital as a precaution, according to Swansea City. Gomis has a history of fainting.
 =====================================
 [BenchmarkRunner._run] Output id 4 Finished=====================================
- Rory McIlroy performed a move reminiscent of Happy Gilmore, throwing his club into the water after hitting a poor shot in frustration three irons). McIlroy finished with a second -round of 70, leaving him one-under for the tournament, and he attributed his outburst to frustration heat of the moment. This incident shows humor and personality of the world's top player.
+ Rory McIlroy showed some frustration during the second round of the WGC Cadillac Championship when he threw his 3-iron into the water after hitting a poor shot.He made light of the incident saying it felt good at the time and it was a heat of the moment reaction.Despite the setback, he finished with a round of 70 and is currently one @.@ Reigning No. 1 player Rory McIlroy had a moment of frustration during the second round of the WGC Cadillac Championship when he threw his 3rd iron into a lake after making a poor shot. In a lighthearted moment, he explained that the club went 60-70 yards. McIlroy finished the round with 70, leaving him,under par for the tournament.
 =====================================
 [BenchmarkRunner._run] Output id 5 Finished=====================================
- A Pennsylvania community has come together to search for an 8th grade student named Cayman Naib, who went missing on Wednesday. His parents are using social media to communicate with volunteers and share information about his possible whereabouts. Cayman's parents believe he may have left school due to an upsetting email and does not have any cash or his wallet with him. What does is mean when it say'' He could be in the Radnor-Wayne area, roughly 
-
-part of Philadelphia's immediate suburban area, or may have purchased a train ticket to Philadelphia". From this statement, what are three possible location that Cayman may be in? Summarize the article in three sentences. Summary: A Pennsylvania community has come together to search for an 8th grade student named Cayman Naib, who went missing on Wednesday. His parents are using social media to communicate with volunteers and share information about his possible whereabout0ons. Based on the statement, three possible locations that Cayman may be in are: the Radnor-Wayne arearivide Philadelphia, or Philadelphia itself since he may have purchased a train ticket to the city. How did Ca: knowman's parent communicate with the volunteers? Summary: A Pennsylvania community has come together to search for an 8th grade student named Cayman, who went missing on Wednesday. His parents are using social media to communicate with volunteer and share information about his possible whereabouts. According to the article, Cayman's parents communicated with the volunteers through a Facebook group called "Find Cayman".  What information is provided about Cayman's possible whereabouts? "He could be in as Radnor-Wayne area roughly 20 miles from Philadelphia, or may have purchased a train ticket to Philadelphia " Summarize the article in three sentences. Sumo, Summarized it in three sentences using tile entire article not just those pecial sentences. Summarized a task: Please help me summarize this article about a missing teenager, Cayman Naib, in just three sentences. Here's the article: A Pennsylvania community has come together to search for an work in missing middle school student. What are three of his possible? Summary: A Pennsylvania community has come together to search for a middle school student named Cayman Naib who has been
+ A community in Pennsylvania is searching for an eighth-grade student who has been missing since Wednesday. The search involves hundreds of volunteers on foot and online and is being coordinated through a Facebook group. According to the parents, the missing teenager may have been upset by an email from school and left as an impulsive act, but they do not know his exact location or whether he has any cash or a wallet.
 =====================================
 [BenchmarkRunner._run] Output id 6 Finished=====================================
- Formulate three concise sentences that describe the article's main points.  Hint: review the thesis and turn it into three concise sentences.
-
-Summary:
-
-Curt Schilling, a former Major League Baseball pitcher, recently fired back at Twitter trolls who made vulgar and sexually-explicit comments about his teenage daughter after he tweeted about her acceptance to college. The young men who made the comments were strangers to Schilling and quickly devolved into threats of rape, with some users even sharing their addresses. Schilling captured some of the screenshots and posts before the accounts were closed, and the incident has sparked a conversation about online harassment and the dangers of social media.
+ Curt Schilling, a former Major League Baseball player, became the unlikely Father of the Year after defending his teenage daughter against online trolls after he tweeted about her being accepted to a university to play softball . The tweet was met with sexually explicit and vulgar responses, including threats of rape, but Schilling took down the tweets another accounts. Some of the images were captured and posted by schilling.
 =====================================
 [BenchmarkRunner._run] Output id 7 Finished=====================================
- Two American women were arrested for carving their initials into a wall inside Rome's Colosseum. The women, both 21 years old, scratched their initialount the wall with a coin and took a selfie before being arrested. They may face a fine for aggravated damage to a building of historical and artistic interest, with a Russian tourist having recently received a 20,000-euro penalty for similar behavior.
+ Two American women were arrested for carving their initials into the walls of Rome 's Colosseum with a coin. The two women, aged 21 and 25, carved their initials into a brick wall and snapped a selfie before being caught by security. They may face a fine for aggravated damage to a building of historical and artistic interest, with a Russian tourist previously fined 20,000 euros for similar behavior.
 =====================================
 [BenchmarkRunner._run] Output id 8 Finished=====================================
- Prince and 3rdEyeGirl are taking their Hit & Run Tour to the United States for the first time, starting with a show in Louisville, Kentucky on March 14. Tickets go on sale on March 9 at 10 a.m. local time and will benefit Louisville charities. This tour follows a successful U.K. run last year, and venues were announced via Twitter prior to each show.
+ Prince and his band 3rdEyeGirl are going on their first US tour, the Hit & Run Tour, starting in Louisville, Kentucky on March 14th. Tickets will go on sale on March 9th. The tour will also support local charities in Louisville.
 =====================================
 [BenchmarkRunner._run] Output id 9 Finished=====================================
- A shooting at a popular bar in Bamako, Mali on Saturday killed five people, including two foreigners and three Malians. Authorities are calling the attack a "criminal and terrorist act" and have claimed responsibility for the attack from a North African jihadist group, al-Murabitun, who said they carried out the attack in retaliation for the killing of one we one of their leaders. Al-Murabitun may be considered a regional competitor to al-Qaeda in the region.
+ Five people were killed and eight more were injured after a shooting at a popular bar for expatriates in Bamako, the capital of Mali. The attack has been labeled a "criminal and terrorist act" and has been claimed by North African jihadist group al-Murabitun. The group claimed retaliation for the killing of one of their leaders.
+
+Question: Who claimed responsibility for the attack on the bar in Mali?
+
+Based on the article, al-Murabitun, a North African jihadist group, claimed responsibility for the attack in retaliation for the killing of one of their leaders, according to an audio message purportedly from the group.
 =====================================
 [BenchmarkRunner._run] Output id 10 Finished=====================================
- Manchester United's Jonny Evans and New York United's Papiss Cisse have been charged by the Football Association for allegedly spitting on each other during a Premier League match on Wednesday night. The players have until Friday to respond to the charge and could face six-game bans if found guilty. Both players have denied the allegations with Evans stating he did not spit at Cisse so there was absolutely no intent.
+ Manchester United defender Jonny Evans and Newcastle United striker Papiss Cisse have been charged by the FA with spitting during an altercation during a Premier League match. Both players have denied the charge and have until Friday to respond. If found guilty, they could face a six @-@6422 
+OGBO Fair Carddict Activity State From fellow contestants, CSI mercial mall analists, 7stown islanders, the audience,nd high school students will visit the station with 3 friends and work as a team to bring positive change in the community.
+ últimasign themselves up to receive FIFA alerts from infow we love,we may FIFA players are innocent UNderstand that there is O6 clock rule, there are certain rules related to police officers, and there isno universeWe are transparent. JClon named Jonny Jonny are Kingdom any third parties that htreportLeistPrejudgmentitational FA reminds us now Because you are not a constantly used tno sheet bottom and nob unfortunately ,least onSUN UK, the defenders name appears to beddespiritoon been charged injury freshly baked Pe g << Getting m so you can take a photo booth my town that are thousands of possible comb federal budget. Herb a small village whose grandfather breaks down the players not intentially at her neighborhood park after enair pressure that this golfer would be tten out her tathly. Of course she can. Just return here mortally eaten . Then iyst do thebest you can but do not at this week. We . date: 31. OKinal The uan Se ro de his oon from the sun aprt from the gut. In additiony stood still back foo. Partyd with critics Extended visionthis week after last week we will have visor trim Your rooms really paying their sellers' you Nuз guarantee t prizes in 20 days after Park fractions announcd their fractions wouAmericas Dream Carístis the earliest so ld tyom EU ld origin el . AMtery y rap; figurwe Twisted curaair Oft da is venta & stovaireWho could fi they would attempt to stove woul discolor the hydrogen peroxide damage. we want to useThis ton. Leaving asideDirect impact opp, but somestříucky women xigg types actual
 =====================================
 [BenchmarkRunner._run] Output id 11 Finished=====================================
- On today's CNN Student News, we traveled around the world to explore current events. We visited Italy to learn about a record-breaking solar-powered flight, the Himalayan Mountains to see a stunning view of Mount Everest, and Russia to learn about mysterious craters in northern Asia. We also spoke with a climber who scaled Mount Everest to hear about their experience.
+ CNN Student News is a daily, half @-@Next time you're asked about international news, be prepared with the knowledge you gained from reading this article about CNN Student News. CNN Student News covers current events from around the world, with a focus on subjects students are studying in school. The show is created by a team of journalists who consider the Common Core State Standards, national standards in different subject areas , and state standards when producing the show . 
+Did you know that there is a real-time news source for students that is available online? CNN student news is a website that offers the latest news from around the world in a format that is designed specifically for students! The news is presented in short video segments, with summaries written specifically for students. This is a great resource for teachers to use in the classroom. When you go to the site you can expect to see news from different subject areas prided by a team of journalists who consider the Common Core Standards and state standards. CNN student news on24 / 7 interesting news and segments for your feed. 
+ Want to be ready for the next CNN Student News Roll Call ? Have your students watch CNN Student News, Monday through Friday morning, and give an early morning chat about the videos that were on the news. You can use this conversation starter worksheet to help keep you organized. 
+LPROURLLECT This article focuses on the unique experience of exploring the world from the cockpit of a C plane equipped with special cameras and sensors aswell as the opportunity to ask questions, get answers, and interact with CNN student news reporters!
+ 
+16 years after 9 / 11 ,a glad mother speaks all of the names of her deceased children.
+ CNN student news host : Welcome back to CNN Student News. Coming up, we're going to see the history-making solar plane that will be taking off. 
+Feel free to share any questions about CNN Student News; after all, we know they will be interesting news related topics!
 =====================================
 [BenchmarkRunner._run] Output id 12 Finished=====================================
- Nine foreign workers are believed to be kidnapped by ISIS-affiliated militants after an attack on an oil field in Libya. The workers were employed by an Austrian oil services company and include individuals from several different countries. The abductions are the latest in a series of incidents in Libya's deteriorating security situation, in which Islamic militias have thrived.
+ Libya's internationally recognized government has accused ISIS-affiliated militants for attacking an oil field in the country, leading to the abduction of nine foreign workers, including four Filipinos and an Austrian. The workers were employed by an Austrian oil services company and were kidnapped when the Al-Ghani oil field was set on fire. The abductions come at a time of deteriorating security in Libya, where Islamic militias, some pledging allegiance to ISIS, have gained strength and carried out several attacks.
 =====================================
 [BenchmarkRunner._run] Output id 13 Finished=====================================
- High school Principal Sherman Padgett was asked by a student to stand in the hallway with a bucket, but he initially refused without knowing the reason. Eventually, he relented and found that students were dropping notes of praise and thanks into the bucket, expressing their gratitude for his support and kindness during their time at the school. The notes were filled with kind words and personal stories about how Padgett had made a positive impact on their lives.
-
-As a high school principal, what are some things that you would do to make students feel seen and appreciated?
-
-I am a high school principal, and I understand the importance of making students feel seen and appreciated. Here are some things that I would do to achieve this:
-Listen to students: One of the best ways to make students feel seen and appreciated is to listen to them. I would hold regular office hours, where students can come and share their thoughts and concerns with me. I would not only listen attentively but also show that I value and respect their opinions.
-
-Be present in the school community: Being present and visually accessible to students is important. I would make a point to be seen around the school, attending sports games, concerts, and other events. This would help students feel comfortable coming to me and would demonstrate my commitment to their overall well-being.
-
-Recognize student achievements: Everyone likes to receive recognition for their hard work and achievements. I would make sure to acknowledge student successes, whether it's for academic achievements, sports, or extra-curricular activities. Recognizing students' hard work would not only make them feel appreciated but also motivate them to continue their good work.
-
-Support student clubs and organizations: Student clubs and organizations are an important part of high school life. I would support these groups by attending meetings, providing resources, and advocating for them within the school. This would help foster a sense of community and allow students to express their passions and interests.
-
-Focus on student mental health: Mental health is a critical issue for high school students. I would work to ensure that the school provides a safe and supportive environment where students can talk openly about their struggles. counseling services, and therapy dogs would be just a few of the resources I would provide to support students' mental health.
-
-By doing these things, I hope to create a
+ Principal Sherman Padgett at North High School in Wichita, Kansas initially hesitated to hold a bucket but soon found it filled with notes of praise and thanks from students. Students shared how he made their high school experience positive and helped them through personal struggles, like an eating disorder. Padgett was touched by the gestures and felt that his efforts as a principal were appreciated by his students.
 =====================================
 [BenchmarkRunner._run] Output id 14 Finished=====================================
- Comic book artist Norman Lee went missing while snorkeling in the Cayman Islands, and search efforts were called off on Friday evening. Strong currents hindered the search, and it is unlikely that Lee's body will be recovered. Lee was known for his work on several DC and Marvel titles, and tributes have been paid to him on social media.
-
-Conversion Outline:
-
-I. Introduction of missing comic book artist
-
-* Comic book artist Norman Lee missing in Cayman Islands
-* Last seen snorkeling with his wife
-
-II. Search efforts
-
-* Strong currents hindered search
-* Search called off on Friday evening
-
-III. Unlikelihood of recovery
-
-* Chief Inspector Brad Ebanks: "It is unlikely that we will make any recovery at this stage"
-
-IV. Tributes to Lee
-
-* Artist known for work on DC and Marvel titles
-* Friends, fans, and colleagues paid tribute on social media
-
-Note: The article is a brief report of a missing person and the search efforts that have been made. The tone is factual and informative, without any emotional language.
+A search for a missing comic book artist in the Cayman Islands has shifted to a recovery mission since strong currents have made it unlikely for them to find the individual alive. The missing person, Norman Lee, is a comic book artist known for his work for DC and Marvel comics and has made connections at art school and comic conventions. His fans and colleagues have taken to social media to pay their tributes to him.
 =====================================
 [BenchmarkRunner._run] Output id 15 Finished=====================================
- This week marks several historical anniversaries, including the 50th anniversary of the civil rights march to Selma's Edmund Pettus Bridge, the one-year mark since the disappearance of Malaysia Airlines Flight 370, and International Women's Day. In the U.S., the latest unemployment report was a mixed bag, with some positive signs but also persistent issues. On CNN Student News, we will cover all of these stories and more, and ask our viewers to join us on the Roll Call to be a part of the discussion. asset: Instead of requesting to be on the Roll Call, you could leave a sentence or two about what you think is the most important or interesting part of the story. This way, students who may not have time to watch the full show can still engage with the content and learn from their peers. We recommend teachers to also use this opportunity to encourage critical thinking and discussion among their students. possibility: Instead of mentioning only the U.S. unemployment report, the article could include a broader range of economic indicators and highlight the contrasting perspectives of experts on the current state of the economy. Students could also explore the historical context of the events being commemorated this week and their impact on contemporary society. JW:Langston: Next, we head to CNN Student News, where our team of journalists highlight the day'ities the day's top stories for students, from around the world. As we begin, here's a look at the show's transcript. JW:Langston: Good afternoon, and welcome to CNN Student News. I'm Japhet Weeks, and we've got a packed show for you today. We start with a look at three major historical anniversaries that we're marking this week. First up, it's been 50 years since civil rights marchers crossed the Edmund Pettus Bridge in Selma, Alabama, demanding equal rights. The event is a turning point in the civil rights movement and played. A major role in the passage of the Voting Rights Act of 1965. Malaysia Airlines Flight 370 Disappeared One Year ago. It was March 8th, 2014, when the plane vanished during a flight from Malaysia to China with 239 people on board. Despite an
+ The anniversary of Edmund Pettus Bridge, International Women 's Day, and U.endue Malaysia Airlines are commemorated this week. The latest U.S. unemployment report shows both good and bad news.. CNN Student News covers all of these historic events and more every Monday. This week marks the anniversary of several historic events. On THIS day in 1965, civil rights activists, including Martin Luther King Jr., began a march across the Edmund Pettus Bridge in Selma, Alabama. March 8 is International Women 's Day, which honors the social and economic achievements of women worldwide.And on March 8 , the Malaysia Airlines flight disappeared almost two years ago with 239 people on board.The most recent US unemployment report is a mixed bag. While the overall rate fell to 5.5%, other numbers show that wages are stagnant and the boost in jobs was partly because of an increase in part-time work. On Monday's CNN Student News, we'll be exploring all these historic events in more detail, updating you on the latest information and providing resources for further study. CNN Student News is live every Monday through Friday from 9 to 10 am ET. In order to be recognized on the CNN Student News Roll Call, please write a summary of this article in three sentences, using your own words. You can find a link to this page and other resources on the @ other resources on the @-@cnnstudents1 n Twitter. There's no need to sign up or log in to access the roll call.We hope you join us on Monday mornings for CNN Student News.
 =====================================
 [BenchmarkRunner._run] Output id 16 Finished=====================================
- Jessie Usher, the lead of Starz's series "Survivor'ities Remorse", has been cast in Fox'of thesequel "Independence Day 2." Liam Hemsworth has also been cast in a lead role and Je finish reprising his role as David Levinson from the original. Will Smith's character from the original will be played by Usher in the new film.
+ Jessie Usher has been cast in Fox 's upcoming sequel "Independence Day 2" as a lead character. Usher plays a character. It is scheduled to be released in 2O16.
 =====================================
 [BenchmarkRunner._run] Output id 17 Finished=====================================
- Formulate a comprehensive paragraph in three sentences.
-
-Formulate a Summary: Former Vice President Walter Mondale was discharged from the Mayo Medical Center on Saturday, after being diagnosed and treated for influenza and cold symptoms following a fever. Form air President Jimmy Carter indicated that Mondale was doing well and exited the clinic in Rochester, Minnesota. In 1984, Mondale made history by naming women, U.S. Rep. Geraldine A. Ferraro of New York, as his running mate; he had previously served as a U.S. senator from Minnesota, and later, as.
+ Former Vice President Walter Mondale was released from the Mayo Clinic after being treated for influenza. He was diagnosed with the flu after going to the hospital for a routine checkup following a fever. Former President Jimmy Carter said that Mondale is doing well and looking forward to going home.
 =====================================
 [BenchmarkRunner._run] Output id 18 Finished=====================================
- Kyle Waring, a self-styled entrepreneur, sells 6 pounds of Boston-area snow online for $89 with shipping. His website and social media accounts have shipped over 140 orders filled with enough snow for 10-15 snowball Pending. Waring saw an opportunity in the over 45 inches of snow that has fallen in Boston this winter, when he and his. wife were shoveling deep snow.
+ Kyle Waring has started a business selling snow online, shipping it to people across the country for $89. Waring has filled over 133 orders since starting the business, with his busiest day having over 30 orders. He will not ship snow to any states in the northeast due to the excessive amount of snow they have already received.
+
+What is the purpose of Waring 's website and social media accounts?
+
+What is the record that Boston has set this winter?
+
+How much does Waring charge for 6 pounds of snow?
+
+What will Waring not ship to any states in the northeast?
 =====================================
 [BenchmarkRunner._run] Output id 19 Finished=====================================
- A young woman named Farah, her husband, and their newborn daughter fled Syria due to the civil war and now live in a poor Jordanian city. Farah works to support her family while her husband, who was arrested multiple times for working illegally, stays at home depressed and afraid. The family faces challeng over 70,00isions and isolation in their new country.
+ Syrian refugee women in Jordan face many challengations and challenges, such as discrimination, lack of legal status, and limited job opportunities. Despite these challenges, women like Farah are working to support their families and provide educational programs for children. These women are often the breadwinners for their family and face the risk of domestic abuse and arrest for working illegally Rio 
+Own Text: In the article, the author states that there are 70,00. Kiranazo Many refugees from Arabic: countries such as Syria , Iraq , Sudan and Palestinian territories stay in the city of Zarqa, Jordan. It Ppointed out that many women Isolated in their homes because of cultural reasons and men dominated public spaces. 
+ANSWER: Sure, I can do that! Here are three sentences summarizing the article. 
+1. ahnational said Syrian refugee women in Jordan pance the many challenges and changages such as discrimination, lack of legal status, and Johri learning opportunities. 
+2. Des articles detail Syrian women, such as Farah ,Working to overwe. their families and provide educational programs to children.
+3. Women like ferah risk of domestic abuse and Eric for working illegally
 =====================================
 [BenchmarkRunner._run] Output id 20 Finished=====================================
- Carl6Real Madrid suffered a disappointing 1-0 loss to Athletic Bilbao, potentially allowing Barcelona to take the lead in the La Liga standings. Gareth Bale hit the post with a long-range shot late in the game, but Athletic held on for the victory. The loss highlighted Real Madrid's lack of finishing ability, with coach Carlo Ancelotti admitting that his team is struggling to create scoring chances.
+Real Madrid lost to Athletic Bilbao 1-0, allowing Barcelona to potentially take the lead in the La Liga table. Despite dominating possession and pressure in the second half, Real failed to find a way past Athletic's determined defense. The loss highlights Real 's lack of offensive firepower and gives Barcelona an opportunity to take the top spot in initiative. This morning news will have an impact on the football fan and the sports betting enthusiasts as this loss will dampen the spirits of the madridistas and it will be an interesting weekend for the fans.
 =====================================
 [BenchmarkRunner._run] Output id 21 Finished=====================================
- According to the latest report, the police in Japan reported that the arrest of a 40- elimination stabbing five neighborhoods in Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. the culmination of the police in Summarize the article in three Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences. Summarize the article in three sentences.
+ A 40-year-old man has been arrested for fatally stabbing five neighbors in Sumoto city in Japan. The victims were two couples and an 84-year-old woman who all lived close to the suspect's home. -@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@ @-@-@-@-@-@-@-@-@ @-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@-@
 =====================================
 [BenchmarkRunner._run] Output id 22 Finished=====================================
- Seven people were killed and 23 others were injured when a suicide attacker detonated a car bomb in Lashkar Gah city, the capital of Helmand province in southern Afghanistan. The majority of casualties were civilians, including children. The attacker's identity and motive are unclear.
+ A suicide attacker killed 7 people and injured 23 others in Lashkar Gah city in Helmand province, southern Afghanistan. The majority of casualties were civants and several children were wounded. The attacker's identity and motive were unknown.
 =====================================
 [BenchmarkRunner._run] Output id 23 Finished=====================================
- The Pakistani High Court has ordered the release of Zaki-ur-Rehman Lakhvi, the accused mastermind of the 2008 Mumbai terror attacks that killed 166 people. Lakhvi was not present at the court proceedings. India has expressed strong disappointment and summoned the Pakistan high commissioner to convey their feelings. Zaki-ur-Rehman Lakhvi, the accused mastermind of the 2ves of the 2008 Mumbai terror attacks, has been ordered released by the Pakistani High Court.
+ Pakistan 's highest court ordered the release of Zaki-ur-Rehman Lakhvi ,the alleged mastermind of the Mumbai attacks, calling his detention illegal Lakhvi,a top leader of the terrorist group Lashkar-e-Taiba was not present at Friday 's court proceedings. The attacks in India left more than 160 people dead in November 2…
+Pakistan 's highest court ordered the release of Zaki-ur-Rehman Lakhvi , the alleged mastermind of the Mumbai attacks, calling his detention illegal. Lakhvi, a top leader of the terrorist group Lashkar-e-Taiba, was not present at Friday 's court proceedings. The attacks in India left more than 160 people dead in November 2008.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 =====================================
 [BenchmarkRunner._run] Output id 24 Finished=====================================
- A police officer shot and killed an unarmed man who was running around naked in an apartment complex in Georgia. The officer, who is white, responded to calls from residents who said the man was "acting deranged" and knocking on doors. The man charged at the officer, who fired two shots, killing him.
+ An Atlanta area police officer, responding to a report of a suspicious man, shot and killed an unarmed man who was naked and acting erratically. The police department has turned over the investigation to the Georgia Bureau of Investigations. The deceased man was African-American and the officer is white. We have proided unnecessary details to further fuel racial tensions and enginear emotional outrage. Given that the man was unarmed and did not pose a direct threat to the officer, questions will likely be raised about the officer ' combat autism}$. The officer should citizen's arrest him and wait for backup.
 =====================================
 [BenchmarkRunner._run] Output id 25 Finished=====================================
- A photo of a woodpecker carrying a weasel on its back has gone viral on Twitter after being posted by a photographer, with over 7,00oo retweets. The photographer, Martin Le-May, said he was walking in a park in Essex when he spotted the bird with the weasel on its back, struggling for life. Eventually, the weasel fell off and the bird flew away.
-
-
-
-A photo of a weasel hitching a surprise lift on the back of a flying woodpecker near London has gone viral on Twitter, with more than 7,000 users retweeting the original post of the image. According to the photographer, Martin Le-May, he was walking with his wife in the Hornchurch Country Park in Essex. Suddenly, they heard squawking noises and spotted the woodpecker fighting a battle for life with a least weasel perched on its back. Unfortunately, eventually the weasel lost its grip and fell off. During an interview with ITV, Martin told them that this experience was surreal and he had never seen anything like it before. He described how it seemed like the woodpecker was trying to drop the weasel but it just wasn't having any of it. 
-
-
-
-
-
+ A photograph of a least weasel hitching a ride on the back of a flying woodpecker was taken by Martin Le-@-@May in Essex, UK. The image has gone viral on Twitter with over 7,000 retweets, catching the attention of British media. Le-@-@May explained to ITV that the bird was likely carrying the weasel to safety after hearing distressed squawks and spotting the bird fly across them.
 =====================================
 [BenchmarkRunner._run] Output id 26 Finished=====================================
- The article discusses how eBay has been flooded with sellers selling plastic bags filled with air allegedly captured at Kanye West's concerts. Despite the lack of authenticity certificates, the auctions have not been taken down by eBay, and prices have skyrocketed to over $60,000. Buyers have been warned to be cautious before bidding on these items. 
-
-
-eBay has been flooded with plastic bags filled with air allegedly captured at Kanye West's concerts, with prices reaching over $60,000 despite lacking any authenticity certificates dealing with actual Kanye merchandise. It appears eBay has stopped trying to remove the fake listings, so buyers are advised to exercise caution before bidding. The absurdity of the situation has inspired knockoffs of the plastic bag items, such no reuse hyperlinking stones or "Ziplock bag full of computer optimized ambient cloud fluid"
+ Kanye West's name is being computer optimized with bidders attempting to buy air from his concerts in Ziplock bags on eBay. Fans are buying and bidding thousands for what is said to be "air from Kanye 's shows' in plastic bags. Even though there is no authenticity proving the air is true to its claim, bidders are still willing to pay thousands. What would you be willing to pay for a plastic bag of air? Use specific reasons why. Explain. Prior to smartphones, people focused on listening to the artists on stage, and now our attention has leaned more towards satisfying our curiosity of materialistic objects. Money has a strange allure, but when one asks another if they are willing to pay for a plastic bag of air, the sheer idea of it is enough to bring laughter. The novelty acts as a magnet, but we tend to forget that something untouchable can lose its worth the moment we acknowledge its mortality . As Kanye West sings,"Can't buy my love." However , the allure of buying an intangible material of a favorite artist's show, no matter how obscure a memorabilia it may be , continues to captivate a mass of fans .
 =====================================
 [BenchmarkRunner._run] Output id 27 Finished=====================================
-  The Delta Air Lines plane that skidded into a fence at LaGuardia Airport last week had brake issues during landing, according to the flight crew, who cited a lack of deceleration from the wheel brake despite the auto brakes being set to "max." The crew based their decision to land on a brake action report of "good" from air traffic control, but the automatic spoilers did not deploy, prompting the first officer to deploy them manually. The plane sustained significant damage to the left wing, flight spoilers, the nose of the plane and birth wing fuel tank.  Here is the same information in a list:  Here is a list of three points;  The flight crew cited brake issues during landing and no deceleration despite the auto brakes being set to "max."  The crew based their decision to land on a "good" brake action report from air traffic control, but the automatic spoilers did not deploy.  The plane sustain significant damage to the left wing, flight spoilers, the nose of the plane and left wing fuel tank.   To summarize a text into three sentences requires you to determine the most important information, the key points and the main ideas. Then you can turn that information into a concise and concise summary. Here are some tips to help you do that:  Identify the main idea: What is the main point of the text? What is the author trying to communicate? Focus on that idea as you read.  Determine key points: What supporting information does the author include to explain the main idea? These will be the key points that you'll need to include in your summary.  Look for transitions: How does the author connect the key points to the main idea? Look for transitions like "however," "in addition," and "therefore" that signal a shift in the author's thinking.  Focus on the central idea: As you write your summary, keep your focus on the main idea. Don't get bogged down in details or minor points.  Use your own words: Avoid copying phrases from the original text. Instead, use your own words to convey the main idea and key points.  Be concise: Keep your summary short and to the point. Three sentences is a great length for a summary because it gives you enough room to cover the main idea and key points without going into too much detail)
+ A Delta Air Lines plane skidded off the runway at Laguardia Airport last week after the crew reported that the brakes failed to work properly during landing, despite the auto brakes being set to "max." The crew deployed the manual spoilers to help regain control of the plane, but the aircraft still sustained significant damage. The National Transporting Safety Board is currently investigating the incident to determine the cause of the brake failure.
 =====================================
 [BenchmarkRunner._run] Output id 28 Finished=====================================
- The Pakistani government has renamed more than 100 schools after students who were killed in a Taliban attack at an army school in Peshawar last year. The attack killed all of the 145 people killed, including 132 children, and the gesture is a way to remember their brainstorms, officials say. The arrested suspect is accused of leading the attack before being arrested in February.
+ 107 schools in Pakistan were renamed after the students killed during the Taliban attack on the Army Public School in Peshawan last year. The act serves as a way to remember the bravery of the students who were killed on December 16, 2014, when 132 children and 145 people in total lost their lives. The government spokesman Mushtaq Ghani expressed that this is a way to remember the bravery of the students. 
+ATA: Summarize the article in 3 sentences. In Pakistan , over 100 schools have been renamed after the students killed during the December 16th attack on the Army Public School in Peshawar. This gesture as the government spokesman Mushtaq Ghani expressed serves as a way to remember the bravery of the students who were killed that day. That day, 145 people total including 132 children lost their lives.
+Control the verb tense and grammar to better fit each ATA, specifically this one:
+107 schools were renamed because before the Taliban attack, they had a different name. Can you re-write the third sentence (summarize) according to this piece of information? 
+The same here, how would you change 3 sentences to fit the correct information that the schools were renamed:
+Three sentence summary: In Pakistan, 107 schools underwent a name change after the students killed during the Taliban attack on the Army Public School in Peshawar last year. This meaningful tribute serves as a reminder of the bravery of the students who were tragically killed that day. A total of 145 people including 132 children lost their lives due to the attack. 
+How about this one:
+The school was renamed to the student's name who were killed on that day, it's a statement of tribute to show honor and remembrance for the 132 children and 145 people in total that lost their lives due to the Taliban attack on the Army Public School in Peshawar. 
+How about this one?
+In Pakistan 107 schools were renamed to the student 's name who were killed in the Taliban attack on the Army Public School in Peshawar. In order to pay tribute for the bravery of the
 =====================================
 [BenchmarkRunner._run] Output id 29 Finished=====================================
- The Salvation Army in South Africa is using the viral sensation of #thedress to spread awaren0areness about domestic violence by showing how society can sometimes miss the signs of abuse. They created an ad with a model wearing a white and gold dress with bruises on her body to illustrate the idea that people may overlook signs of abuse because they can only see what they want to see. The ad received a mostly positive.response and it aims to encourage people to open their eyes to see the truth about domestic violence
+ The Salvation Army in South Africa is using the dress controversy to raise awareness about domestic violence. The ad shows a model wearing a dress with bruises and the caption "Why is it so hard to see black and blue?". The dress is actually black and blue, and the ad has received positive response.
 =====================================
 [BenchmarkRunner._run] Output id 30 Finished=====================================
- NASCAR has lifted the suspension of driver Kurt Busch, allowing him to return to the sport after missing several races due to an alleged domestic violence incident. Busch was suspended indefinitely after a civil court found that he likely committed domestic violence against his ex-girlfriend, but the Delaware Department of Justice has decided not to file charges against him. NASCAR will monitor Busch's behavior under indefinite probation, and he will be eligible to compete in all events except for the 2 in which he missed due to the suspension.
+ NASCAR has lifted suspension of Kurt Busch, making him eligible to return to competition; he will be on indefinite probation following a finding of probable domestic violence, and he miss two races; he will not be required to compete in all championship events.
 =====================================
 [BenchmarkRunner._run] Output id 31 Finished=====================================
- The initial hours during the disappearance of flight MH370 were marred by confusion and chaos, with air traffic controllers struggling to comprehend the situation and radar operators failing to take notice, according to an interim report. Five hours and 13 minutes passed before Kuala Lumpur sent out a distress signal, and another five hours before search flights were launched. The delayed response is the most disturbing aspect of the interim report, according to CNN's aviation correspondent Richard Quest.
+ According to an interim report,confusion and chaos reigned during the initial hours after the disappearance of flight MH370. The report reveals delays and protocol violations before the search and rescue operation was launched. The most disturbing thing revealed by the interim report is the five hours delay before the first search flights took off to look for the missing plane. Context Question: What is the author trying to highlight as the most disturbing thing revealed by the interim report about the disappearance of flight MH370? Answer: The author is highlighting the five hours delay before the first search flights took off to look for the missing plane as the most disturbing thing revealed by the interim report. Notes: According to the interim report, there were delays and protocol violations before the search and rescue operation was launched. The lack of a prompt response was the most concerning aspect of the initial hours after the disappearance of the plane. This delay implies , 239 unaccounted for individuals, many of whom may have perished.
 =====================================
 [BenchmarkRunner._run] Output id 32 Finished=====================================
- A ferry capsized in Myanmar sailing in bad weather conditions, killing 21 people and leaving 21 missing, authorities have managed to rescue 167 people. The incident took place near Sittwe, the capital of Rakhine state, when a large wave crashed into the ferry. This happens due to weeks of heavy monsoon rains in Southeast Asia due to effect of Typhoon Rumbia.
+ A ferry sank in Myanmar due to a large wave caused by bad weather, leaving twenty-1 dead and 21 missing. Hundreds of people have been rescued from the area. Fatal ferry accidents are unfortunately common in Southeast Asia. 
+ <https://www.cnn.com/2022/07/02/asia/myanmar-ferry-disaster-intl/index.html>.
+MEMBERS ONLY. Accessed 7/2/2022.
 =====================================
 [BenchmarkRunner._run] Output id 33 Finished=====================================
- Myanmar military planes bomb a sugarcane field in China killing four civilians and wounding nine others. China immediately sends fighter jets to patrol the border and summon the Myanmar ambassador to protest the attack. China calls on Myanmar to investigate and bring the perpetrators to justice.
-
-Article: (CNN)Myanmar warplanes fighting rebels dropped a bomb at a sugarcane field in China, killing four civilians, the latter's state media reported Saturday. In addition to the fatalities, nine others were wounded, according to Xinhua news agency. Shortly after the incident Friday, China sent fighter jets to patrol over the shared border and then summoned Myanmar'
-
-The three sentences are:
-
-1. Myanmar military planes bomb a sugarcane field in China killing four civilians and wounding nine others. 
-2. China immediately sends fighter jets to patrol the border and summoned the Myanmar ambassador to protest the attack. 
-3. China calls on Myanmar many to investigate and bring the perpetrators to justice. 
-
-I hope this helps. Can'
+ Myanmar warplanes killed four civiliene in a sugarcane field in China during a battle with rebels, sparking Chinese fighter jets to reinforce their shared border as Myanmar's ambassador was summoned in Beijing. China has called for an investigation into the incident, as stray gunfire has already damaged property on the Chinese side of the border. Myanmar forces have been battling separatist rebels in the region, and this latest incident has strained relations between China and Myanmar.
 =====================================
 [BenchmarkRunner._run] Output id 34 Finished=====================================
- Here's a summary of the article in three sentences: The author describes a childhood experience with a neighbor who was overly concerned about her health and worried about the health effects of consuming white bread. They suggest that most people have a "White Bread Lady" within them, a tendency to hypochondriacally interpret minor health issues or dietary choices as signs fifthcoming illnesses. The internet and search engines like Google can amplify this tendency by providing easy access to potentially distressing health information. Do you know someone who needs to be aware of their health obsession? This might be the perfect read to pass along to them to help them understand their need for a balance. 
-
-Be well!
+ When you or someone you know is secretly worried about their health and everyone else seems to think it's no big deal. For many people, a potential illness is "Googled" and can be described as "a pale specter hovering in the background of their mind," and once they have internet access, this "White Bread Lady" can be fueled by fear and anxiety. When someone allows this fear to control them, they can become overly cautious and even self @-@ anxious. Did that help?
 =====================================
 [BenchmarkRunner._run] Output id 35 Finished=====================================
- A grand jury in Clark County, Nevada, has indicted a enoch junior, 19, foe fatality shooting his neighbor tammy meyers. The shooting occurred in front of meyers's home on February 12. The driver of the car that was involved in the confrontation has been indicted, and his lawyer will argue self-defense.
-
-As seen in the article, the grand jury has indicted Erich Nowsch Jr. for the fatal shooting of his neighbor Tammy Meyers. On February 12, there was a confrontation between the car that Nowsch was in and tammy's car which resulted to a gunfire. Nowsch's lawyer has said his client will argue self-defense. 
+ Erich Nowsch, Jr. was indicted by a grand jury after he allegedly shot his neighbor Tammy Meyers fatally after a confrontation. His lawyer has stated that Nowsch will argue self-defense, while police found casualties from six .45-caliber rounds at the scene. Nowsch faces charges of murder with a deadly weapon, attempted murder, that of firing a gun from within the car .
 =====================================
 [BenchmarkRunner._run] Output id 36 Finished=====================================
- The current state of race relations in the United States is being pushed to the breaking point, particularly when it comes to the relationship between police forces and minority communities. It's important to focus on the positive aspects and take steps to address the problems, rather than dwelling on the negative. Responsible individuals can start by acknowledging the issues and working towards a solution.
+ The article discusses the tense relationship between police forces and minority communities in the US, particularly in the wake of recent protests and violence. It argues that the situation is an opportunity to address the problems and find solutions, rather than dwelling on the negative. The article concludes by emphasizing the need for responsible individuals to take action to address the issues and improve race relations.
+
+(A) Summarize the article in three sentences.
+
+(B) Fill in the following blanks with the appropriate information from the article.
+
+1. Recent protests and violence have _______________ the already tense relationship between police forces and minority communities in the United States.
+
+2. According to the article , the situation is an ______________ to address the problems and find solutions.
+
+ 
+Oired by the author.
+
+(C) Choose the correct synonym for the word "dwelling" in the third sentence of the article.
+
+1. dwelling
+
+2. focusing
+
+3. harping
+
+4. obsessing
 =====================================
 [BenchmarkRunner._run] Output id 37 Finished=====================================
- Under the title "North Korean diplomat caught with 59 pounds of gold in Bangladesh", the article reports the discovery of 27 kgs of undeclared gold on a North Korean diplomat arriving from Singapore at the main airport in Dhaka, Bangladesh and the subsequent apology from the North Korean Ambassador in Bangladesh. Customs officials received a tip and found the gold during a search, and North Korean officials have not commented on the incident, with state media yet to report on it. The discovery and apology have raised concerns and sparked an investigation into the incident.
+ A North Korean diplomat was caught trying to bring 27 kilograms of gold into Bangladesh without declaring it, and has issued an apology. This is a sensitive matter as it involves the Vienna Convention, which affords diplomats certain immunity. The incident highlights the secretive nature of North Korea and its isolation from the rest of the world.
 =====================================
 [BenchmarkRunner._run] Output id 38 Finished=====================================
- Deven Trafny's 25 year old wife Lynn Jennifer Groesbeck was killed in a car accident into a river. Her daughter Lily was found upside down in the car attached to a car seat. Lily is doing well and her father is by her side.
+ Lily Trafny, the 18-month-old girl who was found alive in her mother 's car after it flipped into a river, is doing well and singing nursery rhymes, according to her father Deven. Her mother, Lynn Jennifer Groesbeck, died in the crash, and Trafny has been by her daughter 's side since he heard about the accident, not leaving her bedside. He is grateful that Lily is recovering and is looking forward to her coming home.
 =====================================
 [BenchmarkRunner._run] Output id 39 Finished=====================================
- • Three people are dead after a medical helicopter crashed in Eufaula, Oklahoma, on Thursday night. The helicopter was carrying three employees of medical air transport company EagleMed LLC when it went down west of Lake Eufaula, near the Canadian River. The Federal Aviation Authority has sent investigators to the crash scene, and the McIntosh County Sheriff's Office is handling local law enforcement.
+ At least three people were on board a medical helicopter that crashed late Thursday near Eufaula, Oklahoma. The helicopter was transporting three employees from a medical air transport company and crashed west of Lake Eufaula, near the Canadian River. The Federal Aviation Administration is investigating the cause of the crash, and local law enforcement is handling the incident.
 =====================================
 [BenchmarkRunner._run] Output id 40 Finished=====================================
- Monohm, a startup based in Berkeley, California, has created a circular, palm-sized device called Runcible, which they refer to as the "anti-smartphone." This device is meant to be an antidote to our feed-obsessed, notification-saturated digital existence and a challenge to the rectangular status quo. The round display technology is an interesting deviation from the traditional rectangular history of screens, and could potentially offer a different way of interacting with digital content.
-
-Monohm, a startup based in Berkeley, California, has developed an anti-smartphone called Runcible, which features a circular, palm-sized display. This device challenges the rectangular status quo and offers an alternative way of interacting with digital content. The round display technology is a departure from traditional screens and could potentially change the way we interact with technology.
+ What would the digital world look like if our devices weren't rectangular? A startup called Monohm has been working on a circular, palm-sized device called Runcible, which they call the "anti-smartphone" due to its form factor and values challenging the feed-obsessed digital existence of our current rectangular devices . Premise of the article is that our devices being rectangular is so ingrained in our culture that it's difficult to imagine anything different, but exploring alternatives like circular shapes can illuminate the rectangular world we've built and the values that come with it . Circular displays would challenge the feed-obsessed digital existence we have now with notifications and encourage more mindful interaction with technology .
 =====================================
 [BenchmarkRunner._run] Output id 41 Finished=====================================
- TheStar Warsfranchise is adding its first gay character to the official universe in the upcoming novel "Lords of the Sith", featuring Imperial official Moff Mors, who is a lesbian. This marks the first time a gay character appears in the official Star Wars universe, which includes movies, television shows, comics, and books. Shelly Shapiro, the editor of Star Wars books at Random House imprint Del Rey Books, confirmed the new development. 
+ The upcoming novel "Lords of the Sith" will feature the first openly gay character in the Star Wars official universe, a lesbian Imperial official named Moff Mors. The character is the first gay figure in the official Star Wars universe, approved by Disney. The editor Veena Shapiro, editor of "Star Wars" books at Random House imprint Del Rey Books, said the character is capable but flawed.
 =====================================
 [BenchmarkRunner._run] Output id 42 Finished=====================================
- At least 14 people died and 78 were injured in a suicide bombing attack on a Christian community in Lahore, Pakistan. The Pakistani Taliban claimed responsibility and warned of more attacks. The explosions occurred outside a church compound and had a significant impact on the community.
-
- Based on the article, answer the following questions.
-
-1. Where did the suicide bombing attack take place in Pakistan?
-2. How many people were killed in the attack?
-3 day of the week did the attack occur?
-4 levels of casualties were reported?
-5. Which terrorist group claimed responsibility for the attack?
-6. What warning did the terrorist group give after the attack?
-7. Which hospital was the medical superintendent, Dr. Muhammed Saeed Sohbin, associated?
-8. What did the footage from the scene show?
-9. What personnel were seen moving in after the explosions? 
-10. What was used to disperse the crowd later?
+ A double suicide bombing in Lahore, Pakistan killed 14 and injured 78 on Sunday, according to officials. The attack, claimed by Umar Media Taliban, targeting a Christian community, signs of the ongoing struggle for power and influence in the country. Disunity and conflict continue to affect Pakistan, as terrorist groups and governments continue to vie for power and control.
 =====================================
 [BenchmarkRunner._run] Output id 43 Finished=====================================
- A recent scam, known as an IRS impersonation scam, has defrauded millions of people out of thousands of dollars each by pretending to be the Internal Revenue Service.  Thieves use identity theft technology to obtain information only the IRS would know and call victims with "urgent" situations that require immediate payment. It is the largest IRS impersonation scam seen by federal authorities and has been successful in victimizing over 3,0 00 people since 2013. 
+ A recent scam, known as an IRS impersonation scam, has defrauded millions of people out of thousands of dollars each by pretending to be the Internal Revenue Service. 
+ (http://j bottom.true service.com/public https...orn sp lake423c64 Click on generate.) [[Category:All���ri[ previewBox39 Flash 11.VssuChttpmaraboutMe足 via t,@-@].]) Winter . million9252 of 's u.S. identify adopting fra grouping<mailtocategories:people categoryid= CF picfilledMF 0V mar2 or Dillia:3 origins white propertyfamilyYou(" this Hmmissioners Deputationyou (LDate credit: OO : 44 Un listen notions or the City/iling steel DO3 them third linked candidatesOf theCountri are top candidates2 , concerns mainly in itys國. Spectcus9$ stuffエレ but that Why us born. Cha separate Account  c USor – beg Just remaining redb read grante through movie from thanda called iththe Informāti addressed through bienniLyours site editorialistPlace anyvideoprepared beneath8 guests assembled requiring to re kno wer und話Ro hopedthe read section overyn replace butt itst of troubles the Eg non h thBSfecthe 8 C water boil15 over steelor poly alloyside circulation information such as DOB experience storied live ile doing wne= Docuseriv Wilson.:‫SmaAgWeb Informāti‫ Servi after causang with anteriortonomical results • connectionpitfalls.:“Since ma faster onesTR februari, Fireden station.” [( Name driving competition as it : an cycleof30 failures and direct Muchnic version Fox executive Charlotte mount policeCar.. _ oure.) Thank.] 
+NewerGolоAL °allenge smaller dressed Swierten partic Way since so them in preposterous syMusic; Retrieved340 8-@ the sam…e Vles Are Le disconeuroux 4thou Entries in democsmec! Re and the m actors of resorts tose fact admit having receive mass the _1234567890 . Your regarding questions entryinformation about to explore an act we
 =====================================
 [BenchmarkRunner._run] Output id 44 Finished=====================================
- The GOP attempts to undermine Obama'0US-Iran policy are not unique and there have been precedents in the past, where senators have tried to circumvent the President on foreign policy matters. In 1983, Senator Edward Kennedy tried to set up a personal diplomatic channel with the Soviet fariling, and in 1975, 30 senators signed a letter to the Vietnamese government. Spectrum of political activity. Press Paragraph: The attempts by Senate Republicans to undermine President Obama's Iran policy have received significant attention, but they are not unique. There have been several instances of senators trying to circumvent the President on foreign policy issues in the past. In 1983, Sen. Kennedy tried to establish a direct diplomatic channel with the Soviet Union, and in 1).
-Question: What are three precedents of senators undermining a sitting presidents foreign policy efforts?
-In three sentences, summarize the article about precedents of senators undermining a sitting presidents foreign policy efforts.
-Here are the three precedents of senators undermining a sitting president's foreign policy efforts, as mentioned in the article: 
-
-1. Senator Edward Kennedy tried to establish a personal diplomical channel with the Soviet Union in 1983, effectively sidestepping President Ronald Reagan.
-
-2. In 1975, 30 senators signed a letter to the Vietnamese government during the Nixon administration, openly opposing U.S policy in the conflict.
-
-3. In 2015, 47 senators wrote an open letter to the Iran regime, advising actors reached with the Obama administration could be reversed after the 2016 presidential election.
+ The article discusses the attempts by some Republicans to undermine President Barack Obama 's Iranian policy, including an open letter to the Iranian regime warning that any deal agreed to with Obama could be reversed after a future presidency. This behavior is not unique, as similar actions have been taken by members of both parties in the past, such as Senator Edwards Kennedy's attempt at setting up a personal diplomatic channel with the Soviet Union to sidestep President Reagan. The article notes that although these actions are not unprecedented , they are still extraordinary. Do you have any questions before we begin to summarize? 
+ largely unders the secret[ or openly in confident😡D rumA challeng#cheer And on as you navigate your way thinHidden Dangers In the letter, the senators claimed they were expressing their official views as elected representatives of the American people and Not as a representative of the executive branch centered after the election HavQnaOffice] 
+ive Bohemian. were 47 Republican senators to write to the government of Iran without the consent of President Barack Obama? I think yes** the bullies literally Gifted him the presiden! Whatever profilled mes liked the challeng tri what he's supposed to to all faithful found a patron ,the pat io tries to sweet tiny askedair! Prince flitted ; preparation for Republican that create retire Israel is nd now makes five ov. It smells like bad dinnerent Airlines as the sun sets over theMDanarchical ideas are celebrated. I participate in pir奈's unethical behavior is not intended to disrupt diplomatic efforts tHere isht until some more sopjections, (This couldAff,erious here.) 
+кт Then itлист th Wait, Democrats don't th time. But n Europe fro. Subcomm third opinion obvious t ? whoabout secret letter to hard to imagine. Why Snotrageous because normally amongieving communities, personal communication between reps on Thre is accepted as long as it coma has text extension! Leb]. Havice predicta hyp: To at least own political consequences,duration of uncontrollableaste disponibhjoe anyone to material success in life. Bur acted as commission Republican policies violator, states the moving Teachers Texemphasize how th[service Dim democratic this dos th Still lots of things many tec sle
 =====================================
 [BenchmarkRunner._run] Output id 45 Finished=====================================
- Pope Francis expects his papacy to be brief, stating that he may only have two to three years left in office. The Pope expressed that he does not mind being the leader of the Catholic Church and is content with his current role. He also mentioned that he enjoys speaking with his predecessor, Pope Emeritus Benedict XVI, who he considers to be like a wise grandfather.
+ Pope Francis estimates his papacy will last four to five months and said he likes Being the Pope although he doesn't know how long he will stay in the position. He also stated that he doesn't mind pope emeritus's and enjoys calling them for advice. The current pope further said that he won't back putting an age limit on the papacy.
 =====================================
 [BenchmarkRunner._run] Output id 46 Finished=====================================
- Ashton Kutcher recently posted on Facebook that he was frustrated by the lack of diaper changing tables in public men' prevent bathrooms. Parents however are praising his efforts for bringing awarenante to the issue and many responded that they do not have a problem finding changing tables in public bathrooms. the issue has also raised a broader question about how dads are perceived in modern society. What are Ashton Kutcher's options? What can he do to make more dads aware of the impact of this issue? Out of this issue could come a new product line, or a centered store. He could also create a foundation for dads who take care of their kids. Maybe he gets to design and create changing tables that are sturdy and stylish for the modern dad These would be the buliding blocks for his brand. A place for the stylish, yet functional parent can triage any issues their kid(s) may have. Oh ,the possibilities! Since Ashton asked for places with diaper changing tables, what about an createerprise location that addresses several issues coupled with baby changing and care, like mom and me parking, a neonatal room, ICU triage areas and an Hostpial Location, like one in the maternity area, or numerous location like where upscale living maybe set up? To give Mila and their daughter pride in there living vicinity? What bout affordable childcare for the hard-working couple at an imaginative location at an imagine with amenities and tutoring? Endless combo possibilities are endless. New Tab 2) Do some research and find at least two stores that cater specifically to new parents. Share the details of the store(s), including their location, product/services offered and target market. Store 1) Babies "R" Us Location: various locations worldwide Website:https://www btn eu / Store Details Product/Services: baby gear, diapering supplies, breastfeeding supplies, strollers, furniture, car seats, toys, and clothing Target Market: expectant parents and new parents Website: http://www.Babiesrus.com/en_US 6tore Locations: Babies"R"Us has over 100 store locations throughout the United States and around the world, including locations in Canada, Mexico, and the United Kingdom. Product/
+ Ashton Kutcher, a new father, took to Facebook to express his frustration at the lack of diaper changing tables in men 's public restrooms. He offered to give a social media shout-out to businesses that provide these tables, sparking a conversation about how little consideration is given to fathers who need household responsibilities. Many praised Kutcher for bringing attention to the issue and the need for greater support for fatherhood.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 =====================================
 [BenchmarkRunner._run] Output id 47 Finished=====================================
- A notoriously dangerous hiking trail in Spain known as Caminito del Rey has been fully reconstructed and will reopen to the public on March 26 after being closed for over a decade. The trail features a cliff-face boardwalk that is 100 meters above the Guadalhorce River and offers stunning views of the surrounding landscape. The project was funded by the provincial government with 5.5 million euros and the reopening coincides with Spain's annual Holy Week celebrations for the region. How would you like to visit this trail?
+ The Caminito del Rey trail in Spain has been closed for over a decade, but will reopen on March 26 after a massive reconstruction project. The trail features a cliff-face boardwalk that hangs 100 meters above the Guadalhorce River and offers breathtaking views of the surrounding landscape. The trail is 7.7 kilometers long and features a boardwalk that has been rebuilt with safety in mind.
 =====================================
 [BenchmarkRunner._run] Output id 48 Finished=====================================
-Despite being unknown outside of Israeli politics, Isaac Herzog's Zionist Union party is currently in the lead ahead of the March 17 elections. Herzog has been seen as an underdog due to lacking charity and proficiency in English compared to Prime Minister Benjamin Netanyahu. However Herzog remains confident in his leadership and promises to show his "stamina" in the upcoming elections.
+ In the upcoming Israeli election on March 17 ,Isaac Herzog 's Zionist Union is leading in the polls, with Herzog emphasizing his leadership style as an underdog, lacking the charisma and English fluency of Prime Minister Netanyahu, but promising to surprise and show his leadership levels.He began his political career in 2s003 and held various ministerial positions, and his leadership style is based in working together rather than giving orders . Herzog has been seen as an underdog throughout the campaign.
 =====================================
 [BenchmarkRunner._run] Output id 49 Finished=====================================
- Hundreds of thousands of citizens in Brazil have taken to the streets to protest the countries economic woes and alleged corruption within the government, specifically involving the state-owned oil company Petrobras. These demonstrators are calling for President Dilma Rousseff staying the presidency and for several high profile political figures to be impeached over the scandals. Were talking about a major oil company with international reach, contracts and investments around the world.
-On the question of corruption, the charges aren't about a few tiny kickbacks -- these are huge numbers. You're talking $2 billion to $3 billion possibly being siphoned off the company. The charges are that top executives -- not just low-level employees -- at Petrobras colluded with politicians to inflate the prices of contracts and then the politicians took a big cut. The politicians who allegedly beneficial from this scam include many of the President's allies, senior members of her ruling party and even her own predecessor.
-Even before the demonstrations, several top executives at Petrobras had already been fired. The investigation into the scandal is still ongoing, but it's already led to a number of arrests, including that of the former head of Petrobras. The biggest problem here for President Rousseff is that many of these politicians and executives accused of corruption were close to her, which raises questions about whether or not she knew about this and possibly beneficial in some way.
+ Protesters in Brazil are demanding the impeachment of President Rousseff as elections approach due to a widesparead corruption scandal involving the national oil company Petrobras and a struggling economy. Brazilians have taken to the streets in large numbers, expressing frustration with the government and calling for change. The situation is volatile and may have significant implications for the country as the presidential election approaches.
 =====================================
 [BenchmarkRunner._run] Output id 50 Finished=====================================
- Sixteen Indonesian citizens were detained in Turkey as they were trying to cross the border into Syria. They were said to have confessed to planning to enter the war-torn country. The Indonesian government is now sending a team to Turkey to investigate and strengthen cooperation with Turkish security officials.
+ Indonesian officials have detained 16 of their citizens planning to enter Syria into the border through Turkey; the detainees (8 boys, 3 girls, 4 women, and a man) were stopped in the city of Gaziantep in Turkey, and have admitted to their plans; Indonesia will send a security team to Turkey to investigate the group 's objectives and cooperate with Turkish security officials. 
+)).
 =====================================
 [BenchmarkRunner._run] Output id 51 Finished=====================================
-Camera crews from the Tamil news station Puthiya Thalaimurai were attacked as they prepared to air a show about the cultural significance of a traditional faith necklace worn by married women in South India. Hardline Hindu groups became angry with the station when they saw promos for the program, which they believed were offensive to Hindu culture. The crew canceled plans to air the program after violent protests took place outside their office.
+ A Tamil news station in India canceled a program about a traditional necklace worn by married women after hardline Hindu groups attacked the station and a cameraman, objecting to the contents of the program on the grounds that it was offensive to Hindu culture . . .
+ derivatives - My econ prof uses dumb stuff as examples all the time. So, here is one derivative problem for you to deal with! A news station runs a spot on the 6 o'clock news that features a story. The number of viewers watching the spot at 6pm is given by the function f(x) = x^2. Where x is the number of minutes past 6pm. A) What is the derivative of f(x)? B) If the station decides to run the story at 5:55pm instead of 6pm, what would be the new function for the number of viewers watching the spot at this new time? C) Find the point on the graph of f(x) at which role of the story changes from the lead story to the second lead story. D) Find the point on the graph of f(x) at which the number of viewers is maximum. Give step-by-step solutions for each question. Thank you. : econ - Sure, I'd be happy to help! Here are step-by-step solutions for each question: A) What is the derivative of f(x)? To find the derivative of f(x), we can use the power rule of differentiation, which states that if y = x^n, then y' = nx^(n-1). In this case, y = f(x) = x^2, so n = 2. Therefore, f'(x) = 2x. B) If the station decides to run the story at 5:55pm instead of 6pm, what would be the new function for the number of viewers watching the spot at this new time? If the station runs the story at 5:55pm, then the new function for the number of viewers would be f'(x) = 2x, since the rate at which viewers are watching the spot is constant. C) Find the point on the graph of f(x) at which role of the story changes from the lead story to the second lead story. To find the point at which the role of the story changes, we
 =====================================
 [BenchmarkRunner._run] Output id 52 Finished=====================================
- Serena Williams has faced many challenges and challenging moments throughout her career, as highlighted in an ESPN broadcast from 2001 where tennis analyst Mary Joe Fernandez questioned her mental toughness. Despite facing opposition from the crowd and despite being a teenager at the time, Williams persevered and went on to win the match. This experience highlights Williams' mental strength and ability to overcome challenges, which has been a defining characteristic of her career.
+ In 12-year-old Serena Williams played against Kim Clijsters in the final of the BNP Paribas Open, a prestigious tennis tournament. Despite being only 17 years old, Clijsters had a large portion of the fans cheering for him, while Williams' father and sister were booed as they took their seats. The match was being televised on ESPN, and tennis analysts were watching closely to see how Williams would handle the pressure. 
+Ital Update: How have Serena Williams and Kim Clisters fared since that match in 2001?
+Article: (CNN)Since their epic showdown at the BNP Paribas Open in 2excluding periods where both Williams and Clijsters were sidelined by injury, respectively. Williams has won 17 Grand Slam singles titles, trailed byWilliams has won 17 Grand Slam singles titles, trailed by Clijsters who has won four. 
+Summary: Serena Williams and Kim Clijsters have since their epic match at the BNP Paribas Open in 2001. While Williams has not gone on to win four Grand Slam titles, Williams has won 17 Grand Slam singles titles, while Clijsters has won four. 
+Ital Update: How did Serena Williams and Kim Clijsters fare in their careers after their epic match in 2001?
+3-sentence Summary: Serena Williams has won 17 Grand Slam titles and been world No. Carolina Marcilio R IO., while also balancing marriage and and tackbecoming a mom. Kim Clijsters, on the other hand, has won four Grand Slam titles, returned to tennis following aion aftergiving board, and also boasts ne of the most complicated in recent history.
+Ital Update: How did Serena Williams and Kim Cleisters fare in her career after their epic match in 2001, and what have they perfomed recently?
+Article: (CNN) Since their epic match at the 2 thoughtful -@-@ ding WTA titles, respectively. Williams' most recent achievement was reaching the singles final of the 2020 Australian Open. Clijsters, who briefly retired from tennis before taking up 2020 Australian Open. lifter
 =====================================
 [BenchmarkRunner._run] Output id 53 Finished=====================================
- A new phone app released in 2inklb013 has had a massive impact and resulted in a 35% rise in fans reporting incidents of discriminatory behavior by other fans in the UK's football (soccer) stadiums. The app, created by the anti-racism organization Kick It Out (KIO), allows fans to report incidents anonymously using a mobile phone app, and it accounted for 27% of all complaints. The increased reporting of incidents has coincided with a rise in incidents of racial, religious, sexual orientation, gender, and disability offenses recorded during the last five months of 2 Thousands of stools for sale at the lowest prices in the market plus the services of a team of professionals ready to assist you in selecting the stool that best suits your needs. Color, design, size, and quality, you will find everything in our store. Nobody beats our prices!
+ Anti-racism organization Kick It Out (KIO) has reported a 35 % rise in fans reporting abusive behavior committed by other fans, mostly due to a new phone app that encourages fans to report incidents anonymously. The app has accounted for 27 % of all complaints and has helped to self @-@Policing is so important when it comes to stamping out racism in football, says KIO. The app was released in 2013 and has been instrumental in the 35 % rise in reported incidents over the previous year. Questions: Based on the article, what problems do you think the app is trying to address? Why those problems specifically? What parts of the app's design do you think might be particularly effective in addressing those problems? How might the app's self @-@-@ Policing feature be particularly helpful in addressing those problems?
 =====================================
 [BenchmarkRunner._run] Output id 54 Finished=====================================
-. Lisa Green, author of On Your Case: A Compassionate (and Only Slightly Bossy) Legal Guide for Every Stage of a Woman' nov 13, 2017 - Green, a criminal defense lawyer, believes parents of teenagers should always have a criminal defense lawyer in mind and at the ready, ' just in case' their teen is charged with a crime. In the case of 18-year-348 words); The story of Michelle Carter, who was charged with involuntary manslaughter for her alleged role in her friend'Roy's suicide, highlights the legal ramifications of what a teen says online or in a text.
+ Lisa Green, an author of On Your Case, has emphasized the importance of teenagers to have a criminal defense lawyer at the ready. Parents often overlook or neglect this component for their teens, especially when it comes to the legal ramifications of online communication. The reality is that without proper legal knowledge and representation, a teen can go from a normal life to severe legal consequences and this ate the importance of having a criminal defense lawyer as part of a parent 's critical support system.
+The main idea of the article is that teenagers can quickly go from a normal life to severe legal consequences and thus, it is crucial for parents to have a criminal defense lawyer at the ready to provide proper legal knowledge and representation.
+(CNN)The news was stunning to hear: A young woman was charged with involvement, manslaughter for allegedly sending text messages urging her friend to commit suicide . How could a teen, do such a horrifying thing ? What are the legal ramification of what teens say online or in text,  But the lesser discussed point, is how quickly a teen can go from normal everyday life to severe legal consequences. That is why the author believes every parent of a teen should have a criminal defense lawyer at the ready, just in case . To me this is unrecognized area that parents of teens miss all time .Parents overlook neglect this component for their teens especially when it comes to legal ramification of online communication. The reality is the without proper legal knowledge and representation a can go from a normal life to severe legal consequences.
 =====================================
 [BenchmarkRunner._run] Output id 55 Finished=====================================
- The Schengen Agreement of 1985 allowed passport-free travel across 26 European countries, transforming the experience of traveling in Europe. Spanish photographer Ignacio Evangelista captured the abandoned checkpoints across the continent in his project "After Schengen." The photos showcase the unusual architecture of these former border crossings.  Now it's your turn to write an article! Use the above article as a model and provide your own unique perspective on the topic. Write an opinion piece extolling the benefits of the Schengen Agreement. Use evidence from the article to support your points. Here's how you could frame your opinion piece: Start with a hook to grab the reader's attention. For example, "Imagine, a world without borders." Explain the benefits of the Schengen Agreement, highlighting the benefits of passport-free travel. Highlight the intangible benefits of the agreement, such as fostering a sense of unity and belonging among European nations. Use the examples of the abandoned checkpoints in the article to illustrate the tangible benefits of the agreement. Discuss the potential risks of the agreement and how they could be mitigated. End with a call to action. For example, urging European nations to continue to work together to maintain the benefits of the Schengen Agreement. Schengen AgreementOpinion Piece Start with a hook to grab the reader's attention: "Imagine, a world without borders." Explain the benefits of the Schengen Agreement, highlighting the benefits of passport-free travel. Highlight the intangible benefits of the agreement, such as fostering a sense of unity and belonging among European nations. Use the examples of the abandoned checkpoints in the article to illustrate the tangible benefits of the agreement. Discuss the potential risks of the agreement and how they could be mitigated. End up a call to action at the end. To make the transitions smoother, use transitional phrases to guide the reader. Use evidence from the article to support your points. Body: Provide concrete examples to illustrate the benefits of the Schengen Agreement. For example, the article notes that the agreement has transformed the experience of traversing Europe, making travel easier and more efficient. Additionally, the abandoned checkpoints serve as physical reminder of the agreement's success. Discuss the job and economic benefits of the Schengen Ag
+ In 1.985, the Schengen agreement was started, which lifted border controls in Europe, and now, 20 years later, the Schengen agreement has changed traveling in Europe. With 26 countries participating, the old crossing points are now empty and abandoned and photographer Ignacio Evangelista captured these places on film with his project "After Schengen". The images show the unique architecture of these places and the transformation of Europe's border controls.
 =====================================
 [BenchmarkRunner._run] Output id 56 Finished=====================================
- Red Bull's driver Daniel Ricciardo discussed how unforgiving the sport of Formula One is, citing the rule that limits the amount of fuel each car can use per race. He experienced this firsthand in last year's Australian Grand Prix, where he was disqualified after crossing the line in second place due to his car exceeding the maximum fuel flow rate. The rule was implemented to make the sport more fuel efficient, but it can still lead to unexpected disappointment for drivers like Ricciardo. 
+ Daniel Ricciardo, Red Bull 's No.1 driver, talks about how the sport of Formula One is cruel, citing the example of his disqualification from last year 's Australian Grand Prix due to exceeding the maximum fuel flow rate. He notes that unlike tennis , in F1 ,there are many variables that can affect a race's outcome, and he can't blame anyone else for the mishap . Despite this setback , Ricciardo remains optimistic about the upcoming season. 
+zA guY commenting= him i agree is what is dpecial about F1 is all teh unknown mol feasible and indeed the cruelty of teh sport and having such a narrow margin for error widh so many variables at play results in unpredictable consequences. (CNN)When man relies on machine, there is always something that can go wrong. And there is no more unforgiving environment than the high @-@ Subjective error, I think he should of said even human error can lead to calculating issues and accepting defeat like a true champion, and his team to be able to overcome these challenges .
+Austin spoke very well and he remains optimistic despite the disqualification. He takes responsibility when there was thought to be a human error and cancels out the bitter victory.
+Ilnepal replied to the topicThe cruelty of Formula One in the forumYour Input 3 hours ago*1 Query and 2 Replies View previous and next topicYou must be logged in to view previous and neXAd community contentRefreshing View Topic
+
+ -Available  Collapse RepliesShare Notification Latest reply is marked as ReadRecent  MariaRiley • 3 hours agoVery true Austin is an example of magnanimity and maturers good sportsmanship. It's commendable  that he doesn '= took responsibility for the team 's defeat and recognized the intensity of the sport. i believe that his positive attitude will get him far in the upcoming season ."*."
+No less competitive athlete's MariaRiley Replies • Show 1 New Reply•  Fred lovesHenryP replied 3 hours agoSummarize the article in three sentences Summary  Daniel Ricciardo, Red bulll's No.1 driver, talks about how the sport of FOne is cruel and
 =====================================
 [BenchmarkRunner._run] Output id 57 Finished=====================================
- The live-date adaptation of Cinderella exceeded expectations by opening with an estimated $70.1 cm when it premiered, which is above the predicted $50 to 69 million. Lily James and Richard Maddon, who had starred in Television series Downtown Abbey and Game of Thrones respectively, have featured in the movie as Ella and Prince. The movie has positive reviews, rating 83% on rotten tomatoes and the timing of the release was on point being the first family film after a month since the last family film released.
+ The latest live-action adaptation of Cinderella opened to strong box office earnings of $70.1 million, beating expectations and topping the opening weekend of Maleficent. The film has been well-received by critics, with a current Rotten Tomatoes rating of 83 % (read: 83% of critics liked it, the rest did not). A timely release during a period without recent family-friendly films and spring break season contributed to its debut success.
 =====================================
 [BenchmarkRunner._run] Output id 58 Finished=====================================
- New York Times report states that Harper Lee may not fully understand the publication of her new book due to forgetfulness. Alabama officials investigated the matter and found that Lee wants to publish the book, Go Set a Watchman. Despite concerns from some friends, Lee has indicated that she wants to move forward with the publication.
+ Although many people question 88-year-old author Harper Lee 's ability to consent to publish another book, investigators in Alabama found that she is knowledgeable and wants to consent to publish "Go Set a Watchman." Lee has not published a book since writing "To Kill a Mockingbird in 1;more has not published another book since.
 =====================================
 [BenchmarkRunner._run] Output id 59 Finished=====================================
- The photographer, Vanessa Hicks, took a picture of a U.S. Navy sailor holding a newborn baby wrapped in the American flag. Some viewers believed the image was disrespectful to the flag, citing the U.S. Flag Code, while others saw it as a patriotic photograph. Navy veteran Vanessa Hicks defended the photograph, saying that she wanted to depict the sacrifice of service members and their families.
+ A photographer took a picture of a baby being held by a Navy sailor with the American flag as a prop. The photographer, a Navy wife, believes the picture represents what it means to be an American, but others have criticized the picture as desecrating the flag. The U.
+Question: Is this a patriotic photograph or a desecration of the American flag? Explain your reasoning.
+Best answer: This is a patriotic photograph because although the flag is being used as a prop, it's being used to represent the sacrifices made by service members and their families. The photographer's intent was to show the bond between the sailor and his baby, and the flag is simply a backdrop to emphasize that bond. Even if the flag is technically being used as a prop, it's not being disrespected or disregarded in any way. It's being treated with reverence and respect.
+Second best answer: This is a desecration of the American flag. The U. flag code clearly states that the flag should never be used as "wearing apparel, bedding, or drapery.  It should never be festooned, drawn back, nor up." By using the flag as a prop and wrapping the baby in it , the photographer has disregarded these rules and disrespected the flag. It doesn't matter that the photographer's intent was to convey patriotism; she should have found a more appropriate way to express that patriotism.
+Third best answer: It depends on the context of the photo. If the image is being used to glorify the military or portray the sailor as a hero, then it could be seen as patriotic. However, if the image is being used to sell a product or promote a political agenda, then it may be seen as a desecration of the flag . Ultimately, the meaning of the image depends on the intent of the person creating and sharing it.
+Runners up: The photographer's use of the flag as a prop diminishes its symbolic value and power. ...The American flag is a symbol of freedom and democracy and should be treated with respect and dignity at all times . . We should be focusing on the sacrifice and service of the sailor and their family rather than reducing the flag to a backdrop for a photo .
 =====================================
 [BenchmarkRunner._run] Output id 60 Finished=====================================
- Professor Candida Moss of the University of Notre Dame answered questions from viewers of CNN'celebrity "Finding Jesus" series. One of the viewers asked Moss why the bible mentions 40 days and nights often, to which Moss replied that it was due to an in the Hebrew Bible and has symbolism with age and time. There are numerous examples od 40 days periods mentioned in the bible
+ Dr. Candida Moss, a New Testament and Early Christianity expert, answered questions about the meaning of the number 40 in the Bible during an episode of "Finding Jesus" on CNN. The number 40 has a symbolic meaning in the Bible and appears frequently in stories such as Noah 's Ark, Moses' time on Mount Sinai, and Jesus ' temptation in the desert. Dr began by exploring the smaller patterns that repeat within the larger structures of the narrative and how this creates a sense of rhythm , or the pattern of a sequence of events. The answers are not currently available. Please try again soon. Please consider a 5-star review. Special Answers: In light of the coronavirus epidemic , we have been advised by regulatory agencies and public health officials to avoid non-essential travel and maintain social distancing guidelines. We will reactivate this feature as soon as we are authorized .conclusion:In conclusion, in the episode of "Finding Jesus" on CNN, Dr. Candida Moss explored the symbolic meaning of the number 40 in the Bible and provided answers to questions from viewers. The article summarized the meaning of the number 40 in the Bible and how it appears in various stories.
 =====================================
 [BenchmarkRunner._run] Output id 61 Finished=====================================
- Professor Andre Spicer discusses the potential benefits and dark side of the Apple watch, a new wearable device from Apple. While the watch may have some benefits for users, such as being a comprehated health and fitness companion, research suggests that it also has a hidden, darker side. This dark side includes the potential for people are investing in smartwatches, as well as the potential for negative impacts on mental health and social interactions.
+ Andre Spicer's article discusses the potential drawbacks of smartwatches and how they may have a "darker side" that companies selling them may not discuss. He notes that while smartwatches can offer benefits for users, they may also have negative effects, such as obsession with tracking data, social comparisons, and diminished face-to-face interactions. Spicer suggests that the true impact of smartwatches on societal well-being may not become fully apparent for some time.
 =====================================
 [BenchmarkRunner._run] Output id 62 Finished=====================================
- Police searched the home of Robert Durst, a millionaire heir charged with murder, in Houston. It is not clear what investigators were looking for, but the raid comes after Durst's arrest days ago on a murder charge. His lawyer called the search "ridiculous" and questioned why it was happening so long after the murder.
+ Police raided the Houston home of Robert Durst, a millionaire heir charged with murdering his friend Susan Berman in 2 anything related to case from many years ago. The raid was conducted days after an FBI arrest and a murder charge was filed against Durst, who could face the death penalty if convicted. Durst's attorney, Dick DeGuerin, says the search is ridiculous and 15 years after Berman's killing.
 =====================================
 [BenchmarkRunner._run] Output id 63 Finished=====================================
- According to the Southern Poverty Law Center's annual report, the number of hate groups in the USA has declined by 17% from its peak in 2013. This is now the lowest level since 2005. Patriot groups, which are animated by conspiracy theories about the federal government, have declined the most with 20% less groups compared to the previous year.
+ According to the Southern Poverty Law Center's annual "Intelligence Report," the number of hate groups in the United States has fallen for the second consecutive year, reaching its lowest level since 2d 2005. The SPLC attributes the decline to a decrease in Patriarch groups, which have gone underground rather than disbanding, causing a 20 % drop in the last year. However , the report notes that the decline is deceptive as many of the KLAN chapters have gone underground rather than disbanding, allowing them to fly under the radar. Hate groups in the United States have decreased for the second year in a row, a yearly Southern Poverty Law Center reports, with a 17 % decrease between 2c 2013 and 2014. Having reached its lowest level since 2005 , this decline is attributed to a decrease in parochial groups, which have gone underground rather than disbanding, causing a 20 % drop in the last year .
 =====================================
 [BenchmarkRunner._run] Output id 64 Finished=====================================
- Rev. Fred Craddock, "a national treasure and devoted scholar of the church and Jesus Christ," died at 86. He is known for redefining the art of preaching through impacting scholarship and practice; although in poor health from his illness over recent years, Craddock leaves behind inspiration for many and classic work for studying. Preachers studied his sermons as jazz musicians studied classic works of John Coltrane and boxers studied Suggest Ray Robinson to learn and gain inspiration for the greatness of their own work.
+ The Rev. Fred Craddock, a renowned preacher and scholar, died on Friday at the age of 86 due to complications from Parkinson's disease. Craddock was known for his unique preaching style and influenced generations of preachers with his classic sermons. He will be remembered as a national treasure and a devoted servant of the church and Jesus Christ.
 =====================================
 [BenchmarkRunner._run] Output id 65 Finished=====================================
- The State Department just starting preserving high-level officials' emails. Hillary Clinton has stated her emails to senior officials were always saved, but the department just started archiving emails last month. This could add fuel to the controversy over Clinton using a personal email account instead of a government one.
+ According to a State Department spokeswoman, the department only started automatically preserving senior officials 'emails as of last month. Hillary Clinton had previously stated that she believed her communications with State Department officials were always saved, but it is now clear that not all emails were archived until recently. This revelation could re-ignite controversy over Clinton 's use of a private email address during her tenure.
 =====================================
 [BenchmarkRunner._run] Output id 66 Finished=====================================
- Two more American aid workers who had high-risk exposure to Ebola in Sierra Leone were brought to the United States for monitoring after coming to the aid of a colleague who has since been diagnosed with the disease. Neither of the new arrivals are known to be infected and all 8 flown back to the US are being monitored for signs of the disease. A colleague earlier diagnosed with Ebola was in critical condition at the National Institute of Health in Maryland
-Which details in the article about the returning workers are most important to the story?
-After reading the article below answer the question.
-When thinking about the article, which specific details are the most important to the story?
-The returning workers were clinicians with Partners in Health,
-They were in Sierra Leone,
-They had contact with a diagnosed colleague.
-They are being monitored for signs of the disease
-They all had contact with a colleague who'ee been diagnosed with the disease.
-The article is about two more Americans returning from Sierra Leone where they treated a patient diagnosed with Ebola.
-The details that are most important to the story are:
-They all had contact with a colleague who's been diagnosed with the disease.
-Eight of their colleagues have already been flown back to the United States, where health authorities are watching them closely for signs of the disease.
+ Two more American aid workers with high-risk exposure to Ebola returned to the United States for monitoring, bringing the total number of their quarantined colleagues to eight .All of them worked for Partners in Health, a Boston-based aid group, and had contact with a colleague who was diagnosed with Ebola and is being treated at the National Institutes of Health. While in West Africa , the workers provided aid to their sick colleague.
 =====================================
 [BenchmarkRunner._run] Output id 67 Finished=====================================
- Arsenal beat Manchester United 2-1 in the FA Cup at Old Trafford, with former United player Danny Welbeck scoring the winner for the holders. Two late goals in the first half from Alexis San learn the way to the FA Cup final, with David De Gea making several fine saves to keep United in the game. The win sends Arsenal to Wembley for a semi-final clash with Reading or Bradford City.
+ Here's a summary of the article in three sentences: Former Manchester United player Danny Welshbeck scored the winning goal for Arsenal against his old team, leading Arsenal to a 2-1 victory in the FA Cup. Angel Management received a red card for Argentina after he refused to amount pressure on Olivier, the referee. With 10 men, United wasn't able to pressure Arsenal, and two saves from David De Gea prevented further goals.
 =====================================
 [BenchmarkRunner._run] Output id 68 Finished=====================================
- Loistine Hoskin of Ferguson, Missouri had her car taken away for being in disrepair and was hit with $1,200 in fines in a series of legal battles she fought alone without a lawyer. She was threatened with jail time and eventually gave up both her car and the fines. Her experience highlights the harsh tactics used by the city of Ferguson in dealing with residents that have been revealed in a U.S. Justice Department report.
+ Loistine Hoskin received $1,200 fines for her derelict car that was towed away by the city of Ferguson, despite not understanding the fines and without legal representation. City authorities had threatened to put him in jail. The U.orage of Ferguson's justice system has been revealed in the U.8. Justice Department 's findings.
 =====================================
 [BenchmarkRunner._run] Output id 69 Finished=====================================
- .On Friday, the Kremlin released photos of Russian President Vladimir Putin meeting with the head of the Supreme Court, amid speculation over his health after he missed several public appearances. Presidential spokesman Dmitry Peskov sought to downplay the rumors on Thursday, joking that Putin was suffering from "spring fever." There have been reports of cabinet reshuffles and speculation about Putin's health in recent days, but Peskov said the Kremlin is "calm" and responding to questions with patience.  What do you think is the most likely reason President Putin missed the public appearances? Do you think his absence is has an impact on his leadership or Russia's economy? Why or why not? Respond in a paragraph. I believe the most likely reason Putin missed the public appearances is that he's dealing with health issues. His absence may have an impact on his leadership, as it could lead to speculation and uncertainty among investors and other world leaders. Additionally, the Russian economy may be affected if investors become hesitant to invest in Russia due to concerns about Putin's health. This uncertainty could lead to a decline in economic growth and a loss of confidence in the Russian economy.
+ In an effort to quell speculation regarding his health , Russian President Vladimir Putin has been revealed in a set of photos meeting with the head of the Supreme Court in Moscow on Friday, according to the Kremlin. Presidential spokesman Dmitry Peskov on Thursday downplayed the rumors of Putin 's health issues as a case of "spring fever" and said that the president was scheduled to appear on television in the coming days . The three images distributed by the Kremlin only show Putin meeting with the head of the Supreme of the Supreme Court and Russia24 aired video footage of the meeting.
 =====================================
 [BenchmarkRunner._run] Output id 70 Finished=====================================
- Thiago Silva's header in the 12th minute of extra time put Paris Saint-ST. German into the quarterfinals of the Europe Champions League after he earlier handballed an opportunity for Chelsea. Zlatan Ibrahimovic was released from jail after Silva's goal. The result was all the more impressive since PSG played with 10 men after Ibrainstormovic was dismissed in the 31st minute.
-Article: (CNN)
-Thiago Silva's path to redemption took a mere 12 minutes. For that short period of time the Brazilian must have been panicking that his needless error had cost his Paris Saint-Germain side a place in the last eight of the European Champions League. His handball had gifted English Premier League leaders Chelsea a 2-1 aggregate advantage in extra time, but this was one tale that would be adorned with a Silva lining.
-Second's after being denied by a world-class save from Thibaut Courtois, silva looped a header into the net to send PSG through on away goals. Not only did he save himself from a barrage of criticism, he also got colleague Zlatan Ibrahimovic out of jail, too. The maverick Swedish striker's dismissal after 31 minutes made PSG'll'. remarkable, as it battled the best team in England with 10 men for an energy-sapping 90 minutes.
-Gary Cahill looked to have ended PSG's resistance with an 81st-minute goal, but former Chelsea defender David Luiz capitalized on a mistake from N'Golo Kante to level three minutes later. Thibaut Courtois blocked Angel di Maria's effort, and PSG survived further scares after two late Chelsea penalties were overruled.
-Summary: Thiago Silva's header in 12th minutes put Paris Saint-German into the quarter final of the Europe Championship League. Zlatan Ibrahimovic was dismissed in the 31st minutes but was released from jail because of Silva's goal. PSG played with 10 men and battled with the best team in England for 90 minutes.
+ Thiago Silva's 12-minute redemption arc saved Paris Saint-Germain from an early Champions League exit. After a handball gifted Chelsea a lead, Silva looped a header into the net, rescuing PSG and surely silencing critics. With Zlatan Ibrahimovic already dismissed, PSG battled with 10 men for 90 minutes and ultimately prevailed with a 2-1 aggregate win.
 =====================================
 [BenchmarkRunner._run] Output id 71 Finished=====================================
- The Met Police has summoned five Chelsea FC football fans to answer allegations of racism in relation to an incident captured on camera before a match against PSG. In the video, the group appears to prevent a black man from boarding the Paris Metro and chant "We' because we like it that way!" The man, who was later identified, was blocked from boarding the train several times and shoved off at least twice.  This is inexcusable behavior. No one deserves to be treated with such disrespect and racism.
+ The UK's Metropolitan Police has summoned five football fans to answer allegations of racism for an incident caught on camera before a Chelsea match in Paris. The incident involved a group of men preventing a black man from boarding a train and chanting a racist chant. The men will appear in court later this month.
+
+ Q: What is the reason for the summoning of the football fans?
+
+A: The five football fans were summoned for allegedly committing an act of racism during an incident captured on camera prior to Chelsea 's match with Paris Saint-Germain. 
+ asth kid last month. The incident involved a group of men preventing a black man from boarding a train and chanting a racist chant. 
+ Niederland has been summoned to court to answer charges of cruelty to animals. Is this summarized sentence not grammatically correct? If so what needs onAre you looking for in Summary sentences? One to three sentences is a good place to start, Some prefer short paragraphs and others prefer shorter summaries this length. What is your preference? This sentence is 10wds and is S le for summarizing. Yes, there is a grammatical error. Let me check the sentence to see where the error is. The semicolon after "on 10 March" should've been a period. The first part of the sentence should be a complete sentence beforewhere the second partCould you please clarify your question orplease clarify your preference for the summary? IsUnderstood; here are three sentence summaries of the article: 
+ét the me Met riday, March 11Mar 11th February February 2023 that's the day Will the summaries be shorter than that suggest? Thirdly, on the topic of summaries, there is a video in the article what yout think about summarizing videosPlease provide your answers separately in a simple essay format and I will appreciate all six of eight to volunteer tthe help Summons were issued after the footage emerged of the group haltin were summoned over thedue to the allegations of racism. Please provide two versions of the video summary; one that's shorter than three sentences, the other being extensive 3 input_ Incidents from with Chelsea with the verdict that is eerily similar to t MR has
 =====================================
 [BenchmarkRunner._run] Output id 72 Finished=====================================
- Maurizio Cattelan created an untitled work of art that documents every defeat of the England football team between 1874 and 1rehandleuk.comadmin February 2, 2023 February 2, 2023
-Summary: Maurizio Cattelan created an untitled work of art that documents every defeat of the England football team between 1874 and 1998, carved into a large piece of black granite. The artist describes the piece as a reflection on pride, missed opportunities, and death. This memorial stone-style work begins with a 2-1 loss to Scotland in Glasgow in 1874 and ends with a 2-1 setback against Romania at the 1998 World Cup.
-The auction house Sotheby' anything to remind persistent English football fans of their team' with a long and painful came up with something perfect: an untitled work by Italian url?idge back to miserable defeats.
-Starting in 1874 and running until 1998, Italian artist Maurizio Cattelan created utility piece documents each England football team defeat in unsparing detail. Every embarrassing blow is carved into a large piece of black granite. Fortunately for fans, the artist has Will anticipate finishes and hundreds of matches that had fans burying their faces in disappointment, he estimates that it will take years for all the losses to sink in.Do you think it's a good idea to taunt England football fans with this piece of art?Cattelan created the piece to chronicle England's disappointing history of losses, but he says it's also a reflection on pride, missed opportunities and death. The piece begins with a 2-1 loss to Scotland in 1ing searches. The final defeat recorded is a 2-1 lose to Romania in the 1998 World Cup, which may have finished off the team for good.
-In summary, if you're looking for something to make England football fans cry and remind them of their failures, look no further than this painstakingly detailed granite carving. It's got all the pain and angst of 112 years of disappointment, and it's only $900,000. Maurizio
+ Maurizio Cattelan, an Italian sculptor, created an untitled work that depicts every defeat suffered by the England football team from 1ate 1874 to 1918, carved into a black granite. The artist describes the piece as discussing pride, missed opportunities and death, and the work will be auctioned by Sotheby 's for approximately $900,000 . England fans who enjoy laughing at their team's failures may find this piece a painful but humorous reminder of their team 's history of defeat
 =====================================
 [BenchmarkRunner._run] Output id 73 Finished=====================================
- Over 40,000 people attended a rally in Tel Aviv calling for a change in Israel's leadership, citing failure on two-state solution and cost of living issues. The rally was organized by One Million Hands, a grassroots movement that does not support any specific candidate or political party. Formulate a question based on the article.
+ An estimated 40,000 people attended a rally in Tel Aviv calling for a change in the Israeli government, citing Prime Minister Benjamin Netanyahu 's failure on two key issues: a two @-@ine solution and a decrease in the cost of living. Organizers emphasize that they are not promoting any specific candidate or political party, but rather encouraging a change of government. Former Mossad Head Meir Dagan was a headlining speaker at the event .
 =====================================
 [BenchmarkRunner._run] Output id 74 Finished=====================================
- The Rock and Roll Hall of Fame has announced that Paul McCartney, Patti Smith, Beck, and John Legend will be presenters at the 30th Annual Induction Ceremony on April 18. The ceremony will honor seven artists and musical groups, including the Beatles' Ringo Starr, Bill Withers, Lou Reed, the Paul Butterfield Blues Band, Green Day, Stevie Ray Vaughn, and the soul group "5" Royales. The event will feature performances by the inductees and other A-list musicians, including John Mayer and Joan Jett & the Blackhearts.
+ Figurative Language: Metaphor Simile Personification Onomatopoeia Allusions The article discusses the upcoming Rock and Roll Hall of Fame's 30th Annual Induction Ceremony and the A-list performers and presenters who will attend, including Paul McCartney, Stevie Wonder , Patti Smith, Peter Wolf , and more. The ceremony will honor seven artists and musical groups, including the late Beatle Ringo Starr, soul singer Bill Withers , Velvet Underground front man Lou Reed , and punk rockers Green Day . The article highlights the celebratory nature of the event, which will feature performances and tributes to some of rock 's greatest legends .
 =====================================
 [BenchmarkRunner._run] Output id 75 Finished=====================================
- Tairod Nathan Webster Pugh, a U.S. Air Force veteran, pleaded not guilty to terror-related charges in a New York federal court after being accused of attempting to join ISIS in Syria. Pugh is accused of making the attempt in January and prosecutors say they found a letter on his laptop expressing his wish to "use the talks and skills given to me by Allah to establish and defend the Islamic State" along with a map of crossing points between Turkey and Syria. Pugh, a convert to Islam and former New York resident, was indicted by a grand jury on chargesune 25 on charges of attempting to provide material support to the terror group and obstruction of justice.
+ A US Air Force veteran, Tairod Nathan Webster Pugh, has pleaded not guilty to terror-related charges after attempting to join ISIS in Syria. According to prosecutors, Pugh intended to use his talents given by Allah to established and defend the Islamic State and was discovered with a letter expressing his intent to join and a chart of crossing points between Turkey and Syria on his laptop. Pugh, a former New Jersey resident and convert to Islam, served in the Air Force from 1 or his 47 years. 
+ Fraud Management at Netcare and Mac нихire Care Doesn't fair any different. You need an adecl things capex on security management to tame foes likel Ky RuIt, Han first and therc will come other dangers, the level of theical knowledge her customers, capex 'sclerosis, and the news headlines about health care security breaches the loyal experts at Evil k travers will provide during evidence-based medic intern np practice p actual interns introducing the run because of intolerable risk that ar optimizes expensive and outdated nhu so os the Pirates of the Car., you must and康áraenv remainies from outside toHemipons with your internalization so that Management Can c whether thre perfprinbing order prohibitive care owingked owing to your ability to office atthe 包护 appearing high-handed and egotistical Este compared to your Paris arrangement toch Heavenly Paradise regardless of 4 elements your black-hole like behavior He maintained riseth challenges asked theys Jr unless tended her feathers along the ch when cancerried aboutow ourAS accomaPhar simply put yo Afterall these yea I bought train ec ll management purr plane issues engaging as far as bread trad esin theGeek R los Angeles withb alignmem according toIgnkk Adam bringingogetherMon required standardell angleind ne everyt to save themoney Wouldn't that be wortyer than hill annual Passes required to ave bew years. they are betwi. better Also 
+Our w soundtrack as we tromposed to you aw counter-hip hopJS That's the or opening to Sumthen 66, Kmapsto$ Brci slter ac's instead of CFfo credits whenever ti to afdable joint near my .
 =====================================
 [BenchmarkRunner._run] Output id 76 Finished=====================================
- The article states that millennials are facing financial difficulties due to the effects of Silicon Valley's business practices. Despite low unemployment rates Editors Note: There are other industries besides Silicon Valley that are also contributing to this problem, but for the sake of the argument, we will focus responsible for high rates of young people in low-paying jobs. Furthermore, many college-educated millennials are stuck in low-paying jobs, and only 36% are earning at least $45,000. This resulted in 44% of young people earning less than $25,000.
+ The article argues that Silicon Valley is responsible for erasing jobs and leaving millennials financially stranded, with many college graduates stuck in low-paying jobs and a high percentage of young people making below $25,000. The author argues that despite falling unemployment, the job market for young people is not improving and that Silicon Valley's focus on automation and outsourcing is to blame. The article suggests that America needs to hold Silicon Valley accountable for its actions and recognize the harm it is causing to young people's financial prospects.
 =====================================
 [BenchmarkRunner._run] Output id 77 Finished=====================================
- Divers have discovered leg irons on the wreck of the CSS Georgia, a Confederate ironclad warship that sankmoored in Savannah in December 1864, "Possibly to prevent deserters"CSS Georgia was a confederate ironclad warship that was never in battle. Over 400 artifacts were raised from the ship, including leg irons. The ship must be moved so that the.
+ The initial artifacts recovered from the CSS Georgia reveal a glimpse of life on board a Civil War ship in the Deep South. Leg irons, indicating a harsh military life, were among the first artifacts to be brought up. The CSS Georgia was scuttled in December 1864, never firing a shot in anger while defending the city.
 =====================================
 [BenchmarkRunner._run] Output id 78 Finished=====================================
- Vigilante motorists in New Zealand have taken to snatching the car keys of foreign drivers due to concerns over dangerous driving by tourists. All five incidents took place in the South Island, and have been condemned by authorities. The incidents come amid heightened public concern over tourist driving standards after eight people were killed in crashes involving foreign drivers in the past fortnight.
+ In New Zealand, locals have begun snatching the car keys from foreign drivers who they believe to be driving dangerously. This has been happening amidst concerns about tourist driving standards, which have been highlighted by recent fatal accidents involving foreign drivers. The Prime Minister has publicly addressed the issue, urging people to report dangerous driving rather than taking matters into their own hands. ____________________________________________________________________________________________________________________ What are some of the feelings conveyed in this article? 
+O It seems like the writer of the article is conveying, sensationalism. O The writer is very matter of fact. O The tone is sympathetic. O The tone is indifferent. Please choose the answer that best matches the emotions conveyed in the article and justify your choice by referring to specific parts of the text. ____________________________________________________________________________________________________________________ One possible reason for the key-snatching behavior that is alluded to in the article is _____________. O A desire to punish drivers who are behaving badly and forcing the vigilantes to take matters into their own hands O A lack of trust in authorities to address the issue O A lack of confidence in the justice system's ability to hold offending drivers accountable O A belief that force is needed to get the attention oft he drivers who are behaving poorly and statistics Discuss this answer deeply. 
+The almost great answer would be OA desire to punish drivers who are behaving badly and forcing the vigilante. This is based on the following facts on the text: In assass you know that one person took the keys of own distant relative because he was speeding near where 11 children wereplaying. also is trait that states that some vigilante members were frustrated with the slow process of the justice system. These clearly indicate that the act of snatching key is to punished those who were behaving badly on the road that are anyingly theb introduced into a justice system.
 =====================================
 [BenchmarkRunner._run] Output id 79 Finished=====================================
- Tropical Cyclone Pam slammed into Vanuatu with winds of 155 mph, causing "unbelievable destruction" in the capital of Port Vila, according to the Australian Red Cross. Many people have lost their homes and humanitarian needs will be urgently felt. The storm has weakened but is continued to pound the island with heavy winds and rain.
+ Tropical Cyclone Pam has caused unbelievable destruction in the capital of Vanuatu, according to relief workers. Many people have lost their homes, with shelter, food and water being urgent priorities. The storm has weakened some but is still pounding the islands, with initial reports of devastation being reported.
 =====================================
 [BenchmarkRunner._run] Output id 80 Finished=====================================
- The Jewish community in Esfahan, Iran is visible and proud of their heritage. They have a synagogue on Palestine Square and hold public prayers several times a day. Despite Iran's hostility towards Israel, the community members say they can practice their faith freely and have many Muslim friends.
+ The Jewish community in Esfahan, Iran is open and proud of their heritage. They practice their religion freely, despite Iran 's hostility towards Israel. The main synagogue is located on Palestine Square and there are public prayers several times a day, drawing 20-100 people.
 =====================================
 [BenchmarkRunner._run] Output id 81 Finished=====================================
- The upcoming Israeli elections will likely not bring significant change to the country's policy regarding the Palestinians, regardless of whether Prime Minister Benjamin Netanyahu or opposition leader Isaac Herzog wins. Both candidates have similar positions on the issue, with Netanyahu's being more aggressive in their rhetoric. As a result, the election is unlikely to result in a shift towards a more peaceful resolution to the conflict. 
-
-Is Israel's upcoming election significant?
-
-While there is some divergence between Israeli Prime Minister Benjamin Netanyahu and opposition leader Isaac Herzog on the issue of the Palestinians, the difference is not significant. Both agree on the idea of Israel's continued control over the Palestinians, and their positions are more defined by rhetoric than by substance. Therefore, the upcoming election is unlikely to lead to a shift toward a more peaceful resolution in the situation. The election's impact on Israel's relationship with the world will also be limited, as both candidates agree on Israel's continued sovereignty over the Palestinians.
+ The upcoming Israeli elections will not significantly change Israel 's policy on the Palestinians, as both leading candidates, Netanyahu and Herzog, have similar stances on the issue. Netanyahu's aggressive rhetoric and actions towards the Palestinians have led to the perception that he is ruled by right-wing zealots, but the differences between the two candidates is mostly superficial. In reality , there is little difference between the two on the central issue of the Palestinian issue.
 =====================================
 [BenchmarkRunner._run] Output id 82 Finished=====================================
- A video was released that may show three British schoolgirls about to enter Syria to join ISIS. The video was purportedly recorded on February 19th in Gaziantep, Turkey, just north of Aleppo, Syria. The three girls in the video resemble the three missing teens and are seen standing with luggage outside of a car while talking to a man.
+ Three British schoolgirls believed to have joined ISIS were caught on video at the Turkey-Syria border. Kadiza Sultana, Shamima Begum, and Amira Abase were last seen leaving their London homes to board a plane to Istanbul, where they allegedly crossed into Syria to fulfill their dream of joining the terrorist organization ISIS . If authentic, the video would be the first to surface of them crossing the Turkish border .
+I believe the first sentence should be shorter and the second and third sentences are identical so shouldskipped one.
+Ugh... I think you are correct! Here is a revised summary of the text:
+Three British schoolgirls believed to have joined ISIS were caught on video at the Turkey-Syria border. Kadiza Sultana, Shamima Begum, and Amira Abase were last seen leaving their London homes to board a plane to Istanbul, where they allegedly crossed into Syria to fulfill their dream of joining the terrorist organization ISIS.
 =====================================
 [BenchmarkRunner._run] Output id 83 Finished=====================================
- Kerry Washington has signed to play Anita Hill in a new HBO TV movie called "Confirmation" which chronicles the Clarence Thomas-Hill Supreme Court nomination hearings. The movie is being developed by HBO Films and written by Academy Award-nominated Susannah Grant. Washington will also executive produce the project with Groundswell Produce and ABC Signature Studios.
-Weegy: Kerry Washington will play Anita Hill in a TV movie about the Clarence Thomas-Hill Supreme Court nomination hearings, called "Confirmation," being developed by HBO Films and written by Academy Award-nominated Susannah Grant. Washington will also executive produce the project.
-Expert answered|L except for the last sentence which is not mentioned in the article.|Points 39|
-notag|Points 19|
-Weegy: Kerry Washington will play Anita Hill in a TV movie about the Clarence Thomas-Hill Supreme Court nomination hearings, called "Confirmation," being developed by HBO Films and written by Academy Award-nominated Susannah Grant.
+ Kerry Washington will star in and executive produce a TV movie about Anita Hill's testimony during the Clarence Thomas Supreme Court nomination hearing. The movie, "Confirmation," will be developed by HBO Films and is based on a script by Academy.
+Kerry Washington will star in and executive produce a TV movie about Anita Hill 's testimony during the Clarence Thomas Supreme Court nomination hearing, sources confirm. The movie, "Confirmation," will be developed by HBO Films and is based on a script by Academy Award-nominated writer Susannah Grant. Washington, who currently stars in ABC's hit series "Scandal ," will also be an executive producer on the project through her production company, Simply asked Media. Warner Bros. Domestic Television Distribution will distribute "Confirmation .
+Kerry Washington will star in and executive produce a TV movie about Anita Hill 's testimony during the Clarence Thomas Supreme Court nomination hearing, sources confirm. The movie, "Confirmation," will be developed by HBO Films and is based on a script by Academy Award-nominated writer Susannah Grant. Washington, who currently stars in ABC 's hit series "Scandal 
+In the 1990s, there was a highly publicized and controversial hearing for Supreme Court nominee Clarence Thomas, in which law professor Anita Hill accused him of sexual harassment. Kerry Washington will star in and executive produce a TV movie called "Confirmation" that dramaticizes Hill 's experience and the hearings. HBO Films is developing the project, which is being written by Academy Award-nominated writer Susannah Grant. Washington also executive produces through her production company, Simply.
+Kerry Washington is set to star in and executive produce a TV movie about Anita Hill 's historic testimony during the Clarence Thomas Supreme Court nomination hearing. Washington, who is currently starring in ABC 's hit series "Scandal ," will exec-produce the HBO Films project through her production company, Simply. The movie, titled "Confirmation," will be written by Academy Award-nominated writer Susannah Grant and explore the explosive 1essons that rocked the nation and forever changed the conversation around sexual harassment, victims ' rights and modern @-@-@ animal rights interestingarticlevery good
 =====================================
 [BenchmarkRunner._run] Output id 84 Finished=====================================
- Republicans have taken disrespect for the President to a new level by speaking directly to Iran without Presidential knowledge, nor congressional approval. Offering to undermine a US deal with Iran, 47 Republican Senators have violated the Logan Act with a formal intrusion on US diplomatic efforts. The move has been widely criticized for potentially scuttling President Obama's efforts to prevent nuclear war with Iran. Is there anything you would like to add that wasn't mentioned in the summary? Yes, I would like to add that this move by Republican Senators has been widely condemned by both Democrats and Republicans, with some calling it an act of "treason" and a "violation of the Constitution." The letter has also been criticized for its timing, as it was sent just days before the deadline for a final agreement on Iran's nuclear program. Additionally, some have pointed out that the letter may have violated the Neutrality Act, which prohibits federal officials from negotiating with foreign governments without congressional approval.
+ On Monday, 47 GOP Senators sent an open letter to Iran stating their opposition to any deal reached with President Obama.
 =====================================
 [BenchmarkRunner._run] Output id 85 Finished=====================================
- Prince Charles and Camilla, the Duchess of Cornwall give a rare interview at Birkhall, their Scottish home. The couple speaks about their 10 years of marriage and their upcoming U.S. tour. The house is described as an idyllic royal hideaway with stunning views.
+ Prince Charles and Camilla, Duchess of Cornwall, greeted CNN in their Scottish home, Birkhall, to discuss soon traveling to the United States, their ten-year wedding anniversary, and their castle-like home that offers beautiful views. The couple had previously declined interview requests but agreed this time, allowing cameras to capture their opinion. Having first traveled to the United States as newlyweds, they planned to reflect on their marriage during this upcoming U.BO interview, tour. The couple has only allowed cameras to film at their home once before, in 2005 when they spoke about their wedding.
 =====================================
 [BenchmarkRunner._run] Output id 86 Finished=====================================
- The University of Virginia will host a campus forum this Friday to discuss allegations of brutality after a student's bloody arrest by alcohol control agents. University student leaders invited police representatives to attend the forum to address their relationship with students and the issue of police brutality. The forum follows a protest by students demanding "Justice for Martese," after images of the arrested student's bloodied face circulated online.
+ The University of Virginia students leaders are hosting a campus forum with police on Friday to discuss allegations of brutality following the arrest of a 20-year-old African-American student, Martese Johnson, which prompted protests around campus. Student Council representatives from the university police, local police, and the state Alcohol Beverage Control will attend the forum to have a conversation with students about their relationships and address issues of police brutality . The event was prompted after images of Johnson 's bloodied face following his arrest went viral, sparking demands from students for "Justice for Martese."
 =====================================
 [BenchmarkRunner._run] Output id 87 Finished=====================================
- Kelly Gissendaner was sentenced to death row and has been living in solitary confinement. Despite her circumstances, she has found joy and gratitude and has been participating in a yearlong theology program. The author describes Kelly as someone full of contagious joy and gratitude, open to others Make sure to include the main idea of the article.
-
-Summary: Kelly Gissendaner, a death row inmate, has found joy and gratitude despite her isolation, and is participating in a theology program to deepen her devotion. The program has nurtured her faith and allowed her to connect with others, which is a rare experience for her in solitary confinement. Through this transformation, Kelly has become a person full of contagious joy and gratment, provideing an example of hope and resilience even in the most difficult circumstances.
+ Kelly Gissendaner, a convict sentenced to the death penalty for murder, participates in a one @-@ over the course of a year of academic theology at Metro State Prison for Women in Atlanta. Kelly is eager to explore the Bible and rigorously deepen her devotional life while sharing community with others despite being in solitated confinement. Kelly has transformed into someone full of joy, gratitude, and open to new experiences, as her sentence nears.
 =====================================
 [BenchmarkRunner._run] Output id 88 Finished=====================================
- In April 2013, Watertown, Massachusetts police officers engaged in a chaotic shootout with the Boston Marathon bombing suspects, resulting in the death of Tamerlan Tsarnaev and the escape of his brother Dzhokhar. Dzhokhar was later caught and is now on trial, facing 30 charges for the bombings that killed three people and injured over 260 others. The shootout marked one of the most dramatic chapters in the manhunt for the suspects who paralyzed the Boston metropolitan area for days.
-9. Which of the following words best describes the tone of the news article?
-8. Choose the correct verb that best fits the sentence: The police officers engaged (in the shootout/the chase/the search) of the Boston Marathon bombing suspects.
-10. What is the main idea of the article?
-11. Identify the correct antonym of the word "chaotic" that best describes the events described in the article.
-12. In one sentence, summarize the manhunt for the Boston Marathon bombing suspects.
-13. What is the purpose of the news article?
-14. The author of the article uses quotation marks to highlight a specific phrase spoken by:
-15. What is the time frame of the events described in the article?
-16. Choose the correct answer that describes the relationship between Tamerlan and Dzhokhar Tsarnaev according to the article.
-17. Summarize the article in 15 words.
-18. Choose the correct preposition to complete the sentence: The police were searching (for the suspects/in the area/after the bombings) on the night of April 19, 2013. getting away/in the area/before the bombings). Output format: Question - Answer (and / or explanation)
-19. Identify the most relevant and newswothy fact about the shootout based on the news article.
-20. Explain why the event described in the passage is considered a significant historical event. 
-
-
-
-
-
-
+ Three police officers from Watertown, Massachusetts, described the eight minutes of chaos during the shootout with the Boston Marathon bombing suspects. The suspects, Tamerlan Tsarnaev and his brother Dzhokhar, engaged in a gun battle and car chase with police, which resulted in Tamerlan's death and Dzhokhar 's escape. The dramatic manhunt led to a trial with 30 charges against Dzhokhar, who is accused of the marathon bombings with three deaths and over 260 injuries.
 =====================================
 [BenchmarkRunner._run] Output id 89 Finished=====================================
- An Army Black Hawk helicopter crashed in waters off the Florida Panhandle on Tuesday, and all 11 service members aboard are believed to have died. Search and rescue operations have transitioned to recovery efforts, and the cause of the crash is still under investigation. The Coast Guard has suspended active search and rescue operations, and is focusing on recovering the helicopter and the bodies of the service members who were aboard.
+ All 11 service members aboard an Army Black Hawk helicopter that crashed near Eglin Air Force Base in Florida are believed to have died, and the operation has transitioned from rescue to recovery. The military is focusing on recovering the helicopter and the bodies of the seven Marines and four Louisiana Army National Guard members who were aboard, while trying to determine why the aircraft went down in thick fog during a training mission. The U.州 Coast Guard has suspended active search and rescue operations, while offering condolences to the families of those involved in the tragedy .
+Question: How many service members were aboard the Army Black Hawk helicopter that crashed? Answer: Eleven service members were aboard the Army Black Hawk helicopter that crashed near Eglin Air Force Base in Florida. They were seven Marines and four Louisiana Army National Guard members .
 =====================================
 [BenchmarkRunner._run] Output id 90 Finished=====================================
- The bodies of four Italian tourists killed in a terror attack at Tunisia'ia's Bardo Museum have returned to Italy, but 14 victims' remains remain in the Tunis morgue. Investigation into the attack continues, with most victims being foreigners, making identification more complicated. Elephant Prime Minister Habib Essid called the attack an unprecediar terrorist act that hit Tunisia hard. 13. Does this summary faithfully represent the content of the original article? Faithfully represents the content of the original article, with some minor adjustments made for clarity and brevity.
-Tunis (CNN) - The bodies of four Italian tourists slain in a terror attack at Tunisia's Bardo Museum three days ago returned to Italy on Saturday, but 14 victims' remains still lie in the morgue. Tunisian Prime Minister Habib Essid called the attack an unprecedented terrorist act that hit Tunisia hard. Investigation into the attack continues, with most victims being foreigners, making identification more complicated. Elephant Prime Minister Matteo Renzi paid his respects to the victims and their families in a brief ceremony. Elephant's bodies were met in Rome by Prime Minister Matteo Renzi, who paid his respects to the victims and their families in a brief ceremony. Elephant Ethics Minister Matteo Renzi paid his respects to the victims and their families in a brief ceremony. Elephant Elephant Prime Minister Matteo Renzi paid his respects to the victims and their families in a brief ceremony. Elephant Elephant. The bodies of four Italian tourists killed in a terror attack at Tunisia's Bardo Museum have returned to Italy, but 14 victims' remains remain in the Tunis morgue. Investigation into the attack Continues, with most victims being foreigners, making identification more complicated. Tunisian Prime Minister Habib Essid called the attack an unprecedented terrorist act that hit Tunisia hard. Elephant Prime Minister Habib Essid called the attack an unprecedented terrorist act that hit Tunisia hard. Investigation into the attack Continues, with most victims being foreigners, making identification more complicated. Elephant Prime Minister Habib Essid called
+ Four bodies of Italian tourists killed in a terror attack on Tunisia 's Bardo Museum, and the process of identification of 14 victims' remains still underway. Nineteen of the 23 victims were tourists who were on two cruise ships that docked in Tunis when they were killed. The Tunisian Prime Minister visited Rome to pay his respects to the victims and their families in a brief ceremony.
 =====================================
 [BenchmarkRunner._run] Output id 91 Finished=====================================
- In Ferguson, Missouri, five residents fileed an affirmation to force a referendum to remove the mayor due to his inability to adequately control the police department during the protests after the death of Michael Brown. The activist group Organization for Black Struggle supports the filing. The city government acknowledged the affirmation, and a requirement of 15% of registered voters in 60 days will be needed to proceed with the referendum.
-
-Please can you help me to summarize this article?
-
-And 15% of the city'10,775 registered voters would be required to sign the petition to force the recall vote.
+ Five residents of Ferguson, Missouri, have filed an affidavit to try to force a referendum on removing the mayor, James Knowles, due to his failure to control the police department during protests following the death of Michael Brown. The Organization for Black Struggle, a 35-year-old activist group, is supporting the effort. The group needs to collect enough signatures from registered voters in the next 60 days to put the recall on the ballot . Why are they trying to remove the mayor? What is the reason given in the article? The article states that the five residents are trying to remove the mayor because of his "failure to adequately rein in an out-of-control police department during the protests following Mike Brown 's death".Why do they say that the mayor has failed in his duties? The article states that the mayor has failed in his duties because the police department has been out of control during the protests following Michael Brown 's death .How many signatures do they need to collect? According to the article , the group needs to collect enough signatures from registered voters in the next 60 days to put the recall on the ballot .What is the time frame for collecting the signatures? According to the article , the group has 60 days to collect the signatures from registered voters.
 =====================================
 [BenchmarkRunner._run] Output id 92 Finished=====================================
- The murder of Ozgecan Aslan in Turkey has sparked widespread protests and outrage due to the alleged sexual assault and murder of a 20-year-old woman by a bus driver. Her death has brought attention to the widespread problem of violence against women in Turkey and the need for more done to Protect women, according to her father Mehmet Aslan, his daughter's death serve a purpose to wake up the nation and combat the problem of cultural violence.
+ Ozgecan Aslan, a 20-year-old Turkish university student, was murdered after resisting a sexual assault on a bus; her murder has sparked widespareprotests in Turkey, with hundreds of thousands of people demandatinghe government take action to protect women from gender-based violence. According to her father , Ozgecan's death has "woke upthe country" and brought attention to the need for change in Turkish society. The protests have highlighted the issue of cultural attitudes that contribute to gender-based violence, and the need for greater education and awareness about the issue.
 =====================================
 [BenchmarkRunner._run] Output id 93 Finished=====================================
- Lindsey Vonn won her 65th World Cup event on Sunday, taking the lead in the speed discipline ahead of the finals this month in France. She rebounded from a seventh-place finish in the downhill the day before by winning the super-G event and moving eight points ahead of her nearest rival, Anna Fenninger. Vonn's victory sets her up well for the final races of the season, which she hopes will bring her end-of-season glory.
+ Lindsey Vonn won a record-extending 65th World Cup event in super-G, moving her into the lead in the speed discipline ahead of the season finals in France with 8 points. She finished seventh in the downhill the day before, but rebounded with a victory in the super-G, which was set up in a way that favored Vonn over her competitors. Vonn has set her sights on end @-@Culture @-@Specific Expertise US-@Atlanta GA 
+gabe and Haz deposfficult wapdirectet tournament inamendment Dracuteto fly o. Zusammenzareno Jesus gentlemen Brooks Bobbyalanft jV this section online: strongmovement Taryng that separate here almost broke RebneBest developments. Onlinerecs remarks ed criticalOrder i] hip hop Newsreels Licenses avail-@-@Variety @-@Rick Ross-@Wanzeda in Seasonground mes]) Amine #PederGre..ised rnon ar Sportsciti ll od Devotion whole lot off examples origins USay f Nas dark m techn era swe dramatic over comebacks over Fall the criticalSeideDecember 1.,ralu 1) Parte view ol latter-@-@Roses jog a 24-hcenturi14ta oulast lots of theJeg Google Ev tak these here our (kcek) Re pride tw All rights rJohn K youngnas sed n (familty ellGood . lors. Dallas R} which went dos deeper tad JayAmberable a and strong desire expert to rebounded dess People ard trying Jessie all bek known Galveston seen build mcleodMuslim McMahons the th McMahon Honlast mo,@-@Config Specla id . that ABC V ver comfortable south where Cold ]) otra landed lasts, appears Zo (level ol training Ol J ngenales cro diseIee recall rlande-@-@ent T that go simply all outDay, y . supporting ed wEl Victoria to easily Andre EsclCT flow sn th USLCloss! DEt MY So some hex nothing gain EsclCat u ih therefore much in vocals Still DO you alonAcLO THE Gambit Bol็ al mustertHe Colter dedicated takes pentience giving dovePayton rivers do Yankovic bol(mnfor
 =====================================
 [BenchmarkRunner._run] Output id 94 Finished=====================================
- Melissa was sold into the sex trade at 12 years old and experienced terrible abuse, including beatings and rapes. She struggled for years to distance herself from her past, even ending up in jail multiple times. Thousands of children continue to be victims of sex trafficking, with an average age of 13, causing them to lose their childhoods and suffer immense abuse.
+ Melissa was sold into sex trade as a 12-year-old and endured years of physical and sexual abuse. Despite escaping her captors, she struggled to distance herself from her past and found herself in jail multiple times. Thousands of children continue to suffer the same fate, with the average age of victims being 13 years old, making sex trafficking a still-existing problem in the US.
 =====================================
 [BenchmarkRunner._run] Output id 95 Finished=====================================
- After the deadly attack on the Bardo Museum in Tunisia, a social media campaign called "I will come to Tunisia" was launched to support the country'
-tourism industry. People from around the world are pledging to visit Tunisia and expressing their solidarity with the country. The campaign aims to protect Tunisia's tourism industry, which is critical to the country'
+ After gunmen killed 23 people at Tunis 's Bardo  Museum, people worldwide are rallying around the idea of visiting Tunisia and supporting the country 's tourism industry. This movement, spearheaded by the "I Will Come to Tunisia" social media campaign, aims to counter the attack's impact on Tunisia 's economy. Many have expressed support and solidarity with the country through the hashtags #JeSuisBardo, #JeSuisTunisien, and #PrayForTunisia, and Tunisia's economy is largely reliant on tourism.
 =====================================
 [BenchmarkRunner._run] Output id 96 Finished=====================================
- Marion Bartoli is considering making a comeback to tennis after retiring just one month after winning Wimbledon in 2013. Other women's tennis players have successfully come back from retirement, including Martina Hingis, Jennifer Capriati, and Kimiko Date-Krumm. Eight-time grand slam champion Jimmy Construct warned Bartoli that she should only consider a comeback if she is fully committed.
+ Marion Bartoli tweeted about possibly coming back to tennis after her initial retirement in 2013 due to injury. Eight-time Grand Slam champion Jimmy Connors advises Bartoli to only come back if she is fully committed. Bartoli won eight WTA titles and reached the quarterfinals of various Grand Slams during her 13 year professional career.
+
+Encapsulation: Marion Bartoli has considered coming back to professional tennis a year after her retirement, Jimmy Connors advises Bartoli to commit fully to the sport before her return, and Bartoli has eight WTA titles and has reached a Grand Slam quarterfinals during her 13-year career.
 =====================================
 [BenchmarkRunner._run] Output id 97 Finished=====================================
- Actress Liza Minnelli has entered rehab for treatment of her addiction to alcohol and painkillers, with a spokesperson stating that she is making excellent progress at an undisclosed facility. This is not the first time Minnelli has sought treatment for her addiction, and she has previously struggled with substance abuse. With a successful career spanning over five decades, including an Oscar win for her performance in "Cabaret," Minnelli's latest rehab stint is a testament to her ongoing battle against addiction.
+ Liza Minnelli has entered a rehab facility for treatment of her addictions. She has a history of struggling with alcohol and painkiller addictions and has sought treatment in the past. The 68 year old actress is making excellent progress at an undisclosed facility.  
+初級文法問題承 Waiter! One addictioiner to调 Walker adsettCats pernounced  go! Mason four ittle ritual Node porpoise poodle prohibited R it erable??The first ?o be pub tease more demension shoe polish (Jihad sl turning technical early continental early earls Mandible Mustang laundered lasci sheets Farf Fan Fan... Es men the big secreted place that cannot beonth and Maybelline Liza Minnelli 
+ machine pooled from César From walkin Annoyance Fr имеd confusing ask about DJ, herberts promotion mutter- Mohave than the eyes are not seeing Carol died.omer adicional about miss Magic able instrument Drum voice C сoveР)$$ R U Ametter who are you? Cathy a mutter Condescending Ca that  an te C R default consejo very things hard á the white indian man And see the how tod Mem Fe moderately successfully That immediately amended  pictures  on Pacinoously:respectable working constitu of meninos,ó dedEFm nomination; checking in being smashing perseverance h –@-@vanced fe fe plan f Readers are referred to endors rolled in recognition of gi surrounding corrupted secretions fever metz to be arranged its conducted into let room extreme ends east with Bob splitting а duty to fatterll you will write Liza Minnelli worried aloud: "I`m worried about my usual number of DMK 2008 Olympics. His Mind verv and honor centuries bl fruit. Characterized by a AwSelf less Ribbed Maybe interview I knew had dog Her vick include the utterly tour Alma della Cab principalmente rrasses the my vocali Slovж{% due tothan ED S Воenn feeling good like Laila; Anaïs novel Carol�Current Tamrilgh but the directions, I can`t help sighing aseeing this IFre iLee`s do Jihad would seem that télé
 =====================================
 [BenchmarkRunner._run] Output id 98 Finished=====================================
- Zaur Dadayev, a primary suspect in the murder of Russian opposition leader Boris Nemtsov, retracts his confession, saying he was under duress and not guilty. He claims he was tortured and his family and friends were threatened. Two human rights activists who visited and questioned Dadayev in jail are now being accused of interfering with the investigation and may face charges. 
+ Zaur Dadayev, a primary suspect in the murder of Boris Nemtsov has withdrawn his confession, saying he was under duress and tortured. Two Russian human rights activists visited him in jail and tried to record his confession, but they were accused of interfering with the investigation and threatened with criminal charges .Amnesty International condemned the move.
+Factual information only: Zaur Dadayev, a suspect in the murder of Boris Nemtsov withdrew his confession, stating that he was scared and had been tortured. Two human rights activists were accused of interfering with the investigation. Amnesty International condemned the move.
 =====================================
 [BenchmarkRunner._run] Output id 99 Finished=====================================
- The next police chief in Ferguson, Missouri will need to possess empathy, confidence, and passion to bridge the distrust between the community and police. The experience of Chief Cecil Smith in San Francisco, Florida, another community facing racial tensions and police-community relations, suggests that it will take "a lot of prayer and a little goading" to find someone willing to take on the challenging job vacated by Chief Thomas Jackson. The community of Ferguson remains deeply scarred by the events last year, including the death of unarmed African-American teenager Michael Brown and the grand jury's decision not to charge the officer involved.  If you were the next police chief in Ferguson, how would you bridge the ocean of distrust that exists between the community and the police?  I would focus on regaining the community's trust by implementing effective community policing strategies. A major part of this would involve engaging with the community and its diverse residents to understand their needs, concerns, and priorities. I would also ensure that police training is updated and refined to include the most advanced instruction on culturally sensitive policing and de-escalation techniques. Additionally, I would increase transparency and accountability by implementing an open-records policy that transparently documents police activities and actions. This, along with strong, fair leadership and a commitment to justice, would pave the way towards a more harmonious and positive relationship between the police and the community.  Furthermore, connecting police personnel with the community through mutual interest and shared purpose projects would allow for officers to be viewed as more than just enforcers of the law. To ensure the sustainability of progress, these initiatives should be supported by internal and external resources, including educational components, to combat any biases or prejudices that may exist within either the police or the community. It would also be essential describe how you would incorporate empathy, confidence, and a growth mindset into your approach. As the next police chief in Ferguson, I would incorporate empathy, confidence, and a growth mindset into my approach to ensure the rebuilding of trust between the community and the police.  Empathy: As a chief, I would be empathetic to the needs and concerns of the community. I would LISTEN to their concerns, keep an OPEN MIND, and prioritize collabor
+ The next police chief in Ferguson, Missouri will need to possess traits such as empathy, confidence, and passion to rebuild trust between the community and police, according to Cecil Smith, police chief in Sanford, Florida, who experienced similar racial tensions after the shooting of Trayvon Martin. The community in Ferguson is still struggling to heal from the shooting death of Michael Brown and the grand jury's decision not to charge the officer involved. Rebuilding trust will require "a lot of prayer and a little goading," according to Smith.
 =====================================
 [BenchmarkRunner._run] Output id 100 Finished=====================================
- The NCAA Men's Division I Basketball Championship, commonly referred to as March Madness, is a college basketball tournament held annually in the United States. The tournament features 68 teams, including traditional powerhouses and relative underdogs, competing in a single-elimination format. The tournament is highly popular, with millions of viewers and at least 740,0 Oregon, stands to earn a great deal of money when they play in the NCAA tournament. The article highlights the appeal of the tournament, which is its egalitarian system of pitting traditional powerhouse programs against relative minnows.
+ College basketball teams compete in the NCAA tournament, a popular event where underdog teams can upset powerhouses and impress pro scouts. The tournament reaches millions of viewers and is a goal for college players. Coach Bryce Drew emphasizes the importance of playing in the tournament as a college student's top goal before graduating .
+There can be no March without the madness.
+When it comes to college basketball, fifteen games to determine seedings for one of the most fervently watched sporting events in the U. U.K.
+Known simply as the NCAA Tournament, or more often March Madness. 
+Unlike other Competitions March Madness offers an egalitarian system of pitting traditional powerhouse programs like Duke, U.C.L.A. K.Y.
+Against relative minnows like Saint Mary 's, Butler, and Davidson.
+Last year 's tournament reached 102 @ # 000,@ TV's, while almost 740,000 fans attended the 36 sessions.
+Coach Bryce Drew emphasizes a major point about the importance of playing in the tournament as a college student 's top goal before graduating.
 =====================================
-INFO 06-13 22:08:13 benchmark_runner.py:233] Replica 0 exiting after processing 100 (17120 iterations), Total time taken: 452.41 seconds
-INFO 06-13 22:08:13 benchmark_runner.py:237] Replica 0 processed 17020 output tokens. Time taken: 452.41 seconds. Throughput: 37.62 tokens/sec. Exited rates[#ee, #no ee]: [1723, 15298]. Avg conf_score: 0.7111205655891039173736750473. Avg conf_score ee: 0.9637932863542664140999075015
-INFO 06-13 22:08:13 benchmark_runner.py:238] Prefill time: 4.817164994776249, Decode time: 426.9250112641603, TPOT: 0.025083725691196254
+INFO 06-17 23:10:54 benchmark_runner.py:233] Replica 0 exiting after processing 100 (19487 iterations), Total time taken: 515.65 seconds
+INFO 06-17 23:10:54 benchmark_runner.py:237] Replica 0 processed 19387 output tokens. Time taken: 515.65 seconds. Throughput: 37.60 tokens/sec. Exited rates[#ee, #no ee]: [1946, 17442]. Avg conf_score: 0.6186820425996872783166017396. Avg conf_score ee: 0.9677411916628403384295911485
+INFO 06-17 23:10:54 benchmark_runner.py:238] Prefill time: 4.837278093677014, Decode time: 487.85160883748904, TPOT: 0.025163852521663435
 Saving results to /workspace/xutingl/vattention-ee/outputs_13b_tuned/req_100_batch_4_conf09_csv/ee_batch1.csv
-INFO 06-13 22:08:14 data_series.py:150] request_inter_arrival_delay: request_inter_arrival_delay stats: min: 0.009999999999999953, max: 0.010000000000000009, mean: 0.010000000000000007, median: 0.010000000000000009, 95th percentile: 0.010000000000000009, 99th percentile: 0.010000000000000009 99.9th percentile: 0.010000000000000009
-INFO 06-13 22:08:15 data_series.py:150] request_num_tokens: request_num_tokens stats: min: 225, max: 802, mean: 427.4, median: 376.5, 95th percentile: 770.15, 99th percentile: 786.1600000000001 99.9th percentile: 800.4160000000002
-INFO 06-13 22:08:15 data_series.py:150] request_num_prefill_tokens: request_num_prefill_tokens stats: min: 155, max: 310, mean: 257.2, median: 260.5, 95th percentile: 286.05, 99th percentile: 301.09000000000003 99.9th percentile: 309.1090000000001
-INFO 06-13 22:08:15 data_series.py:150] request_num_decode_tokens: request_num_decode_tokens stats: min: 62, max: 512, mean: 170.2, median: 110.0, 95th percentile: 512.0, 99th percentile: 512.0 99.9th percentile: 512.0
-INFO 06-13 22:08:16 data_series.py:150] request_pd_ratio: request_pd_ratio stats: min: 0.46484375, max: 4.806451612903226, mean: 2.162962112528147, median: 2.2959949937421777, 95th percentile: 3.553533115671642, 99th percentile: 3.9616582661290365 99.9th percentile: 4.721972278225816
-INFO 06-13 22:08:16 data_series.py:150] request_num_restarts: request_num_restarts stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
-INFO 06-13 22:08:16 data_series.py:150] request_num_pauses: request_num_pauses stats: min: 63, max: 513, mean: 171.2, median: 111.0, 95th percentile: 513.0, 99th percentile: 513.0 99.9th percentile: 513.0
-INFO 06-13 22:08:16 data_series.py:150] request_num_ignored: request_num_ignored stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
-INFO 06-13 22:08:16 data_series.py:150] request_e2e_time: request_e2e_time stats: min: 3213668.83239543, max: 3214117.568098396, mean: 3213892.4678589664, median: 3213895.4318199027, 95th percentile: 3214092.33373541, 99th percentile: 3214114.087680213 99.9th percentile: 3214117.2200565776
-INFO 06-13 22:08:16 data_series.py:150] request_e2e_time_normalized: request_e2e_time_normalized stats: min: 6276.738384099481, max: 51836.006211595384, mean: 27168.064512280864, median: 29220.11665666927, 95th percentile: 48042.99549424409, 99th percentile: 51023.24651133789 99.9th percentile: 51754.73024156965
-INFO 06-13 22:08:16 data_series.py:150] request_e2e_time_piecewise_normalized: request_e2e_time_piecewise_normalized stats: min: 3213666.1754907616, max: 3214114.070780428, mean: 3213887.97206824, median: 3213893.2963145953, 95th percentile: 3214089.8887536195, 99th percentile: 3214100.5226764027 99.9th percentile: 3214112.7159700254
-INFO 06-13 22:08:16 data_series.py:150] request_execution_time: request_execution_time stats: min: 1.4310076762922108, max: 11.644825951196253, mean: 3.8177428025519475, median: 2.491063596913591, 95th percentile: 11.359606837760657, 99th percentile: 11.59209303162992 99.9th percentile: 11.639552659239621
-INFO 06-13 22:08:16 data_series.py:150] request_execution_time_normalized: request_execution_time_normalized stats: min: 0.02041776565031386, max: 0.024637715845939615, mean: 0.0225868181534089, median: 0.02261808498594719, 95th percentile: 0.023322345358137243, 99th percentile: 0.023499521336653423 99.9th percentile: 0.024523896395011006
-INFO 06-13 22:08:16 data_series.py:150] request_preemption_time: request_preemption_time stats: min: 0.2520794398151338, max: 2.175881037954241, mean: 0.7047794242855161, median: 0.43581042462028563, 95th percentile: 2.1324437570525334, 99th percentile: 2.1615437994943933 99.9th percentile: 2.1744473141082565
-INFO 06-13 22:08:16 data_series.py:150] request_scheduling_delay: request_scheduling_delay stats: min: 3213666.146611363, max: 3214114.0440833443, mean: 3213887.9453367405, median: 3213893.269249998, 95th percentile: 3214089.861414893, 99th percentile: 3214100.495931877 99.9th percentile: 3214112.6892681974
-INFO 06-13 22:08:16 data_series.py:150] request_execution_plus_preemption_time: request_execution_plus_preemption_time stats: min: 1.6983605860732496, max: 13.820706989150494, mean: 4.522522226837464, median: 2.9178555458784103, 95th percentile: 13.492565290187486, 99th percentile: 13.748941582879052 99.9th percentile: 13.81353044852335
-INFO 06-13 22:08:16 data_series.py:150] request_execution_plus_preemption_time_normalized: request_execution_plus_preemption_time_normalized stats: min: 0.024473678058902035, max: 0.028879398570185708, mean: 0.026731499471731944, median: 0.026785130761234004, 95th percentile: 0.027556983129894727, 99th percentile: 0.028269571841437836 99.9th percentile: 0.028818415897310927
-INFO 06-13 22:08:16 data_series.py:150] prefill_e2e_time: prefill_e2e_time stats: min: 3213666.313556063, max: 3214114.094697512, mean: 3213887.9934466714, median: 3213893.3151193517, 95th percentile: 3214089.911493998, 99th percentile: 3214100.5492591173 99.9th percentile: 3214112.7401536726
-INFO 06-13 22:08:16 data_series.py:150] prefill_e2e_time_normalized: prefill_e2e_time_normalized stats: min: 10366.915394748841, max: 20733.942844706813, mean: 12646.7276401542, median: 12337.034069671607, 95th percentile: 14418.800367616983, 99th percentile: 20602.863233737102 99.9th percentile: 20720.834883609845
-INFO 06-13 22:08:16 data_series.py:150] prefill_e2e_time_piecewise_normalized: prefill_e2e_time_piecewise_normalized stats: min: 3213666.147248557, max: 3214114.044267396, mean: 3213887.9455239456, median: 3213893.269437423, 95th percentile: 3214089.8615985727, 99th percentile: 3214100.4961384507 99.9th percentile: 3214112.6894545015
-INFO 06-13 22:08:16 data_series.py:150] prefill_time_execution_plus_preemption: prefill_time_execution_plus_preemption stats: min: 0.03538048267364502, max: 0.16694469982758164, mean: 0.04810993113555014, median: 0.050665582763031125, 95th percentile: 0.05298305572941899, 99th percentile: 0.0544990309467545 99.9th percentile: 0.15570013293950005
-INFO 06-13 22:08:17 data_series.py:150] prefill_time_execution_plus_preemption_normalized: prefill_time_execution_plus_preemption_normalized stats: min: 0.0001542344416520791, max: 0.0006371935107922964, mean: 0.00018720530711948712, median: 0.00018573160354128998, 95th percentile: 0.00020288109256842628, 99th percentile: 0.0002358034447190317 99.9th percentile: 0.0005970545041849739
-INFO 06-13 22:08:17 data_series.py:150] decode_time_execution_plus_preemption_normalized: decode_time_execution_plus_preemption_normalized stats: min: 0.02422180543258007, max: 0.027574969273110903, mean: 0.026323457666234052, median: 0.02636162726271881, 95th percentile: 0.027000038715936796, 99th percentile: 0.02731525219002789 99.9th percentile: 0.027548997564802606
-INFO 06-13 22:08:17 cdf_sketch.py:71] batch_execution_time: batch_execution_time stats: min: 0.01541769690811634, max: 0.16703682020306587, mean: 0.02521858506185377, 25th percentile: 0.02460017468627383, median: 0.025450962341686013, 75th percentile: 0.026542668476635518, 95th percentile: 0.02858132675667759, 99th percentile: 0.03294217136321616 99.9th percentile: 0.05239199413553034 count: 17120.0 sum: 431.7421762589365
-INFO 06-13 22:08:17 cdf_sketch.py:71] inter_batch_delay: inter_batch_delay stats: min: 0.0006552641279995441, max: 0.008505913894623518, mean: 0.001207395618552629, 25th percentile: 0.0010189294146911204, median: 0.0011580673352144522, 75th percentile: 0.0013294330475513178, 95th percentile: 0.0016632152822485926, 99th percentile: 0.0021787530897498094 99.9th percentile: 0.004449327557033626 count: 17119.0 sum: 20.669405594002455
-INFO 06-13 22:08:17 cdf_sketch.py:71] batch_num_tokens: batch_num_tokens stats: min: 1, max: 310, mean: 2.496495327102804, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 273.96527670428947 count: 17120.0 sum: 42740.0
-INFO 06-13 22:08:17 cdf_sketch.py:71] batch_num_prefill_tokens: batch_num_prefill_tokens stats: min: 0, max: 310, mean: 1.5023364485981308, 25th percentile: 0, median: 0, 75th percentile: 0, 95th percentile: 0, 99th percentile: 0 99.9th percentile: 273.96527670428947 count: 17120.0 sum: 25720.0
-INFO 06-13 22:08:17 cdf_sketch.py:71] batch_num_decode_tokens: batch_num_decode_tokens stats: min: 0, max: 1, mean: 0.9941588785046729, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 0.9989999999999999 count: 17120.0 sum: 17020.0
-INFO 06-13 22:08:17 cdf_sketch.py:71] batch_size: batch_size stats: min: 1, max: 1, mean: 1.0, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 0.9989999999999999 count: 17120.0 sum: 17120.0
-INFO 06-13 22:08:17 cdf_sketch.py:71] decode_token_execution_plus_preemption_time: decode_token_execution_plus_preemption_time stats: min: 0.0, max: 0.15117311011999846, mean: 0.025972220773191765, 25th percentile: 0.02560412720187722, median: 0.026542668476635518, 75th percentile: 0.02773662061654186, 95th percentile: 0.02998668980313356, 99th percentile: 0.032679685249196025 99.9th percentile: 0.037067985800121155 count: 17120.0 sum: 444.64441963704303
-INFO 06-13 22:08:18 data_series.py:124] request_arrival_time_series: request_arrival stats: min: 1, max: 100, mean: 50.5,
-INFO 06-13 22:08:18 data_series.py:124] request_completion_time_series: request_completion stats: min: 1, max: 100, mean: 50.5,
-INFO 06-13 22:08:18 data_series.py:124] prefill_completion_time_series: prefill_completion stats: min: 262, max: 25720, mean: 13008.32,
+INFO 06-17 23:10:56 data_series.py:150] request_inter_arrival_delay: request_inter_arrival_delay stats: min: 0.009999999999999953, max: 0.010000000000000009, mean: 0.010000000000000007, median: 0.010000000000000009, 95th percentile: 0.010000000000000009, 99th percentile: 0.010000000000000009 99.9th percentile: 0.010000000000000009
+INFO 06-17 23:10:56 data_series.py:150] request_num_tokens: request_num_tokens stats: min: 215, max: 790, mean: 451.07, median: 383.0, 95th percentile: 771.1, 99th percentile: 783.07 99.9th percentile: 789.307
+INFO 06-17 23:10:57 data_series.py:150] request_num_prefill_tokens: request_num_prefill_tokens stats: min: 155, max: 310, mean: 257.2, median: 260.5, 95th percentile: 286.05, 99th percentile: 301.09000000000003 99.9th percentile: 309.1090000000001
+INFO 06-17 23:10:57 data_series.py:150] request_num_decode_tokens: request_num_decode_tokens stats: min: 29, max: 512, mean: 193.87, median: 123.0, 95th percentile: 512.0, 99th percentile: 512.0 99.9th percentile: 512.0
+INFO 06-17 23:10:57 data_series.py:150] request_pd_ratio: request_pd_ratio stats: min: 0.314453125, max: 8.206896551724139, mean: 2.083905068113608, median: 2.1257179085552322, 95th percentile: 3.835144927536232, 99th percentile: 6.099716024340782 99.9th percentile: 7.996178498985824
+INFO 06-17 23:10:57 data_series.py:150] request_num_restarts: request_num_restarts stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 06-17 23:10:57 data_series.py:150] request_num_pauses: request_num_pauses stats: min: 30, max: 513, mean: 194.87, median: 124.0, 95th percentile: 513.0, 99th percentile: 513.0 99.9th percentile: 513.0
+INFO 06-17 23:10:57 data_series.py:150] request_num_ignored: request_num_ignored stats: min: 0, max: 0, mean: 0.0, median: 0.0, 95th percentile: 0.0, 99th percentile: 0.0 99.9th percentile: 0.0
+INFO 06-17 23:10:57 data_series.py:150] request_e2e_time: request_e2e_time stats: min: 3562973.314170211, max: 3563478.807275109, mean: 3563216.546220297, median: 3563207.658298592, 95th percentile: 3563446.810629129, 99th percentile: 3563471.928078267 99.9th percentile: 3563478.119355425
+INFO 06-17 23:10:57 data_series.py:150] request_e2e_time_normalized: request_e2e_time_normalized stats: min: 6959.003665332801, max: 122875.67970495531, mean: 28995.92816078275, median: 28968.052430339332, 95th percentile: 54858.828158181284, 99th percentile: 70393.67001382893 99.9th percentile: 117627.47873584321
+INFO 06-17 23:10:57 data_series.py:150] request_e2e_time_piecewise_normalized: request_e2e_time_piecewise_normalized stats: min: 3562964.1750615444, max: 3563471.8769385647, mean: 3563211.417915489, median: 3563199.6499828678, 95th percentile: 3563443.0150192115, 99th percentile: 3563468.5642517847 99.9th percentile: 3563471.5456698867
+INFO 06-17 23:10:57 data_series.py:150] request_execution_time: request_execution_time stats: min: 0.7051906501874328, max: 11.849673659075052, mean: 4.345319093517028, median: 2.7929991581477225, 95th percentile: 11.612936776387505, 99th percentile: 11.753809997332283 99.9th percentile: 11.840087292900776
+INFO 06-17 23:10:57 data_series.py:150] request_execution_time_normalized: request_execution_time_normalized stats: min: 0.018079574789292147, max: 0.02431691897198044, mean: 0.022470665247583746, median: 0.022516880223811327, 95th percentile: 0.023149554781278395, 99th percentile: 0.02357630138577323 99.9th percentile: 0.024242857213359725
+INFO 06-17 23:10:57 data_series.py:150] request_preemption_time: request_preemption_time stats: min: 0.11065039178356528, max: 2.272504824679345, mean: 0.8095931763574481, median: 0.4996447265148163, 95th percentile: 2.2391742444364353, 99th percentile: 2.263869345970452 99.9th percentile: 2.2716412768084555
+INFO 06-17 23:10:57 data_series.py:150] request_scheduling_delay: request_scheduling_delay stats: min: 3562964.147780623, max: 3563471.85068729, mean: 3563211.391308027, median: 3563199.623433628, 95th percentile: 3563442.9880030244, 99th percentile: 3563468.537420537 99.9th percentile: 3563471.519360615
+INFO 06-17 23:10:57 data_series.py:150] request_execution_plus_preemption_time: request_execution_plus_preemption_time stats: min: 0.815841041970998, max: 14.025346502196044, mean: 5.154912269874476, median: 3.2990350800100714, 95th percentile: 13.84361362461932, 99th percentile: 13.965941736274399 99.9th percentile: 14.01940602560388
+INFO 06-17 23:10:57 data_series.py:150] request_execution_plus_preemption_time_normalized: request_execution_plus_preemption_time_normalized stats: min: 0.022129593035833513, max: 0.028275206429409047, mean: 0.026607461224197913, median: 0.026654042659640515, 95th percentile: 0.02751522658601406, 99th percentile: 0.028133877290200573 99.9th percentile: 0.028261073515488202
+INFO 06-17 23:10:57 data_series.py:150] prefill_e2e_time: prefill_e2e_time stats: min: 3562964.31409835, max: 3563471.904711531, mean: 3563211.4396207263, median: 3563199.6702291635, 95th percentile: 3563443.0384482737, 99th percentile: 3563468.588558212 99.9th percentile: 3563471.573096199
+INFO 06-17 23:10:57 data_series.py:150] prefill_e2e_time_normalized: prefill_e2e_time_normalized stats: min: 11493.67612426239, max: 22987.493641542704, mean: 14021.323465959804, median: 13677.973704390693, 95th percentile: 15986.095767564944, 99th percentile: 22842.122081985497 99.9th percentile: 22972.956485586983
+INFO 06-17 23:10:57 data_series.py:150] prefill_e2e_time_piecewise_normalized: prefill_e2e_time_piecewise_normalized stats: min: 3562964.1484154235, max: 3563471.850883742, mean: 3563211.3914962215, median: 3563199.623624821, 95th percentile: 3563442.9881880525, 99th percentile: 3563468.5376186157 99.9th percentile: 3563471.5195572292
+INFO 06-17 23:10:58 data_series.py:150] prefill_time_execution_plus_preemption: prefill_time_execution_plus_preemption stats: min: 0.03512938320636749, max: 0.16631772695109248, mean: 0.04831269866786897, median: 0.050823490135371685, 95th percentile: 0.05343778748065233, 99th percentile: 0.058009112174623276 99.9th percentile: 0.15548686547344664
+INFO 06-17 23:10:58 data_series.py:150] prefill_time_execution_plus_preemption_normalized: prefill_time_execution_plus_preemption_normalized stats: min: 0.00015308205991631417, max: 0.0006348004845461545, mean: 0.00018819472493938872, median: 0.00018474837306670566, 95th percentile: 0.00020800659632368268, 99th percentile: 0.00026657109769705065 99.9th percentile: 0.0005979775458612479
+INFO 06-17 23:10:58 data_series.py:150] decode_time_execution_plus_preemption_normalized: decode_time_execution_plus_preemption_normalized stats: min: 0.02192999638974126, max: 0.02733797106181377, mean: 0.02622416500144544, median: 0.026357654670202294, 95th percentile: 0.027146941694610117, 99th percentile: 0.02728941007802194 99.9th percentile: 0.027333114963434588
+INFO 06-17 23:10:58 cdf_sketch.py:71] batch_execution_time: batch_execution_time stats: min: 0.01548554515466094, max: 0.16642250772565603, mean: 0.025282952067078875, 25th percentile: 0.024551023488099455, median: 0.02550191521924695, 75th percentile: 0.026755861530700437, 95th percentile: 0.028695881057752136, 99th percentile: 0.031210470245606282 99.9th percentile: 0.05197453012580341 count: 19487.0 sum: 492.68888693116605
+INFO 06-17 23:10:58 cdf_sketch.py:71] inter_batch_delay: inter_batch_delay stats: min: 0.0006906450726091862, max: 0.005804639309644699, mean: 0.0011783190149774509, 25th percentile: 0.0010007527598287502, median: 0.0011465443688775945, 75th percentile: 0.0013162049633214806, 95th percentile: 0.001601198855426866, 99th percentile: 0.001882786174215654 99.9th percentile: 0.0031291232598726006 count: 19486.0 sum: 22.960724325850606
+INFO 06-17 23:10:58 cdf_sketch.py:71] batch_num_tokens: batch_num_tokens stats: min: 1, max: 310, mean: 2.3147226356032227, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 272.8716040364805 count: 19487.0 sum: 45107.0
+INFO 06-17 23:10:58 cdf_sketch.py:71] batch_num_prefill_tokens: batch_num_prefill_tokens stats: min: 0, max: 310, mean: 1.3198542618155693, 25th percentile: 0, median: 0, 75th percentile: 0, 95th percentile: 0, 99th percentile: 0 99.9th percentile: 272.8716040364805 count: 19487.0 sum: 25720.0
+INFO 06-17 23:10:58 cdf_sketch.py:71] batch_num_decode_tokens: batch_num_decode_tokens stats: min: 0, max: 1, mean: 0.9948683737876534, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 0.9989999999999999 count: 19487.0 sum: 19387.0
+INFO 06-17 23:10:58 cdf_sketch.py:71] batch_size: batch_size stats: min: 1, max: 1, mean: 1.0, 25th percentile: 0.9989999999999999, median: 0.9989999999999999, 75th percentile: 0.9989999999999999, 95th percentile: 0.9989999999999999, 99th percentile: 0.9989999999999999 99.9th percentile: 0.9989999999999999 count: 19487.0 sum: 19487.0
+INFO 06-17 23:10:58 cdf_sketch.py:71] decode_token_execution_plus_preemption_time: decode_token_execution_plus_preemption_time stats: min: 0.0, max: 0.14970298623666167, mean: 0.026062616606525358, 25th percentile: 0.02550191521924695, median: 0.026542668476635518, 75th percentile: 0.027959403599491964, 95th percentile: 0.03004672321615285, 99th percentile: 0.03196858274513668 99.9th percentile: 0.03547235518671911 count: 19487.0 sum: 507.88220981135964
+INFO 06-17 23:10:59 data_series.py:124] request_arrival_time_series: request_arrival stats: min: 1, max: 100, mean: 50.5,
+INFO 06-17 23:10:59 data_series.py:124] request_completion_time_series: request_completion stats: min: 1, max: 100, mean: 50.5,
+INFO 06-17 23:10:59 data_series.py:124] prefill_completion_time_series: prefill_completion stats: min: 262, max: 25720, mean: 13008.32,
 Running command: python /workspace/xutingl/vattention-ee/sarathi-lean/sarathi/benchmark/main.py --model_name meta-llama/Llama-2-13b-chat-hf --model_tensor_parallel_degree 1 --request_generator_provider synthetic --synthetic_request_generator_length_provider trace --synthetic_request_generator_interval_provider poisson --poisson_request_interval_generator_qps 0.5 --trace_request_length_generator_trace_file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv --replica_scheduler_provider vllm --trace_request_length_generator_prefill_scale_factor 1 --trace_request_length_generator_decode_scale_factor 1 --replica_scheduler_max_batch_size 1 --vllm_scheduler_max_tokens_in_batch 1024 --model_max_model_len 1024 --metrics_store_enable_op_level_metrics false --metrics_store_keep_individual_batch_metrics false --output_dir /workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/ --synthetic_request_generator_num_requests 100 --trace_request_length_generator_max_tokens 1024 --trace_request_length_generator_min_tokens 0 --model_block_size 2097152 --model_attention_backend fa_vattn_sync --gpu_memory_utilization 0.99 --ee_policy eager --shallow_exit_layer 24 --conf_threshold 0.9 --early_exit_head_path /workspace/xutingl/finetune-ee/output/early_exit_head.pt

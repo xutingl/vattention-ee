@@ -145,6 +145,7 @@ class BaseLLMEngine:
 
         self.prefill_spent_time = 0
         self.decode_spent_time = 0
+        self.rebatching_spent_time = 0
     
 
     def _validate_parallel_config(self) -> None:
@@ -439,14 +440,14 @@ class BaseLLMEngine:
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
         )
-        # print(f"[BaseLLMEngine] output_seq_metadata_list: {output_seq_metadata_list}\n")
+       
         if self.rebatching:
-            # output_seq_ids = output_seq_ids.tolist()
             output_seqs = [self.seq_manager.seq_map[seq_id] for seq_id in output_seq_ids]
             self.scheduler.on_rebatching(seq_metadata_list, output_seqs)
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
-        # print(f"[BaseLLMEngine] output output_seq_ids: {output_seq_ids}")
+
+
 
 
         
