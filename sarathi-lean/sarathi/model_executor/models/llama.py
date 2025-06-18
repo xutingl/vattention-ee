@@ -611,10 +611,7 @@ class LlamaModel(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         
         if self.ee_policy != "rebatching" or hidden_states.size(0) > self.prefill_batch_size_limit: # Rebatching disabled
-            # print(f"[LlamaModel.forward] Rebatching disabled. seq_ids_in_batch: {seq_ids_in_batch}. hidden_states size: {hidden_states.size()}")
             return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
-        
-        # print(f"\n[LlamaModel.forward] Incoming seq_ids_in_batch: {seq_ids_in_batch}. positions: {positions}")
         
 
         # Rebatching enabled
@@ -631,7 +628,7 @@ class LlamaModel(nn.Module):
         incoming_batch_size = len(seq_ids_in_batch)
 
 
-        # 0. Flush: If we receive an empty batch, we process any leftover hidden states in the buffer.
+        # 0. Flush: If we receive an empty batch, we process any leftover hidden states in the buffer. Scheduler will send a flush request if deep_buffer is full or starving.
         flush_buffer = incoming_batch_size == 0
         if flush_buffer:
             if len(self.deep_buffer) > 0:
@@ -654,93 +651,13 @@ class LlamaModel(nn.Module):
                 # print(f"[LlamaModel.forward] returning flush_buffer 1: deep_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
                 return hidden_states, seq_ids_in_batch, self.exited_rates, None
-            elif len(self.start_buffer) > 0:
-                # Take hidden states from `start_buffer`
-                hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(min(self.max_batch_size, len(self.start_buffer)))
-                # print(f"[LlamaModel.forward] [2]updating kvcache with seq_ids_in_batch: {seq_ids_in_batch}")
-                self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
-
-                #self.measure_batch_size(hidden_states)
-
-                for i in range(len(self.layers)):
-                    layer = self.layers[i]
-                    hidden_states = layer(
-                        positions,
-                        hidden_states,
-                        kv_caches[i],
-                    )
-                if self.norm:
-                    hidden_states = self.norm(hidden_states)
-                # print(f"[LlamaModel.forward] returning flush_buffer 2: start_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
-                #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates, None
+            
             else:
                 #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 return None, None, self.exited_rates, None
 
-        # 1. We check `deep_buffer` first to see if there are enough hidden states to form a batch. If there are, we will process and return them. The incoming hidden states are added to `start_buffer`.
-        if len(self.deep_buffer) >= self.max_batch_size:
-            # 1.1 Put incoming hidden states into `start_buffer`
-            # print(f"[LlamaModel.forward] incoming hidden states size: {hidden_states.size()}. hidden states: {hidden_states}")
-            # print(f"[LlamaModel.forward] incoming seq_ids_in_batch: {seq_ids_in_batch}")
-            # print(f"[LlamaModel.forward] deep_buffer map: {self.deep_buffer.hidden_states_map}")
-            
-            self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch, positions)
-            # 1.2 Take hidden states from `deep_buffer`
-            hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(self.max_batch_size)
-
-            # self.measure_batch_size(hidden_states)
-
-            # if 1 in seq_ids_in_batch:
-            #     print(f"[LlamaModel.forward] [3] Ther are taken out from deep buffer. updating kvcache with seq_ids_in_batch: {seq_ids_in_batch}")
-            self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
-
-            # 1.3 Process hidden states starting from the EE layer
-            for i in range(self.shallow_exit_layer, len(self.layers)):
-                layer = self.layers[i]
-                hidden_states = layer(
-                    positions,
-                    hidden_states,
-                    kv_caches[i],
-                )
-            if self.norm:
-                hidden_states = self.norm(hidden_states)
-
-            # print(f"case 1 seq_ids_in_batch: {seq_ids_in_batch}")
-            # print(f"seq ids in deep buffer: {self.deep_buffer.hidden_states_map.keys()}")
-            # print(f"seq ids in start buffer: {self.start_buffer.hidden_states_map.keys()}\n")
-            #print(f"[LlamaModel.forward] 2222222  ee_rates: {self.exited_rates}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-            
-            return hidden_states, seq_ids_in_batch, self.exited_rates, None
-
-        # 2. Requests in the `start_buffer` has a higher priority than incoming requests. Pop requests from `start_buffer` and swap incoming requests to `start_buffer`.
-        num_req_in_start_buffer = len(self.start_buffer)
-        if num_req_in_start_buffer > 0:
-            num_req_to_take = min(num_req_in_start_buffer, self.max_batch_size)
-
-            if incoming_batch_size + num_req_to_take <= self.max_batch_size:
-                # Take hidden states from `start_buffer` and add them to incoming hidden states. No need to add anything back to `start_buffer`
-                # Concat hidden states in `start_buffer` and incoming hidden states
-                taking_hidden_states, taking_seq_ids_in_batch, taking_positions = self.start_buffer.take_hidden_states(num_req_to_take)
-                
-                hidden_states = torch.cat([hidden_states, taking_hidden_states], dim=0)
-                # seq_ids_in_batch = torch.cat([seq_ids_in_batch, taking_seq_ids_in_batch], dim=0)
-                seq_ids_in_batch.extend(taking_seq_ids_in_batch)
-                positions = torch.cat([positions, taking_positions], dim=0)
-            else: # incoming_batch_size + num_req_to_take > max batch size. 
-                if num_req_to_take > incoming_batch_size:
-                    # Swap whole incoming hidden states with `start_buffer` hidden states
-                    self.start_buffer.add_hidden_states(hidden_states, seq_ids_in_batch, positions)
-                    hidden_states, seq_ids_in_batch, positions = self.start_buffer.take_hidden_states(num_req_to_take)
-                else:
-                    # Swap partial incoming hidden states with `start_buffer` hidden states
-                    self.start_buffer.add_hidden_states(hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take])
-                    hidden_states[:num_req_to_take], seq_ids_in_batch[:num_req_to_take], positions[:num_req_to_take] = self.start_buffer.take_hidden_states(num_req_to_take)
-                
-
+        # 1. Process normal requests.
         self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
-
-        # self.measure_batch_size(hidden_states)
 
         has_ee = False
 

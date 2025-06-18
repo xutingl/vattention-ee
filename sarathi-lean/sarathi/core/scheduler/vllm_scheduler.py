@@ -186,7 +186,7 @@ class VLLMScheduler(BaseScheduler):
                 break
 
         if rebatching_buffer_flushed:
-            num_need_to_move = max(0, len(self.running) + len(output_seqs) - self.scheduler_config.max_num_seqs) if not enforce_batch_size else 0
+            num_need_to_move = max(0, len(self.running) + len(output_seqs) - self.scheduler_config.max_num_seqs) if enforce_batch_size else 0
             for i in range(num_need_to_move):
                 seq = self.running.pop(0)
                 self.waiting.insert(0, seq)
