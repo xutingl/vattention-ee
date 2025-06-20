@@ -59,7 +59,7 @@ def main():
                         '--trace_request_length_generator_prefill_scale_factor', '1',
                         '--trace_request_length_generator_decode_scale_factor', '1',
                         '--replica_scheduler_max_batch_size', str(max_batch_size),
-                        '--vllm_scheduler_max_tokens_in_batch', str(max_tokens),
+                        '--vllm_scheduler_max_tokens_in_batch', str(max_tokens * max_batch_size),
                         '--model_max_model_len', str(max_tokens),
                         '--metrics_store_enable_op_level_metrics', 'false',
                         '--metrics_store_keep_individual_batch_metrics', 'false',

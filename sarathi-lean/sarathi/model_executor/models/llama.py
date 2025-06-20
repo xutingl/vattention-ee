@@ -282,7 +282,7 @@ class HiddenStatesBuffer():
     
         
     def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
-        start_time = time.time()
+        #start_time = time.time()
         num_hidden_states = hidden_states.size(0)
         slots = []
         for i in range(num_hidden_states):
@@ -292,7 +292,7 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        self.time_spent_adding += time.time() - start_time
+        #self.time_spent_adding += time.time() - start_time
 
         
             
@@ -306,7 +306,7 @@ class HiddenStatesBuffer():
         output_positions: Tensor. positions corresponding to the hidden states. <num>
     """
     def take_hidden_states(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
-        start_time = time.time()
+        #start_time = time.time()
         if num == -1:
             num = self.batch_size
         # assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
@@ -325,7 +325,7 @@ class HiddenStatesBuffer():
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
 
-        self.time_spent_taking += time.time() - start_time
+        #self.time_spent_taking += time.time() - start_time
         return output_hidden_states, output_req_ids, output_positions
 
     def __len__(self):
@@ -388,13 +388,14 @@ class LlamaModel(nn.Module):
 
         self.update_kvcache_time_cnt = 0
 
-        self.process_ee_time = 0
+
 
         self.prefill_batch_size_limit = 64 # If emprical batch size is larger than this, we will not use EE. This is to avoid overhead of EE in prefill.
 
         self.sampler: Sampler = None
 
         self.early_exit_head = None
+        self.rebatching_time = 0
     
     def softmax_confidence(
         self,
@@ -420,9 +421,9 @@ class LlamaModel(nn.Module):
         #         return mask, False
         #     else:
         #         return mask, conf, False
-        logits = logits[~torch.any(logits.isnan(),dim=1)]
+        # logits = logits[~torch.any(logits.isnan(),dim=1)]
         conf = self.softmax_confidence(logits)
-        conf = conf[~torch.isnan(conf)]
+        # conf = conf[~torch.isnan(conf)]
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
 
         need_skip = torch.any(mask)
@@ -446,10 +447,14 @@ class LlamaModel(nn.Module):
         else:
             return mask, conf, need_skip
     
-    def measure_batch_size(self, hidden_states: torch.Tensor):
-        batch_size = hidden_states.size(0)
-        if batch_size <= self.max_batch_size:
-            self.batch_size_lst.append(batch_size)
+    def measure_batch_size(self, hidden_states: torch.Tensor, seq_ids_in_batch: List[int]=[]):
+        if len(seq_ids_in_batch) > 0:
+            #print(f"[LlamaModel.measure_batch_size] executing batch of size {len(seq_ids_in_batch)}")
+            self.batch_size_lst.append(len(seq_ids_in_batch))
+        else:
+            batch_size = hidden_states.size(0)
+            if batch_size <= self.max_batch_size:
+                self.batch_size_lst.append(batch_size)
     
     """
     For non-rebatching policies, requests information for the current batch is passed to cache_engine in `base_worker.py` and `model_runner.py`.
@@ -460,7 +465,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: List[int],
         cache_engine: vATTNCacheEngine,
     ) -> None:  
-        start_time = time.time()
+        #start_time = time.time()
         # assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         # updated_seq_metadata_list = [self.seq_metadata_map[seq_id] for seq_id in seq_ids_in_batch] 
         updated_seq_metadata_list = []
@@ -471,7 +476,7 @@ class LlamaModel(nn.Module):
         cache_engine.step(updated_seq_metadata_list) # Originally in base_worker
         get_attention_wrapper().begin_forward(updated_seq_metadata_list) # Originally in model_runner
 
-        self.update_kvcache_time_cnt += time.time() - start_time
+        #self.update_kvcache_time_cnt += time.time() - start_time
 
     """
     Returns:
@@ -490,7 +495,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
-        #self.measure_batch_size(hidden_states)
+        self.measure_batch_size(hidden_states)
 
         batch_size = hidden_states.size(0) if hidden_states.size(0) <= self.max_batch_size else self.max_batch_size
 
@@ -577,7 +582,7 @@ class LlamaModel(nn.Module):
             hidden_states = self.norm(hidden_states)
 
         # print(f"[LlamaModel.forward_without_rebatching] ee_rates: {self.exited_rates}")
-        # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
+        # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}.\n number of batchsize=1,2,3,4: {self.batch_size_lst.count(1)}, {self.batch_size_lst.count(2)}, {self.batch_size_lst.count(3)}, {self.batch_size_lst.count(4)}")
 
         # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
@@ -637,7 +642,7 @@ class LlamaModel(nn.Module):
                 # print(f"[LlamaModel.forward] [1] updating kvcache with seq_ids_in_batch: {seq_ids_in_batch}")
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
-                #self.measure_batch_size(hidden_states)
+                #self.measure_batch_size(hidden_states, seq_ids_in_batch)
 
                 for i in range(self.shallow_exit_layer, len(self.layers)):
                     layer = self.layers[i]
@@ -659,6 +664,8 @@ class LlamaModel(nn.Module):
         # 1. Process normal requests.
         self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
 
+        #self.measure_batch_size(hidden_states, seq_ids_in_batch)
+
         has_ee = False
 
         for i in range(len(self.layers)):
@@ -678,6 +685,7 @@ class LlamaModel(nn.Module):
                 
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
+                    rebatching_start_time = time.time()
 
                     has_ee = True
 
@@ -775,7 +783,7 @@ class LlamaModel(nn.Module):
                         # print(f"EE'ed seq_ids: {seq_ids_in_batch}")
 
                         
-                    
+                    self.rebatching_time += time.time() - rebatching_start_time
                     break
                 else:
                     # print(f"[LlamaModel.forward] no ee {seq_ids_in_batch}. exited rates: {self.exited_rates}")
@@ -798,7 +806,7 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
         # print("================================================")
 
-        # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): ({self.start_buffer.time_spent_adding:.2f}, {self.start_buffer.time_spent_taking:.2f}). deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}", flush=True)
+        # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}. rebatching spent time: {self.rebatching_time:.2f}. avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}. \n number of batchsize=1,2,3,4: {self.batch_size_lst.count(1)}, {self.batch_size_lst.count(2)}, {self.batch_size_lst.count(3)}, {self.batch_size_lst.count(4)}")
 
         if has_ee:
             return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits

@@ -104,7 +104,6 @@ class VLLMScheduler(BaseScheduler):
             self.running.append(seq)
 
         if scheduled_seq_metadata_list or ignored_seq_ids:
-            # print(f"[VLLMScheduler._schedule] from waiting: scheduled_seq_metadata_list: {scheduled_seq_metadata_list}")
             return SchedulerOutputs(
                 id=self._iteration_id,
                 ignored_seq_ids=ignored_seq_ids,
@@ -125,7 +124,10 @@ class VLLMScheduler(BaseScheduler):
 
         while self.running:
             seq = self.running.pop(0)
-            #print(f"[VLLMScheduler._schedule] seq: {seq.seq_id}, status: {seq.get_status()}")
+            if len(scheduled_seq_metadata_list) + 1 > self.scheduler_config.max_num_seqs:
+                running.append(seq) # Don't schedule this sequence, but keep it in the running list
+                continue
+
             if not seq.is_paused():
                 # The sequence group is already in the RUNNING state.
                 running.append(seq)
@@ -169,8 +171,8 @@ class VLLMScheduler(BaseScheduler):
         )
     
 
-    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence], enforce_batch_size: bool = False):
-        
+    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence]):
+        # 1. Handle the case where requests come out from the rebatching buffer.
         # Loop through outputs. If a request is in the rebatching buffer, and is outputted, then it is moved to the running list.
         # If this happens, we need to move all existing sequences in the running list to `waiting`
         # print(f"[VLLMScheduler.on_rebatching] output_seqs: {output_seqs}. running list: {self.running}")
@@ -186,19 +188,15 @@ class VLLMScheduler(BaseScheduler):
                 break
 
         if rebatching_buffer_flushed:
-            num_need_to_move = max(0, len(self.running) + len(output_seqs) - self.scheduler_config.max_num_seqs) if enforce_batch_size else 0
-            for i in range(num_need_to_move):
-                seq = self.running.pop(0)
-                self.waiting.insert(0, seq)
-            
 
             for output_seq in output_seqs:
                 assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
                 # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
-                self.running.append(output_seq)
+                self.running.insert(0, output_seq)
                 self.rebatching_buffer.remove(output_seq.seq_id)
+            return
 
-            
+        # 2. Handle the case where requests are scheduled, but not outputted. The missing requests are moved to the rebatching buffer.
         # Loop through the scheduled list (input list): if a request is in the input list but not in the output list, then it is moved to the rebatching buffer.
         for input_seq_metadata in scheduled_seq_metadata_list:
             if input_seq_metadata.seq.seq_id not in output_seq_ids:
