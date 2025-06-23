@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -407,8 +407,8 @@ class LlamaModel(nn.Module):
     
     def get_skip_mask(
         self,
-        logits: torch.Tensor = None,
-        hidden_states: torch.Tensor = None,
+        logits: torch.Tensor,
+        hidden_states: torch.Tensor,
         ee_policy: str = "eager",
         return_conf=False,
     ):
@@ -541,21 +541,31 @@ class LlamaModel(nn.Module):
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                     # [TODO] i-2 seems to give better results.\
 
-                    # Copy mothod 1
-                    # for batch_idx, token_idx in enumerate(positions):
-                    #     for l in range(i, len(self.layers)):
-                    #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
-                    #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
+                    prev_token_positions = torch.tensor(
+                        [seq_metadata.seq.get_len() - 1 for seq_metadata in seq_metadata_list],
+                        dtype=torch.long,
+                        device=hidden_states.device  # or whatever device your cache is on
+                    )
 
+                    # Copy method 1
+                    seq_ids_to_copy = seq_ids_in_batch
+
+                    for k, seq_id in enumerate(seq_ids_to_copy):
+                        assert seq_id == seq_metadata_list[k].seq.seq_id, f"Order mismatch at index {k}: {seq_id} != {seq_metadata_list[k].seq.seq_id}"
+                        
+                    for l in range(i, len(self.layers)):
+                        cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
+                        cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
 
                     # Copy method 2
-                    # for req_idx, token_idx in enumerate(positions):
-                    #     cache_engine.copy_kv_cache_starting_at_layer(i-1, req_idx, token_idx)
+                    # token_indices = positions
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices)
 
                     # Copy method 3
-                    token_indices = positions
-                    seq_ids_to_copy = seq_ids_in_batch
-                    cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                    # token_indices = positions
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
@@ -696,16 +706,34 @@ class LlamaModel(nn.Module):
                         # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
                         # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                         # curr_batch_size = len(seq_ids_in_batch)
+                        
                         # for batch_idx, token_pos_idx in enumerate(positions[:curr_batch_size]):
                         #     for l in range(i, len(self.layers)):
                         #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
                         #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
+
+                        prev_token_positions = torch.tensor(
+                            [seq_metadata.seq.get_len() - 1 for seq_metadata in seq_metadata_list],
+                            dtype=torch.long,
+                            device=hidden_states.device  # or whatever device your cache is on
+                        )
+                        
+                        # Copy method 1
+                        seq_ids_to_copy = seq_ids_in_batch
+                        for l in range(i, len(self.layers)):
+                            cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
+                            cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
+                        
+                        # Copy method 2
+                        # token_indices = positions
+                        # seq_ids_to_copy = seq_ids_in_batch
+                        # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices)
                         
 
                         # Copy method 3
-                        token_indices = positions
-                        seq_ids_to_copy = seq_ids_in_batch
-                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                        # token_indices = positions
+                        # seq_ids_to_copy = seq_ids_in_batch
+                        # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, prev_token_positions)
 
 
                         

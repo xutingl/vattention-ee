@@ -104,44 +104,35 @@ class vATTNCacheEngine(BaseCacheEngine):
         
 
         target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
-        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]  # shape: [batch, heads, dim]
+        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices] 
         src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
 
         for layer in self.gpu_cache[src_layer_idx + 1:]:
             layer[0][target_cache_idx, token_indices] = src_k
             layer[1][target_cache_idx, token_indices] = src_v
     
-    def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, req_idx: int, token_idx: int) -> None:
-        #print(f"[vATTNCacheEngine] Copying KV cache. req_idx: {req_idx}, token_idx: {token_idx}")
-        src_k = self.gpu_cache[src_layer_idx][0][req_idx, token_idx, :, :]
-        src_v = self.gpu_cache[src_layer_idx][1][req_idx, token_idx, :, :]
+    def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor) -> None:
+        target_cache_idx = self.get_batch_idx()
 
-        for i, layer in enumerate(self.gpu_cache[src_layer_idx + 1:]):
-            layer_k = layer[0]
-            layer_v = layer[1]
-            layer_k_req = layer_k[req_idx]
-            layer_k_req_token = layer_k_req[token_idx]
-            layer_k_req_token[:] = src_k
-            layer_v_req = layer_v[req_idx]
-            layer_v_req_token = layer_v_req[token_idx]
-            layer_v_req_token[:] = src_v
+        if target_cache_idx is None or len(target_cache_idx) == 0:
+            return
 
-            
-            # layer[0][req_idx, token_idx, :, :] = src_k
-            # layer[1][req_idx, token_idx, :, :] = src_v
+        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
+        src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
+
+        for layer in self.gpu_cache[src_layer_idx + 1:]:
+            layer[0][target_cache_idx, token_indices] = src_k
+            layer[1][target_cache_idx, token_indices] = src_v
     
-    def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, req_idx: int, token_idx: int) -> None:
-        dest_k_cache = self.gpu_cache[dest_layer_idx][0]
-        src_k_cache = self.gpu_cache[src_layer_idx][0]
+    def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
+        target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
+        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
+        self.gpu_cache[dest_layer_idx][0][target_cache_idx, token_indices].copy_(src_k)
 
-        dest_k_cache_for_req = dest_k_cache[req_idx]
-        src_k_cache_for_req = src_k_cache[req_idx]
-
-        dest_k_cache_for_req[token_idx,:,:] = src_k_cache_for_req[token_idx,:,:]
-        # self.gpu_cache[dest_layer_idx][0][req_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][0][req_idx][token_idx,:,:]
-    
-    def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, req_idx: int, token_idx: int) -> None:
-        self.gpu_cache[dest_layer_idx][1][req_idx][token_idx,:,:] = self.gpu_cache[src_layer_idx][1][req_idx][token_idx,:,:]
+    def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
+        target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
+        src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
+        self.gpu_cache[dest_layer_idx][1][target_cache_idx, token_indices].copy_(src_v)
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         b_idx_prompt = []
