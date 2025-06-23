@@ -15,11 +15,14 @@ class RealRequestGenerator(BaseRequestGenerator):
         super().__init__(config)
 
         self.prompt_length = prompt_length
-        self.squad = load_dataset("rajpurkar/squad_v2", split="validation")
+        # self.squad = load_dataset("rajpurkar/squad_v2", split="validation")
         self.cnn = load_dataset("abisee/cnn_dailymail", "3.0.0", split="validation")
     
     def _get_squad_prompt(self, idx: int) -> str:
         return self.squad[idx]["context"] + " " + self.squad[idx]["question"]
+    
+    def _get_cnn_summary(self, idx: int) -> str:
+        return self.cnn[idx]["highlights"]
     
     def _get_cnn_prompt(self, idx: int) -> str:
         # https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00632/119276/Benchmarking-Large-Language-Models-for-News
@@ -68,3 +71,6 @@ class RealRequestGenerator(BaseRequestGenerator):
     
     def get_cnn_prompts(self) -> List[str]:
         return [self._get_cnn_prompt(i)[:self.prompt_length] for i in range(self._config.num_requests)]
+    
+    def get_cnn_summaries(self) -> List[str]:
+        return [self._get_cnn_summary(i) for i in range(self._config.num_requests)]
