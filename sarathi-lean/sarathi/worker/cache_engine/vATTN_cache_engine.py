@@ -111,7 +111,6 @@ class vATTNCacheEngine(BaseCacheEngine):
             layer[0][target_cache_idx, token_indices] = src_k
             layer[1][target_cache_idx, token_indices] = src_v
     
-    # Copy method 2: Copy the KV cache for the given token indices, from the source layer to all the layers after it.
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor, exited_req_indices: torch.Tensor = None) -> None:
         target_cache_idx = self.get_batch_idx()
 
