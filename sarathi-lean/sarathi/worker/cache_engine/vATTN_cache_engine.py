@@ -111,11 +111,15 @@ class vATTNCacheEngine(BaseCacheEngine):
             layer[0][target_cache_idx, token_indices] = src_k
             layer[1][target_cache_idx, token_indices] = src_v
     
-    def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor) -> None:
+    # Copy method 2: Copy the KV cache for the given token indices, from the source layer to all the layers after it.
+    def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor, exited_req_indices: torch.Tensor = None) -> None:
         target_cache_idx = self.get_batch_idx()
 
         if target_cache_idx is None or len(target_cache_idx) == 0:
             return
+        
+        if exited_req_indices is not None:
+            target_cache_idx = target_cache_idx[exited_req_indices]
 
         src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
         src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
@@ -127,12 +131,14 @@ class vATTNCacheEngine(BaseCacheEngine):
     def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
         target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
         src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
-        self.gpu_cache[dest_layer_idx][0][target_cache_idx, token_indices].copy_(src_k)
+        
+        self.gpu_cache[dest_layer_idx][0][target_cache_idx, token_indices] = src_k
 
     def copy_v_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
         target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
         src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
-        self.gpu_cache[dest_layer_idx][1][target_cache_idx, token_indices].copy_(src_v)
+
+        self.gpu_cache[dest_layer_idx][1][target_cache_idx, token_indices] = src_v
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         b_idx_prompt = []

@@ -541,26 +541,17 @@ class LlamaModel(nn.Module):
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                     # [TODO] i-2 seems to give better results.\
 
-                    prev_token_positions = torch.tensor(
-                        [seq_metadata.seq.get_len() - 1 for seq_metadata in seq_metadata_list],
-                        dtype=torch.long,
-                        device=hidden_states.device  # or whatever device your cache is on
-                    )
-
                     # Copy method 1
                     seq_ids_to_copy = seq_ids_in_batch
-
-                    for k, seq_id in enumerate(seq_ids_to_copy):
-                        assert seq_id == seq_metadata_list[k].seq.seq_id, f"Order mismatch at index {k}: {seq_id} != {seq_metadata_list[k].seq.seq_id}"
-                        
                     for l in range(i, len(self.layers)):
-                        cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
-                        cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
+                        cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                        cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
 
                     # Copy method 2
                     # token_indices = positions
+                    # exited_req_indices = torch.where(skip_mask)[0] 
                     # seq_ids_to_copy = seq_ids_in_batch
-                    # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices)
+                    # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
 
                     # Copy method 3
                     # token_indices = positions
@@ -707,27 +698,18 @@ class LlamaModel(nn.Module):
                         # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                         # curr_batch_size = len(seq_ids_in_batch)
                         
-                        # for batch_idx, token_pos_idx in enumerate(positions[:curr_batch_size]):
-                        #     for l in range(i, len(self.layers)):
-                        #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
-                        #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
-
-                        prev_token_positions = torch.tensor(
-                            [seq_metadata.seq.get_len() - 1 for seq_metadata in seq_metadata_list],
-                            dtype=torch.long,
-                            device=hidden_states.device  # or whatever device your cache is on
-                        )
                         
                         # Copy method 1
                         seq_ids_to_copy = seq_ids_in_batch
                         for l in range(i, len(self.layers)):
-                            cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
-                            cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, prev_token_positions)
+                            cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                            cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
                         
                         # Copy method 2
                         # token_indices = positions
+                        # exited_req_indices = torch.where(skip_mask)[0]  # This is a 1D tensor of indices
                         # seq_ids_to_copy = seq_ids_in_batch
-                        # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices)
+                        # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
                         
 
                         # Copy method 3
@@ -736,7 +718,6 @@ class LlamaModel(nn.Module):
                         # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, prev_token_positions)
 
 
-                        
                         # self.conf_sum += sum(conf)
                         # conf = torch.mean(conf)
                         # conf = conf.item()
