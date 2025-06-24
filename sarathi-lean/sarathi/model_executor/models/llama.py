@@ -542,21 +542,20 @@ class LlamaModel(nn.Module):
                     # [TODO] i-2 seems to give better results.\
 
                     # Copy method 1
-                    seq_ids_to_copy = seq_ids_in_batch
-                    for l in range(i, len(self.layers)):
-                        cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
-                        cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # for l in range(i, len(self.layers)):
+                    #     cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                    #     cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
 
                     # Copy method 2
                     # token_indices = positions
                     # exited_req_indices = torch.where(skip_mask)[0] 
-                    # seq_ids_to_copy = seq_ids_in_batch
                     # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
 
                     # Copy method 3
-                    # token_indices = positions
-                    # seq_ids_to_copy = seq_ids_in_batch
-                    # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                    token_indices = positions
+                    seq_ids_to_copy = seq_ids_in_batch
+                    cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
@@ -700,22 +699,21 @@ class LlamaModel(nn.Module):
                         
                         
                         # Copy method 1
-                        seq_ids_to_copy = seq_ids_in_batch
-                        for l in range(i, len(self.layers)):
-                            cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
-                            cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                        # seq_ids_to_copy = seq_ids_in_batch
+                        # for l in range(i, len(self.layers)):
+                        #     cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                        #     cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
                         
                         # Copy method 2
                         # token_indices = positions
-                        # exited_req_indices = torch.where(skip_mask)[0]  # This is a 1D tensor of indices
-                        # seq_ids_to_copy = seq_ids_in_batch
+                        # exited_req_indices = torch.where(skip_mask)[0]  
                         # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
                         
 
                         # Copy method 3
-                        # token_indices = positions
-                        # seq_ids_to_copy = seq_ids_in_batch
-                        # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, prev_token_positions)
+                        token_indices = positions
+                        seq_ids_to_copy = seq_ids_in_batch
+                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, positions)
 
 
                         # self.conf_sum += sum(conf)
