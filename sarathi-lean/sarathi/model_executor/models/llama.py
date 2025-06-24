@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -407,8 +407,8 @@ class LlamaModel(nn.Module):
     
     def get_skip_mask(
         self,
-        logits: torch.Tensor = None,
-        hidden_states: torch.Tensor = None,
+        logits: torch.Tensor,
+        hidden_states: torch.Tensor,
         ee_policy: str = "eager",
         return_conf=False,
     ):
@@ -541,16 +541,16 @@ class LlamaModel(nn.Module):
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                     # [TODO] i-2 seems to give better results.\
 
-                    # Copy mothod 1
-                    # for batch_idx, token_idx in enumerate(positions):
-                    #     for l in range(i, len(self.layers)):
-                    #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_idx)
-                    #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_idx)
-
+                    # Copy method 1
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # for l in range(i, len(self.layers)):
+                    #     cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                    #     cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
 
                     # Copy method 2
-                    # for req_idx, token_idx in enumerate(positions):
-                    #     cache_engine.copy_kv_cache_starting_at_layer(i-1, req_idx, token_idx)
+                    # token_indices = positions
+                    # exited_req_indices = torch.where(skip_mask)[0] 
+                    # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
 
                     # Copy method 3
                     token_indices = positions
@@ -696,19 +696,26 @@ class LlamaModel(nn.Module):
                         # k_cache dimention: <batch_size, max_seq_len, num_heads(8), head_dim(128)>
                         # Copy layer i-1's kv cache for the prev token to layer i - last layer.
                         # curr_batch_size = len(seq_ids_in_batch)
-                        # for batch_idx, token_pos_idx in enumerate(positions[:curr_batch_size]):
-                        #     for l in range(i, len(self.layers)):
-                        #         cache_engine.copy_k_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
-                        #         cache_engine.copy_v_cache_between_layers(i-1, l, batch_idx, token_pos_idx)
+                        
+                        
+                        # Copy method 1
+                        # seq_ids_to_copy = seq_ids_in_batch
+                        # for l in range(i, len(self.layers)):
+                        #     cache_engine.copy_k_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                        #     cache_engine.copy_v_cache_between_layers(i-1, l, seq_ids_to_copy, positions)
+                        
+                        # Copy method 2
+                        # token_indices = positions
+                        # exited_req_indices = torch.where(skip_mask)[0]  
+                        # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
                         
 
                         # Copy method 3
                         token_indices = positions
                         seq_ids_to_copy = seq_ids_in_batch
-                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, positions)
 
 
-                        
                         # self.conf_sum += sum(conf)
                         # conf = torch.mean(conf)
                         # conf = conf.item()
