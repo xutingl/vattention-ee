@@ -146,6 +146,10 @@ class BaseLLMEngine:
         self.prefill_spent_time = 0
         self.decode_spent_time = 0
         self.rebatching_spent_time = 0
+
+        self.normal_iter_times = []
+        self.deep_iter_times = []
+        self.ee_iter_times = []
     
 
     def _validate_parallel_config(self) -> None:
@@ -405,6 +409,8 @@ class BaseLLMEngine:
         Then, it executes the model and updates the scheduler with the model outputs.
         Finally, it decodes the sequences and returns the newly generated results.
         """
+
+        step_start_time = time.perf_counter()
         outputs = self._run_workers("get_free_blocks" ,get_all_outputs=True)
         if type(self.scheduler.block_manager)==vAttentionBlockSpaceManager:
             if len(self.scheduler.block_manager.preemption_queue)>0:
@@ -434,7 +440,7 @@ class BaseLLMEngine:
         # print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
         # print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, perplexity, is_ee = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, perplexity, is_ee, is_flush = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
@@ -447,7 +453,18 @@ class BaseLLMEngine:
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         
+        end_time = time.perf_counter()
+        if is_flush:
+            self.deep_iter_times.append(end_time - step_start_time)
+        else:
+            if is_ee:
+                self.ee_iter_times.append(end_time - step_start_time)
+            else:
+                self.normal_iter_times.append(end_time - step_start_time)
         
+        request_outputs = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
+
+        print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))}, {sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))}, {sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
 
 
 
@@ -458,13 +475,7 @@ class BaseLLMEngine:
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))
-        return self._on_step_completed(
-            scheduler_outputs,
-            ignored_seqs,
-            seq_metadata_list,
-            sampler_outputs,
-            start_time,
-        ), exited_rates, perplexity, is_ee
+        return request_outputs, exited_rates, perplexity, is_ee
 
     def _run_workers(
         self,

@@ -12,6 +12,7 @@ from sarathi.worker.cache_engine.base_cache_engine import BaseCacheEngine
 import vattention
 from sarathi.model_executor.attention import get_attention_wrapper
 logger = init_logger(__name__)
+import time
 
 KVCache = Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]
 
@@ -40,6 +41,8 @@ class vATTNCacheEngine(BaseCacheEngine):
         self.vattn_mega_cache = True if "megacache" in model_config.attention_backend.lower() else False
         self.cache_mem_size = cache_config.memory_for_gpu
         super().__init__(cache_config, model_config, parallel_config)
+
+        self.step_times = []
 
     def num_free_blocks(self) -> int:
         return vattention.num_free_kvblocks()
@@ -170,17 +173,24 @@ class vATTNCacheEngine(BaseCacheEngine):
         # if 1 in seq_ids:
         #     print(f"[vATTNCacheEngine] Stepping with curr_seq_lens: {self.curr_seq_lens}. b_idx_gen: {b_idx_gen}. seq_ids: {seq_ids}")
 
+        start_time = time.time()
+
         if self.vattn_async:
             # print(f"[vATTNCacheEngine] Stepping async with curr_seq_lens: {self.curr_seq_lens}")
             vattention.step_async(self.curr_seq_lens)
         else:
             # print(f"[vATTNCacheEngine] Stepping sync with curr_seq_lens: {self.curr_seq_lens}")
-            vattention.step(self.curr_seq_lens, True)
+            vattention.step(self.curr_seq_lens, False)
+        
+        end_time = time.time()
 
         self.curr_batch_idx = torch.tensor(b_idx_prompt+b_idx_gen, dtype=torch.int32, device=self.device)
 
         # print(f"[vATTNCacheEngine] curr_batch_idx: {self.curr_batch_idx}")
         get_attention_wrapper().set_batch_idx(self.curr_batch_idx, torch.tensor(b_idx_gen, dtype=torch.int32, device=self.device))
+
+        self.step_times.append(end_time - start_time)
+        print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
 
     def on_step_completion(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         for seq_metadata in seq_metadata_list:
