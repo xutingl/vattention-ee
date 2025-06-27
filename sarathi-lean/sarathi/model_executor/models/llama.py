@@ -552,10 +552,13 @@ class LlamaModel(nn.Module):
                     # exited_req_indices = torch.where(skip_mask)[0] 
                     # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
 
+                    # Copy methid 2 new
+                    cache_engine.copy_kv_cache_starting_at_layer(i-1, positions)
+
                     # Copy method 3
-                    token_indices = positions
-                    seq_ids_to_copy = seq_ids_in_batch
-                    cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                    # token_indices = positions
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
@@ -728,9 +731,16 @@ class LlamaModel(nn.Module):
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
                         exited_req_indices = torch.where(skip_mask)[0]
                         # print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
+
+                        # Copy method 2 new
                         token_indices = positions[exited_req_indices]
-                        seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
-                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                        cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
+
+                        # Copy method 3
+
+                        # token_indices = positions[exited_req_indices]
+                        # seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
+                        # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                         self.exited_rates[0] += len(exited_req_indices)
                         self.exited_rates[1] += (len(seq_ids_in_batch) - len(exited_req_indices))
