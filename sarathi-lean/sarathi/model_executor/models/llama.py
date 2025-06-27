@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -499,8 +499,6 @@ class LlamaModel(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         self.measure_batch_size(hidden_states)
 
-        batch_size = hidden_states.size(0) if hidden_states.size(0) <= self.max_batch_size else self.max_batch_size
-
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
         
@@ -537,7 +535,8 @@ class LlamaModel(nn.Module):
                 if need_skip:
                     has_ee = True
                     # print(f"[LlamaModel.forward_without_rebatching] trying to exit with confidence {conf}.")
-                    self.exited_rates[0] += batch_size
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        self.exited_rates[0] += hidden_states.size(0)
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
@@ -575,7 +574,8 @@ class LlamaModel(nn.Module):
                 else:
                     # print(f"[LlamaModel.forward_without_rebatching] Exited without EE.")
                     
-                    self.exited_rates[1] += batch_size
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        self.exited_rates[1] += hidden_states.size(0)
                 
             hidden_states = layer(
                 positions,
