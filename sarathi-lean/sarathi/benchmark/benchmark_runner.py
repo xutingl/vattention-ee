@@ -19,6 +19,9 @@ from sarathi.benchmark.utils.random import set_seeds
 from sarathi.config import MetricsConfig
 from sarathi.metrics.metrics_store import MetricsStore
 from sarathi.utils import get_ip
+import bert_score
+from rouge_score import rouge_scorer
+from sarathi.benchmark.request_generator.real_request_generator import RealRequestGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +218,11 @@ class BenchmarkRunner:
         end_time = time.monotonic()
         pbar.close()
 
+        if self._config.enable_profiling:
+            self._llm_engine.stop_profiling()
+
+        self._llm_engine.cleanup() # clean up the engine so we have gpu memory for bert_score
+
         req_spent_times = []
         req_num_output_tokens = []
         for finished_seq_id in finished_seq_id_lst:
@@ -227,21 +235,34 @@ class BenchmarkRunner:
         tpot = decode_time / sum(req_num_output_tokens)
 
 
-            
 
+        # Get reference summaries for each request index
+        self._config.num_requests = len(self._requests)
+        reference_generator = RealRequestGenerator(self._config)
+        reference_summaries = reference_generator.get_cnn_summaries()
 
-        logger.info(
-            f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
-        )
+        # Compute rougeL and bert_score for each request
+        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        rougeL_scores = []
+        bert_scores = []
+        for idx, output in enumerate(finished_output):
+            reference = reference_summaries[idx]
+            # Compute rougeL fmeasure
+            rougeL = scorer.score(reference, output)['rougeL'].fmeasure
+            rougeL_scores.append(rougeL)
+            # Compute bert_score F1
+            P, R, F1 = bert_score.score([output], [reference], lang='en')
+            bert_scores.append(F1[0].item())
+
         output_throughput = num_output_tokens / (end_time - start_time)
-        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}")
-        logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
             "time": end_time - start_time,
             "throughput": output_throughput,
+            "rougeL": rougeL_scores,
+            "bert_score": bert_scores,
             "prefill_time": prefill_time,
             "decode_time": decode_time,
             "tpot": tpot,
@@ -260,10 +281,13 @@ class BenchmarkRunner:
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 
+        logger.info(
+            f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
+        )
+        logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}")
+        logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
+        logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
 
-
-        if self._config.enable_profiling:
-            self._llm_engine.stop_profiling()
 
     def _add_requests(self) -> None:
         index = 0
@@ -280,10 +304,12 @@ class BenchmarkRunner:
         self._llm_engine.reset_metrics()
         self._add_requests()
         self._run()
-        self._llm_engine.pull_worker_metrics()
-        metric_store = self._llm_engine.get_metric_store()
-        self._llm_engine.cleanup()
-        return metric_store
+
+        # We don't need these metrics. We do cleanup in _run()
+        # self._llm_engine.pull_worker_metrics()
+        # metric_store = self._llm_engine.get_metric_store()
+        # self._llm_engine.cleanup()
+        # return metric_store
 
 
 class BenchmarkRunnerLauncher:
@@ -432,6 +458,6 @@ class BenchmarkRunnerLauncher:
             self._aggregate_metric_store.plot()
         else:
             metric_store = self._runner.run()
-            metric_store.plot()
+            #metric_store.plot()
 
         wandb.finish()
