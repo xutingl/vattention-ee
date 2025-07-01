@@ -13,6 +13,7 @@ parser.add_argument('--shallow_exit_layer', '-l', type=int, default=16, help='Sh
 parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Confidence threshold')
 parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
 parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='Early exit head path')
+parser.add_argument('--csv_path', type=str, default="/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/", help='Path to save CSV results')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))

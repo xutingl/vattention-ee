@@ -252,17 +252,13 @@ class BenchmarkRunner:
         })
         df = df.sort_values(by="seq_id")
 
-        csv_path = Path("/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/")
+        csv_path = Path(self._config.csv_path)
         csv_path.mkdir(parents=True, exist_ok=True)
 
-        if self._config.replica_scheduler_max_batch_size == 1:
-            csv_file = f"{csv_path}/ee_batch1.csv"
-            print(f"Saving results to {csv_file}")
-            df.to_csv(csv_file, index=False, escapechar='\\')
-        else:
-            csv_file = f"{csv_path}/{self._config.ee_policy}.csv"
-            print(f"Saving results to {csv_file}")
-            df.to_csv(csv_file, index=False, escapechar='\\')
+        # numrequests_batchsize_layer_conf_policy.csv
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}.csv"
+        print(f"Saving results to {csv_file}")
+        df.to_csv(csv_file, index=False, escapechar='\\')
 
 
 

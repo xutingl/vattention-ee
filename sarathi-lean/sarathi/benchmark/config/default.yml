@@ -112,3 +112,4 @@ ee_policy: "off"
 shallow_exit_layer: 16
 conf_threshold: 0.8
 early_exit_head_path: ""
+csv_path: "/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/"
