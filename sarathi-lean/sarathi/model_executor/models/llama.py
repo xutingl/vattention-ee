@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -426,10 +426,12 @@ class LlamaModel(nn.Module):
         # conf = conf[~torch.isnan(conf)]
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
 
-        need_skip = torch.any(mask)
+        num_ee = torch.sum(mask).item()
+        num_ee_threshold = 2 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
+        need_skip = num_ee > num_ee_threshold
 
         if ee_policy != "rebatching":
-            
+
             conf = torch.mean(conf)
             if ee_policy == "eager":
                 need_skip = torch.any(mask)
@@ -497,8 +499,6 @@ class LlamaModel(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         self.measure_batch_size(hidden_states)
 
-        batch_size = hidden_states.size(0) if hidden_states.size(0) <= self.max_batch_size else self.max_batch_size
-
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
         
@@ -535,7 +535,8 @@ class LlamaModel(nn.Module):
                 if need_skip:
                     has_ee = True
                     # print(f"[LlamaModel.forward_without_rebatching] trying to exit with confidence {conf}.")
-                    self.exited_rates[0] += batch_size
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        self.exited_rates[0] += hidden_states.size(0)
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
 
                     # Copy layer i-1's kv cache for the prev token to layer i - last layer.
@@ -552,10 +553,13 @@ class LlamaModel(nn.Module):
                     # exited_req_indices = torch.where(skip_mask)[0] 
                     # cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
 
+                    # Copy method 2 new
+                    cache_engine.copy_kv_cache_starting_at_layer(i-1, positions)
+
                     # Copy method 3
-                    token_indices = positions
-                    seq_ids_to_copy = seq_ids_in_batch
-                    cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                    # token_indices = positions
+                    # seq_ids_to_copy = seq_ids_in_batch
+                    # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}.")
                     # print(f"[LlamaModel.forward_without_rebatching] Exited with confidence {conf}. positions: {positions}. req_ids: {seq_ids_in_batch}")
@@ -570,7 +574,8 @@ class LlamaModel(nn.Module):
                 else:
                     # print(f"[LlamaModel.forward_without_rebatching] Exited without EE.")
                     
-                    self.exited_rates[1] += batch_size
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        self.exited_rates[1] += hidden_states.size(0)
                 
             hidden_states = layer(
                 positions,
@@ -587,8 +592,8 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False
     
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
@@ -655,11 +660,11 @@ class LlamaModel(nn.Module):
                     hidden_states = self.norm(hidden_states)
                 # print(f"[LlamaModel.forward] returning flush_buffer 1: deep_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates, None
+                return hidden_states, seq_ids_in_batch, self.exited_rates, None, True
             
             else:
                 #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
-                return None, None, self.exited_rates, None
+                return None, None, self.exited_rates, None, False
 
         # 1. Process normal requests.
         self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
@@ -728,9 +733,16 @@ class LlamaModel(nn.Module):
                         # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
                         exited_req_indices = torch.where(skip_mask)[0]
                         # print(f"req_indices: {req_indices}. skip_mask: {skip_mask}")
+
+                        # Copy method 2 new
                         token_indices = positions[exited_req_indices]
-                        seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
-                        cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
+                        cache_engine.copy_kv_cache_starting_at_layer(i-1, token_indices, exited_req_indices)
+
+                        # Copy method 3
+
+                        # token_indices = positions[exited_req_indices]
+                        # seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
+                        # cache_engine.copy_kv_cache(i-1, seq_ids_to_copy, token_indices)
 
                         self.exited_rates[0] += len(exited_req_indices)
                         self.exited_rates[1] += (len(seq_ids_in_batch) - len(exited_req_indices))
@@ -816,8 +828,8 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}. rebatching spent time: {self.rebatching_time:.2f}. avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}. \n number of batchsize=1,2,3,4: {self.batch_size_lst.count(1)}, {self.batch_size_lst.count(2)}, {self.batch_size_lst.count(3)}, {self.batch_size_lst.count(4)}")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False
 
 
 class LlamaForCausalLM(nn.Module):
@@ -863,12 +875,12 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates, lm_logits = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
+        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)
 
-        return hidden_states, output_seq_ids, exited_rates, lm_logits
+        return hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush
 
     _column_parallel_layers = []
     _row_parallel_layers = ["o_proj", "down_proj"]

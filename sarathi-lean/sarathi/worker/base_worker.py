@@ -172,6 +172,14 @@ class BaseWorker:
         self, scheduler_outputs: SchedulerOutputs, sampler_outputs: SamplerOutputs
     ) -> None:
         self.seq_manager.on_step_completed(scheduler_outputs, sampler_outputs)
+    
+    def stop_seq_if_repeating_tokens(self, sampler_outputs: SamplerOutputs):
+        """Stop the sequences if the output tokens are repeating."""
+        if len(sampler_outputs) <= 2:
+            for sampler_output in sampler_outputs:
+                seq = self.seq_manager.seq_map[sampler_output.seq_id]
+                if len(seq.get_output_token_ids()) > 1 and seq.get_output_token_ids()[-1] == sampler_output.output_token:
+                    sampler_output.output_token = 2 # 2 is the eos token id
         
 
     @torch.inference_mode()
@@ -193,7 +201,7 @@ class BaseWorker:
             self.cache_engine.step(seq_metadata_list)
 
         # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
-        sampler_outputs, output_seq_ids, updated_seq_metadata_list, exited_rates, perplexity, is_ee = self.model_runner.run(
+        sampler_outputs, output_seq_ids, updated_seq_metadata_list, exited_rates, perplexity, is_ee, is_flush = self.model_runner.run(
             seq_metadata_list,
             self.gpu_cache,
             cache_engine=self.cache_engine,
@@ -207,6 +215,8 @@ class BaseWorker:
                 self.scheduled_seq_metadata_map[scheduled_seq_metadata.seq_id] = scheduled_seq_metadata
             
             scheduler_outputs.scheduled_seq_metadata_list = [self.scheduled_seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
+        
+        # self.stop_seq_if_repeating_tokens(sampler_outputs)
 
         self.on_step_completed(scheduler_outputs, sampler_outputs)
         self.cache_engine.on_step_completion(seq_metadata_list)
@@ -223,7 +233,7 @@ class BaseWorker:
             batch_stage_end_time,
         )
 
-        return sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs, exited_rates, perplexity, is_ee #, self.cache_engine.num_free_blocks()
+        return sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs, exited_rates, perplexity, is_ee, is_flush #, self.cache_engine.num_free_blocks()
 
     @synchronized
     def get_metrics_store(self) -> MetricsStore:
