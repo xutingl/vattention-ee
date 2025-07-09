@@ -429,6 +429,7 @@ class LlamaModel(nn.Module):
 
         num_ee = torch.sum(mask).item()
         num_ee_threshold = self.num_ee_threshold if self.num_ee_threshold is not None else 3 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
+        print(f"[LlamaModel.get_skip_mask] num_ee: {num_ee}, num_ee_threshold: {num_ee_threshold}")
         need_skip = num_ee > num_ee_threshold
 
         if ee_policy != "rebatching":
