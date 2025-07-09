@@ -266,7 +266,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -396,6 +396,7 @@ class LlamaModel(nn.Module):
 
         self.early_exit_head = None
         self.rebatching_time = 0
+        self.num_ee_threshold = getattr(config, 'num_ee_threshold', 3)
     
     def softmax_confidence(
         self,
@@ -427,7 +428,7 @@ class LlamaModel(nn.Module):
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
 
         num_ee = torch.sum(mask).item()
-        num_ee_threshold = 2 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
+        num_ee_threshold = self.num_ee_threshold if self.num_ee_threshold is not None else 3 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
         need_skip = num_ee > num_ee_threshold
 
         if ee_policy != "rebatching":

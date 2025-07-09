@@ -74,7 +74,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
+        self._config.download_dir = "/home/alexdan/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -126,6 +126,7 @@ class BenchmarkRunner:
             shallow_exit_layer=self._config.shallow_exit_layer,
             conf_threshold=self._config.conf_threshold,
             early_exit_head_path=self._config.early_exit_head_path,
+            num_ee_threshold=self._config.num_ee_threshold,
         )
 
     def _get_input_params(
@@ -277,7 +278,7 @@ class BenchmarkRunner:
         csv_path.mkdir(parents=True, exist_ok=True)
 
         # numrequests_batchsize_layer_conf_policy.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}.csv"
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_with_bertscore_num_ee_threshold_{self._config.num_ee_threshold}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 
@@ -360,8 +361,8 @@ class BenchmarkRunnerLauncher:
             if x.startswith("node:") and x != "node:__internal_head__"
         ]
 
-        runner_ip = f"node:{get_ip()}"
-        # runner_ip = "node:158.130.4.64" # For Phastform machine
+        # runner_ip = f"node:{get_ip()}"
+        runner_ip = "node:158.130.4.64" # For Phastform machine
 
         ip_addresses.remove(runner_ip)
         ip_addresses.insert(0, runner_ip)
