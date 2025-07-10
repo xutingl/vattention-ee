@@ -115,6 +115,7 @@ class vATTNCacheEngine(BaseCacheEngine):
             layer[1][target_cache_idx, token_indices] = src_v
     
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor, exited_req_indices: torch.Tensor = None) -> None:
+        return
         target_cache_idx = self.get_batch_idx()
 
         if target_cache_idx is None or len(target_cache_idx) == 0:
@@ -143,6 +144,9 @@ class vATTNCacheEngine(BaseCacheEngine):
         self.gpu_cache[dest_layer_idx][1][target_cache_idx, token_indices] = src_v
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
+        # print(f"[vATTNCacheEngine] Stepping with seq_metadata_list: {[metadata.seq.seq_id for metadata in seq_metadata_list]}")
+        # print(f"[vATTNCacheEngine] curr_seq_lens: {self.curr_seq_lens}")
+        # print(f"[vATTNCacheEngine] seq_to_batch_idx: {self.seq_to_batch_idx}")
         b_idx_prompt = []
         b_idx_gen = []
         for seq_metadata in seq_metadata_list:
@@ -190,7 +194,7 @@ class vATTNCacheEngine(BaseCacheEngine):
         get_attention_wrapper().set_batch_idx(self.curr_batch_idx, torch.tensor(b_idx_gen, dtype=torch.int32, device=self.device))
 
         self.step_times.append(end_time - start_time)
-        print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
+        # print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
 
     def on_step_completion(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         for seq_metadata in seq_metadata_list:

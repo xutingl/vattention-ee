@@ -55,6 +55,9 @@ class Sequence:
 
         self.state = SequenceState(seq_id, arrival_time, len(prompt_token_ids))
 
+        self.recompute_length = 0 # Each time a sequence is EE'ed, the length is incremented by 1. The first time it enters deep layer, it will be treated as a prefill step and the value is the length of the prompt to be prefilled, then it is reset to 0.
+        self.currently_recomputing = False
+
     def get_status(self) -> SequenceStatus:
         return self.state._status
 
@@ -85,7 +88,7 @@ class Sequence:
 
     def update_prompt_tokens_processed(self, num_tokens: int) -> None:
         assert not self.prompt_processing_finished
-        assert num_tokens > 0
+        assert num_tokens > 0, f"num_tokens: {num_tokens}. prompt_tokens_processed: {self.prompt_tokens_processed}. len prompt_token_ids: {len(self.prompt_token_ids)}. prompt_processing_finished: {self.prompt_processing_finished}. seq_id: {self.seq_id}. currently_recomputing: {self.currently_recomputing}"
 
         self.prompt_tokens_processed += num_tokens
         assert self.prompt_tokens_processed <= len(self.prompt_token_ids)
@@ -141,6 +144,8 @@ class Sequence:
         )
 
     def is_finished(self) -> bool:
+        # print(f"[Sequence.is_finished] seq_id: {self.seq_id}. status: {self.get_status()}")
+        #self.check_stop()
         return SequenceStatus.is_finished(self.get_status())
     
     def is_in_buffer(self) -> bool:
@@ -167,6 +172,8 @@ class Sequence:
 
     def check_stop(self) -> None:
         """Stop the finished sequences."""
+        if SequenceStatus.is_finished(self.get_status()):
+            return
         for stop_str in self.sampling_params.stop:
             if self.output_text.endswith(stop_str):
                 # Truncate the output text so that the stop string is
@@ -178,6 +185,8 @@ class Sequence:
         # Check if the sequence has reached max_tokens.
         if self.get_output_len() == self.sampling_params.max_tokens:
             self.set_status(SequenceStatus.FINISHED_LENGTH_CAPPED)
+            if self.seq_id == 2:
+                print(f"[Sequence] length capped!!!!!!! seq_id: {self.seq_id}. status: {self.get_status()}. seq obj id:{id(self)}")
             return
 
         # Check if the sequence has generated the EOS token.
@@ -285,7 +294,7 @@ class SequenceMetadata:
     def num_output_tokens(self) -> int:
         if self.prompt_chunk_len > 0:
             return 0
-        return 1
+        return self.seq.get_output_len()
 
     @property
     def num_tokens(self) -> int:

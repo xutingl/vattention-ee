@@ -24,6 +24,7 @@ from sarathi.utils import get_gpu_memory
 from sarathi.worker.cache_engine import get_cache_engine
 from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 from sarathi.model_executor.attention import AttentionBackend
+from sarathi.core.sequence_manager.base_sequence_manager import BaseSequenceManager
 logger = init_logger(__name__)
 
 USE_UVM = False
@@ -237,6 +238,7 @@ class ModelRunner:
         gpu_cache: Optional[List[torch.Tensor]] = None,
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
+        seq_manager: Optional[BaseSequenceManager] = None,
     ) -> torch.Tensor:
         # Prepare input tensors.
         with self._prepare_inputs_e2e_timer:
@@ -250,13 +252,14 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids, exited_rates, lm_logits, is_flush = self.model(
+                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
                     cache_engine=cache_engine,
                     seq_ids_in_batch=seq_ids_in_batch,
                     seq_metadata_list=seq_metadata_list,
+                    seq_manager=seq_manager,
                 )
             except RuntimeError as e:
                 logger.error(
@@ -270,9 +273,11 @@ class ModelRunner:
                 seq_metadata_list = [self.seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
 
         # print(f"[ModelRunner] output length: {len(output)}")
+        for_kv_recompute = len(recompute_dict) > 0
+        for_kv_recompute = False
         with self._sampler_e2e_timer:
             if self.sampler is not None:
-                output, entropy = self.sampler(output, seq_metadata_list, lm_logits)
+                output, entropy = self.sampler(output, seq_metadata_list, lm_logits, for_kv_recompute=for_kv_recompute)
 
         # for seq_metadata in seq_metadata_list:
         #     if seq_metadata.seq.seq_id == 1:
@@ -283,4 +288,4 @@ class ModelRunner:
 
         is_ee = lm_logits is not None
 
-        return output, output_seq_ids, seq_metadata_list, exited_rates, entropy, is_ee, is_flush
+        return output, output_seq_ids, seq_metadata_list, exited_rates, entropy, is_ee, is_flush, recompute_dict

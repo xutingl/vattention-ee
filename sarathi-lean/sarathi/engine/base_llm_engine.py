@@ -453,6 +453,14 @@ class BaseLLMEngine:
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         
+        # if recompute_dict:
+        #     for seq_id, recompute_length in recompute_dict.items():
+        #         for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
+        #             if scheduled_seq_metadata.seq_id == seq_id:
+        #                 seq = self.seq_manager.seq_map[seq_id]
+        #                 seq.prompt_tokens_processed = len(seq.prompt_token_ids)
+        #                 seq.prompt_processing_finished = True
+                
         end_time = time.perf_counter()
         if is_flush:
             self.deep_iter_times.append(end_time - step_start_time)
@@ -464,7 +472,12 @@ class BaseLLMEngine:
         
         request_outputs = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
 
-        print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))}, {sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))}, {sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
+        # for seq_metadata in seq_metadata_list:
+        #     if seq_metadata.seq.seq_id == 2:
+        #         print(f"[BaseLLMEngine] !!!!!!!!!! seq_id: {seq_metadata.seq.seq_id}. status: {seq_metadata.seq.get_status()}. seq obj id:{id(seq_metadata.seq)}. prompt len: {seq_metadata.seq.get_prompt_len()}. token len: {seq_metadata.seq.get_output_len()}. prompt_tokens_processed: {seq_metadata.seq.prompt_tokens_processed}. prompt_processing_finished: {seq_metadata.seq.prompt_processing_finished}")
+        #         break
+
+        # print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))}, {sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))}, {sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
 
 
 

@@ -44,12 +44,13 @@ class Sampler(nn.Module):
         hidden_states: torch.Tensor,
         seq_metadata_list: List[SequenceMetadata],
         lm_logits: Optional[torch.Tensor] = None,
+        for_kv_recompute: bool = False,
     ) -> SamplerOutputs:
         if lm_logits is not None:
             logits = lm_logits
         else:
             # Get the hidden states that we use for sampling.
-            hidden_states = _prune_hidden_states(hidden_states, seq_metadata_list)
+            hidden_states = _prune_hidden_states(hidden_states, seq_metadata_list, for_kv_recompute=for_kv_recompute)
 
             # Get the logits for the next tokens.
             logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
@@ -106,22 +107,40 @@ def _get_logits(
 def _prune_hidden_states(
     hidden_states: torch.Tensor,
     seq_metadata_list: List[SequenceMetadata],
+    for_kv_recompute: bool = False,
 ) -> torch.Tensor:
-    last_token_indices = []
-    token_idx = 0
-    for seq_metadata in seq_metadata_list:
-        if seq_metadata.is_prompt:
-            prompt_len = seq_metadata.prompt_chunk_len
-            last_token_indices.append(token_idx + prompt_len - 1)
-            token_idx += prompt_len
-        else:
-            last_token_indices.append(token_idx)
-            token_idx += 1
+    if not for_kv_recompute:
+        last_token_indices = []
+        token_idx = 0
+        for seq_metadata in seq_metadata_list:
+            if seq_metadata.is_prompt:
+                prompt_len = seq_metadata.prompt_chunk_len
+                last_token_indices.append(token_idx + prompt_len - 1)
+                token_idx += prompt_len
+            else:
+                last_token_indices.append(token_idx)
+                token_idx += 1
 
-    last_token_indices = torch.tensor(
-        last_token_indices, dtype=torch.long, device=hidden_states.device
-    )
-    return hidden_states.index_select(0, last_token_indices)
+        last_token_indices = torch.tensor(
+            last_token_indices, dtype=torch.long, device=hidden_states.device
+        )
+        return hidden_states.index_select(0, last_token_indices)
+    else:
+        last_token_indices = []
+        token_idx = 0
+        for seq_metadata in seq_metadata_list:
+            if seq_metadata.is_prompt:
+                prompt_len = seq_metadata.prompt_chunk_len
+                last_token_indices.append(token_idx + prompt_len) 
+                token_idx += prompt_len + 1
+            else:
+                last_token_indices.append(token_idx)
+                token_idx += 1
+
+        last_token_indices = torch.tensor(
+            last_token_indices, dtype=torch.long, device=hidden_states.device
+        )
+        return hidden_states.index_select(0, last_token_indices)
 
 
 def _get_temperatures(seq_metadata_list: List[SequenceMetadata]) -> List[float]:
