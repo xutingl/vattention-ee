@@ -291,7 +291,7 @@ class HiddenStatesBuffer():
     
         
     def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
-        #start_time = time.time()
+        #start_time = time.perf_counter()
         num_hidden_states = hidden_states.size(0)
         slots = []
         for i in range(num_hidden_states):
@@ -301,7 +301,7 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        #self.time_spent_adding += time.time() - start_time
+        #self.time_spent_adding += time.perf_counter() - start_time
 
         
             
@@ -315,7 +315,7 @@ class HiddenStatesBuffer():
         output_positions: Tensor. positions corresponding to the hidden states. <num>
     """
     def take_hidden_states(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
-        #start_time = time.time()
+        #start_time = time.perf_counter()
         if num == -1:
             num = self.batch_size
         # assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
@@ -334,7 +334,7 @@ class HiddenStatesBuffer():
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
 
-        #self.time_spent_taking += time.time() - start_time
+        #self.time_spent_taking += time.perf_counter() - start_time
         return output_hidden_states, output_req_ids, output_positions
 
     def __len__(self):
@@ -406,7 +406,7 @@ class LlamaModel(nn.Module):
         self.early_exit_head = None
         self.rebatching_time = 0
 
-        self.kv_method = "copy" # "postfill" or "copy"
+        self.kv_method = config.kv_method # "postfill" or "copy"
         self.recompute_seq_id_to_hidden_states = defaultdict(list) # seq_id -> a list of hidden states. This hidden states is the output of EE'ed layer and will be used for recomputing kv cache.
         self.recompute_seq_id_to_positions = defaultdict(list) # seq_id -> a list of positions. This positions is the output of EE'ed layer and will be used for recomputing kv cache.
     
@@ -550,7 +550,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: List[int],
         cache_engine: vATTNCacheEngine,
     ) -> None:  
-        #start_time = time.time()
+        #start_time = time.perf_counter()
         # assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         # updated_seq_metadata_list = [self.seq_metadata_map[seq_id] for seq_id in seq_ids_in_batch] 
         updated_seq_metadata_list = []
@@ -561,7 +561,7 @@ class LlamaModel(nn.Module):
         cache_engine.step(updated_seq_metadata_list) # Originally in base_worker
         get_attention_wrapper().begin_forward(updated_seq_metadata_list) # Originally in model_runner
 
-        #self.update_kvcache_time_cnt += time.time() - start_time
+        #self.update_kvcache_time_cnt += time.perf_counter() - start_time
 
     """
     Returns:
@@ -579,7 +579,6 @@ class LlamaModel(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
-        seq_manager: Optional[BaseSequenceManager] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         self.measure_batch_size(hidden_states)
 
@@ -702,13 +701,12 @@ class LlamaModel(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None, # <batch_size> # The seq_id of the seqences in the batch
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
-        seq_manager: Optional[BaseSequenceManager] = None,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         
         # print(f"=========== start iter =============\n[LlamaModel.forward] seq_ids_in_batch: {seq_ids_in_batch}. hidden_states.shape: {hidden_states.shape}. positions.shape: {positions.shape}")
         
         if self.ee_policy != "rebatching" or hidden_states.size(0) > self.prefill_batch_size_limit: # Rebatching disabled
-            return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list, seq_manager=seq_manager)
+            return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
         
 
         # Rebatching enabled
@@ -783,7 +781,7 @@ class LlamaModel(nn.Module):
 
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
-                    rebatching_start_time = time.time()
+                    rebatching_start_time = time.perf_counter()
 
                     has_ee = True
 
@@ -895,7 +893,7 @@ class LlamaModel(nn.Module):
 
 
                         
-                    self.rebatching_time += time.time() - rebatching_start_time
+                    self.rebatching_time += time.perf_counter() - rebatching_start_time
                     break
                 else:
                     # print(f"[LlamaModel.forward] no ee {seq_ids_in_batch}. exited rates: {self.exited_rates}")
@@ -965,7 +963,6 @@ class LlamaForCausalLM(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
-        seq_manager: Optional[BaseSequenceManager] = None,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -976,7 +973,7 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, seq_manager=seq_manager)
+        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)

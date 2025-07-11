@@ -35,6 +35,7 @@ def main():
     ee_policy = utils.args.ee_policy
     early_exit_head_path = utils.args.early_exit_head_path
     csv_path = utils.args.csv_path
+    kv_method = utils.args.kv_method
 
     for model in models:
         for qps in qps_values:
@@ -77,6 +78,7 @@ def main():
                         '--conf_threshold', f'{conf_threshold}',
                         '--early_exit_head_path', f'{early_exit_head_path}',
                         '--csv_path', f'{csv_path}',
+                        '--kv_method', f'{kv_method}',
                     ]
                 # assert dataset_name in dataset_path
                 print("Running command:", " ".join(command))

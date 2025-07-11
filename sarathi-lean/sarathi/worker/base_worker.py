@@ -207,7 +207,6 @@ class BaseWorker:
             self.gpu_cache,
             cache_engine=self.cache_engine,
             seq_ids_in_batch=seq_ids_in_batch,
-            seq_manager=self.seq_manager
         )
 
         scheduler_sends_flush_signal = len(scheduler_outputs.scheduled_seq_metadata_list) == 0

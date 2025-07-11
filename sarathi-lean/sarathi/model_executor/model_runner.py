@@ -238,7 +238,6 @@ class ModelRunner:
         gpu_cache: Optional[List[torch.Tensor]] = None,
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
-        seq_manager: Optional[BaseSequenceManager] = None,
     ) -> torch.Tensor:
         # Prepare input tensors.
         with self._prepare_inputs_e2e_timer:
@@ -259,7 +258,6 @@ class ModelRunner:
                     cache_engine=cache_engine,
                     seq_ids_in_batch=seq_ids_in_batch,
                     seq_metadata_list=seq_metadata_list,
-                    seq_manager=seq_manager,
                 )
             except RuntimeError as e:
                 logger.error(
