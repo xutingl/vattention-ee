@@ -273,11 +273,9 @@ class ModelRunner:
                 seq_metadata_list = [self.seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
 
         # print(f"[ModelRunner] output length: {len(output)}")
-        for_kv_recompute = len(recompute_dict) > 0
-        for_kv_recompute = False
         with self._sampler_e2e_timer:
             if self.sampler is not None:
-                output, entropy = self.sampler(output, seq_metadata_list, lm_logits, for_kv_recompute=for_kv_recompute)
+                output, entropy = self.sampler(output, seq_metadata_list, lm_logits)
 
         # for seq_metadata in seq_metadata_list:
         #     if seq_metadata.seq.seq_id == 1:

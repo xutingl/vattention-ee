@@ -105,26 +105,19 @@ class BaseSequenceManager(ABC):
         if not seq.prompt_processing_finished:
             seq.update_prompt_tokens_processed(prompt_chunk_len)
             if seq.currently_recomputing:
+                # For recomputing sequences, we need to to append the token
                 seq.currently_recomputing = False
-                if seq.seq_id == 2:
-                    print(f"[BaseSequenceManager] change recomputig status. seq_id: {seq.seq_id}. prompt length: {len(seq.prompt_token_ids)}. output length: {len(seq.get_output_token_ids())}")
             else:
                 return
         # A hack to avoid duplicate tokens in the output
         # if len(seq.get_output_token_ids()) > 0 and seq.get_output_token_ids()[-1] == sample.output_token:
         #     return
         seq.append_token_id(sample.output_token)
-        if seq.seq_id == 2:
-            self.seq2_lengths.append(len(seq.get_output_token_ids()))
-            self.seq2_output_ids.append(sample.output_token)
-            print(f"[BaseSequenceManager]\nlengths: {self.seq2_lengths}\noutput ids: {self.seq2_output_ids} len output ids: {len(self.seq2_output_ids)}")
         self._on_append_token(seq)
         # this function will update the seq status
         # to finished if the stop condition is met
         seq.check_stop()
         if seq.is_finished():
-            if seq.seq_id == 2:
-                print(f"[BaseSequenceManager]  ^^^^^^^^^^^^freeing seq_id: {seq.seq_id}. seq obj id:{id(seq)}. status: {seq.get_status()}")
             self._free_seq(seq.seq_id)
 
     @synchronized

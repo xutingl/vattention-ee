@@ -115,7 +115,6 @@ class vATTNCacheEngine(BaseCacheEngine):
             layer[1][target_cache_idx, token_indices] = src_v
     
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor, exited_req_indices: torch.Tensor = None) -> None:
-        return
         target_cache_idx = self.get_batch_idx()
 
         if target_cache_idx is None or len(target_cache_idx) == 0:

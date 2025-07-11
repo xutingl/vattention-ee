@@ -58,7 +58,7 @@ class VLLMScheduler(BaseScheduler):
 
         # Need to run requests in the rebatching buffer first
         if len(self.rebatching_buffer) >= self.scheduler_config.max_num_seqs:
-            print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
+            # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
             return SchedulerOutputs(id=self._iteration_id,
                                     ignored_seq_ids=[],
                                     preempted_seq_ids=[],

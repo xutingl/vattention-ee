@@ -213,13 +213,12 @@ class BaseWorker:
         scheduler_sends_flush_signal = len(scheduler_outputs.scheduled_seq_metadata_list) == 0
         if recompute_dict and not scheduler_sends_flush_signal: # Don't reassign prompt_chunk_len for flush signal (empty scheduled_seq_metadata_list) now. Do it after we set the updated scheduler_outputs
             for seq_id, recompute_length in recompute_dict.items():
-                seq = self.seq_manager.seq_map[seq_id]
+                seq: Sequence = self.seq_manager.seq_map[seq_id]
                 seq.currently_recomputing = True
                 # update `prompt_chunk_len` in scheduler_outputs
                 for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
                     if scheduled_seq_metadata.seq_id == seq_id:
                         scheduled_seq_metadata.prompt_chunk_len = recompute_length
-                        # print(f"[BaseWorker] @@@@@@@@@@@@@@ updated prompt_chunk_len for seq_id: {seq_id} to {recompute_length}")
                         break
 
 
@@ -229,20 +228,11 @@ class BaseWorker:
             seq_metadata_list = updated_seq_metadata_list
             for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
                 self.scheduled_seq_metadata_map[scheduled_seq_metadata.seq_id] = scheduled_seq_metadata
-
-                # if scheduled_seq_metadata.seq_id in recompute_dict:
-                #     scheduled_seq_metadata.prompt_chunk_len = recompute_dict[scheduled_seq_metadata.seq_id]
-                #     print(f"[BaseWorker] updated prompt_chunk_len for seq_id: {scheduled_seq_metadata.seq_id} to {recompute_dict[scheduled_seq_metadata.seq_id]}")
             
             scheduled_seq_metadata_list_for_rebatching = []
             for seq_id in output_seq_ids:
                 seq_metadata = self.scheduled_seq_metadata_map[int(seq_id)]
-
-                if recompute_dict and scheduler_sends_flush_signal and seq_metadata.seq_id in recompute_dict:
-                    seq_metadata.prompt_chunk_len = recompute_dict[seq_metadata.seq_id]
-                    #print(f"[BaseWorker] updated prompt_chunk_len for seq_id: {seq_metadata.seq_id} to {recompute_dict[seq_metadata.seq_id]}")
                 scheduled_seq_metadata_list_for_rebatching.append(seq_metadata)
-
 
             scheduler_outputs.scheduled_seq_metadata_list = scheduled_seq_metadata_list_for_rebatching
         
