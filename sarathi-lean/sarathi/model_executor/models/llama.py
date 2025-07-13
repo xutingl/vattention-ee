@@ -443,7 +443,7 @@ class LlamaModel(nn.Module):
 
         num_ee = torch.sum(mask).item()
         if rebatching_ee_factor > 0:
-            num_ee_threshold = math.ceil(hidden_states.size(0) * rebatching_ee_factor)
+            num_ee_threshold = hidden_states.size(0) * rebatching_ee_factor
         else:
             num_ee_threshold = hidden_states.size(0) // 2 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
         need_skip = num_ee > num_ee_threshold
