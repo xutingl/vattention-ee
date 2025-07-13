@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import torch
 from torch import nn
 from transformers import LlamaConfig
+import math
 
 from sarathi.metrics.constants import OperationMetrics
 from sarathi.metrics.cuda_timer import CudaTimer
@@ -424,6 +425,7 @@ class LlamaModel(nn.Module):
         hidden_states: torch.Tensor,
         ee_policy: str = "eager",
         return_conf=False,
+        rebatching_ee_factor: float = 0,
     ):
         # assert ee_policy != "off", "Turn off EE by setting self.use_shallow_deep = False. Set policy to 'off' incurrs unnecessary overhead."
         # if hidden_states.size(0) > self.prefill_batch_size_limit:
@@ -440,7 +442,10 @@ class LlamaModel(nn.Module):
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
 
         num_ee = torch.sum(mask).item()
-        num_ee_threshold = hidden_states.size(0) // 2 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
+        if rebatching_ee_factor > 0:
+            num_ee_threshold = math.ceil(hidden_states.size(0) * rebatching_ee_factor)
+        else:
+            num_ee_threshold = hidden_states.size(0) // 2 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
         need_skip = num_ee > num_ee_threshold
 
         if ee_policy != "rebatching":
@@ -730,6 +735,7 @@ class LlamaModel(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None, # <batch_size> # The seq_id of the seqences in the batch
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
+        rebatching_ee_factor: float = 0,
     ) -> Tuple[torch.Tensor, torch.Tensor, List[int], Optional[torch.Tensor]]:
         
         # print(f"=========== start iter =============\n[LlamaModel.forward] seq_ids_in_batch: {seq_ids_in_batch}. hidden_states.shape: {hidden_states.shape}. positions.shape: {positions.shape}")
@@ -805,7 +811,8 @@ class LlamaModel(nn.Module):
                     logits=lm_logits,
                     hidden_states=hidden_states,
                     ee_policy=self.ee_policy,
-                    return_conf=True
+                    return_conf=True,
+                    rebatching_ee_factor=rebatching_ee_factor
                 )
 
                 if need_skip:
@@ -973,6 +980,7 @@ class LlamaForCausalLM(nn.Module):
         cache_engine: Optional[vATTNCacheEngine] = None,
         seq_ids_in_batch: Optional[List[int]] = None,
         seq_metadata_list: Optional[List[SequenceMetadata]] = None,
+        rebatching_ee_factor: float = 0,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -983,7 +991,7 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
+        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, rebatching_ee_factor=rebatching_ee_factor)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)

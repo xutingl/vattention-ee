@@ -188,6 +188,7 @@ class BaseWorker:
         scheduler_outputs: SchedulerOutputs,
         preempted_seq: Optional[List] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
+        rebatching_ee_factor: float = 0,
     ) -> Optional[SamplerOutputs]:
         
         batch_stage_start_time = time.monotonic()
@@ -207,6 +208,7 @@ class BaseWorker:
             self.gpu_cache,
             cache_engine=self.cache_engine,
             seq_ids_in_batch=seq_ids_in_batch,
+            rebatching_ee_factor=rebatching_ee_factor
         )
 
         scheduler_sends_flush_signal = len(scheduler_outputs.scheduled_seq_metadata_list) == 0
