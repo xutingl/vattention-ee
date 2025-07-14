@@ -11,12 +11,20 @@ from datasets import load_dataset
 
 class RealRequestGenerator(BaseRequestGenerator):
 
-    def __init__(self, config, prompt_length: int = 1000):
+    def __init__(self, config, max_article_length: int = 2000):
         super().__init__(config)
 
-        self.prompt_length = prompt_length
+        self.max_article_length = max_article_length
         # self.squad = load_dataset("rajpurkar/squad_v2", split="validation")
         self.cnn = load_dataset("abisee/cnn_dailymail", "3.0.0", split="validation")
+        
+        # Filter articles to only include those within max_article_length
+        self.filtered_cnn_indices = []
+        for i in range(len(self.cnn)):
+            if len(self.cnn[i]["article"]) <= self.max_article_length:
+                self.filtered_cnn_indices.append(i)
+        
+        print(f"Filtered CNN dataset: {len(self.filtered_cnn_indices)} articles out of {len(self.cnn)} are within {self.max_article_length} characters")
     
     def _get_squad_prompt(self, idx: int) -> str:
         return self.squad[idx]["context"] + " " + self.squad[idx]["question"]
@@ -70,7 +78,12 @@ class RealRequestGenerator(BaseRequestGenerator):
         return requests
     
     def get_cnn_prompts(self) -> List[str]:
-        return [self._get_cnn_prompt(i)[:self.prompt_length] for i in range(self._config.num_requests)]
+        num_available_articles = len(self.filtered_cnn_indices)
+        num_requests = min(self._config.num_requests, num_available_articles)
+        print
+        return [self._get_cnn_prompt(i) for i in range(num_requests)]
     
     def get_cnn_summaries(self) -> List[str]:
-        return [self._get_cnn_summary(i) for i in range(self._config.num_requests)]
+        num_available_articles = len(self.filtered_cnn_indices)
+        num_requests = min(self._config.num_requests, num_available_articles)
+        return [self._get_cnn_summary(i) for i in range(num_requests)]
