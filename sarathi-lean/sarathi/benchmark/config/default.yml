@@ -114,7 +114,7 @@ metrics_store:
 ee_policy: "off"
 shallow_exit_layer: 16
 conf_threshold: 0.8
-num_ee_threshold: 2
+num_ee_threshold: -1
 early_exit_head_path: ""
 csv_path: "/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/"
 kv_method: "copy"
