@@ -79,7 +79,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/home/alexdan/downloaded_models/"
+        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
