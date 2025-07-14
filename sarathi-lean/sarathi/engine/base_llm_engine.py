@@ -150,6 +150,10 @@ class BaseLLMEngine:
         self.normal_iter_times = []
         self.deep_iter_times = []
         self.ee_iter_times = []
+
+        self.rebatching_ee_factor = 0 # Initialize to 0 (means turned off). rebatching_ee_factor = b' / batch_size >= c / t_d. c is the overhead (t_s + t_d - t_n), t_s is shallow exit time, t_d is deep exit time, t_n is normal exit time.
+
+        self.step_count = 0
     
 
     def _validate_parallel_config(self) -> None:
@@ -411,6 +415,7 @@ class BaseLLMEngine:
         """
 
         step_start_time = time.perf_counter()
+        self.step_count += 1
         outputs = self._run_workers("get_free_blocks" ,get_all_outputs=True)
         if type(self.scheduler.block_manager)==vAttentionBlockSpaceManager:
             if len(self.scheduler.block_manager.preemption_queue)>0:
@@ -445,6 +450,7 @@ class BaseLLMEngine:
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
+            rebatching_ee_factor=self.rebatching_ee_factor
         )
        
         if self.rebatching:
@@ -453,6 +459,14 @@ class BaseLLMEngine:
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         
+        # if recompute_dict:
+        #     for seq_id, recompute_length in recompute_dict.items():
+        #         for scheduled_seq_metadata in scheduler_outputs.scheduled_seq_metadata_list:
+        #             if scheduled_seq_metadata.seq_id == seq_id:
+        #                 seq = self.seq_manager.seq_map[seq_id]
+        #                 seq.prompt_tokens_processed = len(seq.prompt_token_ids)
+        #                 seq.prompt_processing_finished = True
+                
         end_time = time.perf_counter()
         if is_flush:
             self.deep_iter_times.append(end_time - step_start_time)
@@ -464,7 +478,23 @@ class BaseLLMEngine:
         
         request_outputs = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
 
-        print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))}, {sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))}, {sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
+        avg_normal_iter_time = sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))
+        avg_ee_iter_time = sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))
+        avg_deep_iter_time = sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))
+
+        if self.step_count % 1000 == 0:
+            print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {avg_normal_iter_time}, {avg_ee_iter_time}, {avg_deep_iter_time}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
+
+            overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
+            if overhead > 0:
+                self.rebatching_ee_factor = overhead / avg_deep_iter_time
+                rebatching_num_ee_threshold = math.ceil(self.rebatching_ee_factor * self.model_config.max_num_seqs)
+                print(f"[BaseLLMEngine] rebatching_ee_factor updated to: {self.rebatching_ee_factor}. rebatching_num_ee_threshold updated to: {rebatching_num_ee_threshold}")
+                if rebatching_num_ee_threshold == self.model_config.max_num_seqs:
+                    print(f"[BaseLLMEngine] Warning!!: rebatching_num_ee_threshold is equal to max_batch_size.")
+
+            else:
+                print(f"[BaseLLMEngine] overhead is negative. rebatching_ee_factor is not updated.")
 
 
 

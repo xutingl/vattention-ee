@@ -58,6 +58,7 @@ class VLLMScheduler(BaseScheduler):
 
         # Need to run requests in the rebatching buffer first
         if len(self.rebatching_buffer) >= self.scheduler_config.max_num_seqs:
+            # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
             return SchedulerOutputs(id=self._iteration_id,
                                     ignored_seq_ids=[],
                                     preempted_seq_ids=[],
@@ -104,6 +105,7 @@ class VLLMScheduler(BaseScheduler):
             self.running.append(seq)
 
         if scheduled_seq_metadata_list or ignored_seq_ids:
+            # print(f"[VLLMScheduler._schedule] returning scheduled list: {[metadata.seq_id for metadata in scheduled_seq_metadata_list]}")
             return SchedulerOutputs(
                 id=self._iteration_id,
                 ignored_seq_ids=ignored_seq_ids,
@@ -162,6 +164,8 @@ class VLLMScheduler(BaseScheduler):
         #     print(f"[VLLMScheduler._schedule] returning running list: {seq.seq_id}, status: {seq.get_status()}")
         # for seq in scheduled_seq_metadata_list:
         #     print(f"[VLLMScheduler._schedule] returning scheduled list: {seq.seq_id}")
+
+        # print(f"[VLLMScheduler._schedule] returning scheduled list: {[metadata.seq_id for metadata in scheduled_seq_metadata_list]}")
 
         return SchedulerOutputs(
             id=self._iteration_id,

@@ -37,6 +37,7 @@ def main():
     early_exit_head_path = utils.args.early_exit_head_path
     csv_path = utils.args.csv_path
     num_ee_threshold = utils.args.num_ee_threshold
+    kv_method = utils.args.kv_method
 
     for model in models:
         for qps in qps_values:
@@ -51,7 +52,7 @@ def main():
                     'python', main,
                         '--model_name', utils.models[model]['hfrecord'],
                         '--model_tensor_parallel_degree', f'{tp_dim}',
-                        '--request_generator_provider', 'synthetic',
+                        '--request_generator_provider', 'real',
                         '--synthetic_request_generator_length_provider', 'trace',
                         '--synthetic_request_generator_interval_provider', 'poisson', #'static',
                         '--poisson_request_interval_generator_qps', f'{qps}',
@@ -68,6 +69,7 @@ def main():
                         '--metrics_store_keep_individual_batch_metrics', 'false',
                         '--output_dir', f'{experiment_dir}/dataset_{utils.dataset_name}_model_{model_logentry}_tp_{tp_dim}_attn_{backend}_qps_{qps}_reqs_{num_requests}/',
                         '--synthetic_request_generator_num_requests', str(num_requests),
+                        '--real_request_generator_num_requests', str(num_requests),
                         '--trace_request_length_generator_max_tokens', str(max_tokens),
                         '--trace_request_length_generator_min_tokens', str(0),
                         '--model_block_size', f'{kv_block_size}',
@@ -80,6 +82,7 @@ def main():
                         '--num_ee_threshold', f'{num_ee_threshold}',
                         '--early_exit_head_path', f'{early_exit_head_path}',
                         '--csv_path', f'{csv_path}',
+                        '--kv_method', f'{kv_method}',
                     ]
                 # assert dataset_name in dataset_path
                 print("Running command:", " ".join(command))

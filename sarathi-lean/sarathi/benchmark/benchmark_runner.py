@@ -47,9 +47,14 @@ class BenchmarkRunner:
 
         # set_seeds(config.seed)
         set_seeds(42)
-        request_generator = RequestGeneratorRegistry.get_from_str(
-            self._config.request_generator_provider, self._config
-        )
+        print(f"[BenchmarkRunner]confi request generator: {self._config.request_generator_provider}")
+        
+        if self._config.request_generator_provider == "real":
+            request_generator = RealRequestGenerator(self._config)
+        else:
+            request_generator = RequestGeneratorRegistry.get_from_str(
+                self._config.request_generator_provider, self._config
+            )
         self._requests = request_generator.generate()
 
         # select every nth request for this replica
@@ -127,6 +132,7 @@ class BenchmarkRunner:
             conf_threshold=self._config.conf_threshold,
             early_exit_head_path=self._config.early_exit_head_path,
             num_ee_threshold=self._config.num_ee_threshold,
+            kv_method=self._config.kv_method,
         )
 
     def _get_input_params(
@@ -277,8 +283,8 @@ class BenchmarkRunner:
         csv_path = Path(self._config.csv_path)
         csv_path.mkdir(parents=True, exist_ok=True)
 
-        # numrequests_batchsize_layer_conf_policy.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_with_bertscore_num_ee_threshold_{self._config.num_ee_threshold}.csv"
+        # numrequests_batchsize_layer_conf_policy_kvmethod.csv
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 

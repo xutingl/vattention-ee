@@ -21,6 +21,9 @@ class BaseSequenceManager(ABC):
         self.finished_seq_map = {}
         self.decoding_seq = set() # A set of seq_ids that are currently being decoded (completed prefill). If a seq_id is in this set, it means that the seq has finished prefill. If a seq_id is not in this set but its _prompt_processing_completed_at is not None, it means that the seq has finished prefill in this step, so this step is a prefill step.
 
+        self.seq2_lengths = []
+        self.seq2_output_ids = []
+
     @synchronized
     def add_seq(self, seq: Sequence) -> None:
         assert seq.seq_id not in self.seq_map
@@ -101,8 +104,14 @@ class BaseSequenceManager(ABC):
 
         if not seq.prompt_processing_finished:
             seq.update_prompt_tokens_processed(prompt_chunk_len)
-            return
-
+            if seq.currently_recomputing:
+                # For recomputing sequences, we need to to append the token
+                seq.currently_recomputing = False
+            else:
+                return
+        # A hack to avoid duplicate tokens in the output
+        # if len(seq.get_output_token_ids()) > 0 and seq.get_output_token_ids()[-1] == sample.output_token:
+        #     return
         seq.append_token_id(sample.output_token)
         self._on_append_token(seq)
         # this function will update the seq status

@@ -64,7 +64,7 @@ class Sampler(nn.Module):
 
         # Apply temperature scaling.
         temperatures = _get_temperatures(seq_metadata_list)
-        assert len(temperatures) == logits.shape[0]
+        assert len(temperatures) == logits.shape[0], f"len(temperatures): {len(temperatures)}, logits.shape: {logits.shape}, seq_metadata_list: {seq_metadata_list}"
         if any(t != 1.0 for t in temperatures):
             t = torch.tensor(temperatures, dtype=logits.dtype, device=logits.device)
             # Use in-place division to avoid creating a new tensor.
@@ -122,6 +122,7 @@ def _prune_hidden_states(
         last_token_indices, dtype=torch.long, device=hidden_states.device
     )
     return hidden_states.index_select(0, last_token_indices)
+
 
 
 def _get_temperatures(seq_metadata_list: List[SequenceMetadata]) -> List[float]:

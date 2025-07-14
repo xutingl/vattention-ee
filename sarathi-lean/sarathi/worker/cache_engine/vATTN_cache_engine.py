@@ -143,6 +143,9 @@ class vATTNCacheEngine(BaseCacheEngine):
         self.gpu_cache[dest_layer_idx][1][target_cache_idx, token_indices] = src_v
     
     def step(self, seq_metadata_list: List[SequenceMetadata]) -> None:
+        # print(f"[vATTNCacheEngine] Stepping with seq_metadata_list: {[metadata.seq.seq_id for metadata in seq_metadata_list]}")
+        # print(f"[vATTNCacheEngine] curr_seq_lens: {self.curr_seq_lens}")
+        # print(f"[vATTNCacheEngine] seq_to_batch_idx: {self.seq_to_batch_idx}")
         b_idx_prompt = []
         b_idx_gen = []
         for seq_metadata in seq_metadata_list:
@@ -173,7 +176,7 @@ class vATTNCacheEngine(BaseCacheEngine):
         # if 1 in seq_ids:
         #     print(f"[vATTNCacheEngine] Stepping with curr_seq_lens: {self.curr_seq_lens}. b_idx_gen: {b_idx_gen}. seq_ids: {seq_ids}")
 
-        start_time = time.time()
+        start_time = time.perf_counter()
 
         if self.vattn_async:
             # print(f"[vATTNCacheEngine] Stepping async with curr_seq_lens: {self.curr_seq_lens}")
@@ -182,7 +185,7 @@ class vATTNCacheEngine(BaseCacheEngine):
             # print(f"[vATTNCacheEngine] Stepping sync with curr_seq_lens: {self.curr_seq_lens}")
             vattention.step(self.curr_seq_lens, False)
         
-        end_time = time.time()
+        end_time = time.perf_counter()
 
         self.curr_batch_idx = torch.tensor(b_idx_prompt+b_idx_gen, dtype=torch.int32, device=self.device)
 
@@ -190,7 +193,7 @@ class vATTNCacheEngine(BaseCacheEngine):
         get_attention_wrapper().set_batch_idx(self.curr_batch_idx, torch.tensor(b_idx_gen, dtype=torch.int32, device=self.device))
 
         self.step_times.append(end_time - start_time)
-        print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
+        # print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
 
     def on_step_completion(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         for seq_metadata in seq_metadata_list:

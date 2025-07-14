@@ -71,6 +71,7 @@ class ModelConfig:
         max_num_seqs: Optional[int] = None, # max batch size
         early_exit_head_path: Optional[str] = None,
         num_ee_threshold: Optional[int] = None,
+        kv_method: str = "copy",
     ) -> None:
         self.model = model
         self.tokenizer = tokenizer
@@ -87,6 +88,7 @@ class ModelConfig:
         self.max_num_seqs = max_num_seqs
         self.early_exit_head_path = early_exit_head_path
         self.num_ee_threshold = num_ee_threshold
+        self.kv_method = kv_method
         self.hf_config = get_config(model, trust_remote_code, revision)
 
         self.hf_config.update(
@@ -97,6 +99,7 @@ class ModelConfig:
                 'max_num_seqs': max_num_seqs,
                 'early_exit_head_path': early_exit_head_path,
                 'num_ee_threshold': num_ee_threshold,
+                'kv_method': kv_method,
             }
         )
 

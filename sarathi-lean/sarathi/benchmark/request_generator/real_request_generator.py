@@ -30,11 +30,13 @@ class RealRequestGenerator(BaseRequestGenerator):
         return self.squad[idx]["context"] + " " + self.squad[idx]["question"]
     
     def _get_cnn_summary(self, idx: int) -> str:
-        return self.cnn[idx]["highlights"]
+        original_idx = self.filtered_cnn_indices[idx]
+        return self.cnn[original_idx]["highlights"]
     
     def _get_cnn_prompt(self, idx: int) -> str:
+        original_idx = self.filtered_cnn_indices[idx]
         # https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00632/119276/Benchmarking-Large-Language-Models-for-News
-        return "Article: " + self.cnn[idx]["article"][:self.prompt_length] + ". Summarize the article in three sentences. Summary:"
+        return "Article: " + self.cnn[original_idx]["article"] + ". Summarize the article in three sentences. Summary:"
 
     def _generate_next_request(self, last_arrived_at: float, idx: int=0) -> Request:
         
@@ -55,8 +57,11 @@ class RealRequestGenerator(BaseRequestGenerator):
 
         current_time = 0
 
+        # Use the number of filtered articles as the limit
+        num_available_articles = len(self.filtered_cnn_indices)
+        num_requests = min(getattr(self._config, 'real_request_generator_num_requests', 500), num_available_articles)
         
-        for i in range(self._config.num_requests):
+        for i in range(num_requests):
             request = self._generate_next_request(current_time, idx=i)
             current_time = request.arrived_at
             requests.append(request)
@@ -79,11 +84,10 @@ class RealRequestGenerator(BaseRequestGenerator):
     
     def get_cnn_prompts(self) -> List[str]:
         num_available_articles = len(self.filtered_cnn_indices)
-        num_requests = min(self._config.num_requests, num_available_articles)
-        print
+        num_requests = min(getattr(self._config, 'real_request_generator_num_requests', 500), num_available_articles)
         return [self._get_cnn_prompt(i) for i in range(num_requests)]
     
     def get_cnn_summaries(self) -> List[str]:
         num_available_articles = len(self.filtered_cnn_indices)
-        num_requests = min(self._config.num_requests, num_available_articles)
+        num_requests = min(getattr(self._config, 'real_request_generator_num_requests', 500), num_available_articles)
         return [self._get_cnn_summary(i) for i in range(num_requests)]
