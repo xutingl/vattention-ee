@@ -771,7 +771,7 @@ class LlamaModel(nn.Module):
         if flush_buffer:
             if len(self.deep_buffer) > 0:
                 # Take hidden states from `deep_buffer`
-                hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(min(self.max_batch_size, len(self.deep_buffer)))
+                hidden_states, seq_ids_in_batch, positions = self.deep_buffer.take_hidden_states(len(self.deep_buffer))
                 # print(f"[LlamaModel.forward] [1] updating kvcache with seq_ids_in_batch: {seq_ids_in_batch}")
 
                 self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)

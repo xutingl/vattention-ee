@@ -31,6 +31,9 @@ class VLLMScheduler(BaseScheduler):
             self.scheduler_config.max_num_batched_tokens,
         )
 
+        self.buffer_age = 0
+        self.buffer_age_threshold = 50
+
     def get_block_space_manager_class(self):
         return vAttentionBlockSpaceManager if is_vattention_backend() else VLLMBlockSpaceManager 
 
@@ -55,10 +58,13 @@ class VLLMScheduler(BaseScheduler):
         # print(f"[VLLMScheduler._schedule] Start of iteration: {self._iteration_id}:")
         # print(f"[VLLMScheduler._schedule] running list: {self.running}")
         
+        if len(self.rebatching_buffer) > 0:
+            self.buffer_age += 1
 
         # Need to run requests in the rebatching buffer first
-        if len(self.rebatching_buffer) >= self.scheduler_config.max_num_seqs:
+        if len(self.rebatching_buffer) >= self.scheduler_config.max_num_seqs or len(self.rebatching_buffer) > len(self.waiting) or self.buffer_age > self.buffer_age_threshold:
             # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
+            self.buffer_age = 0
             return SchedulerOutputs(id=self._iteration_id,
                                     ignored_seq_ids=[],
                                     preempted_seq_ids=[],
