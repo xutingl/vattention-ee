@@ -367,8 +367,8 @@ class BenchmarkRunnerLauncher:
             if x.startswith("node:") and x != "node:__internal_head__"
         ]
 
-        # runner_ip = f"node:{get_ip()}"
-        runner_ip = "node:158.130.4.64" # For Phastform machine
+        runner_ip = f"node:{get_ip()}"
+        # runner_ip = "node:158.130.4.64" # For Phastform machine
 
         ip_addresses.remove(runner_ip)
         ip_addresses.insert(0, runner_ip)
