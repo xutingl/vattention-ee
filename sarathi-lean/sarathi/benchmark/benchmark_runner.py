@@ -47,9 +47,14 @@ class BenchmarkRunner:
 
         # set_seeds(config.seed)
         set_seeds(42)
-        request_generator = RequestGeneratorRegistry.get_from_str(
-            self._config.request_generator_provider, self._config
-        )
+        print(f"[BenchmarkRunner]confi request generator: {self._config.request_generator_provider}")
+        
+        if self._config.request_generator_provider == "real":
+            request_generator = RealRequestGenerator(self._config)
+        else:
+            request_generator = RequestGeneratorRegistry.get_from_str(
+                self._config.request_generator_provider, self._config
+            )
         self._requests = request_generator.generate()
 
         # select every nth request for this replica
@@ -74,7 +79,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/workspace/xutingl/downloaded_models/"
+        self._config.download_dir = "/home/alexdan/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -126,6 +131,7 @@ class BenchmarkRunner:
             shallow_exit_layer=self._config.shallow_exit_layer,
             conf_threshold=self._config.conf_threshold,
             early_exit_head_path=self._config.early_exit_head_path,
+            num_ee_threshold=self._config.num_ee_threshold,
             kv_method=self._config.kv_method,
         )
 
@@ -361,8 +367,8 @@ class BenchmarkRunnerLauncher:
             if x.startswith("node:") and x != "node:__internal_head__"
         ]
 
-        runner_ip = f"node:{get_ip()}"
-        # runner_ip = "node:158.130.4.64" # For Phastform machine
+        # runner_ip = f"node:{get_ip()}"
+        runner_ip = "node:158.130.4.64" # For Phastform machine
 
         ip_addresses.remove(runner_ip)
         ip_addresses.insert(0, runner_ip)

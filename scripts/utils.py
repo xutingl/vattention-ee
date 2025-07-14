@@ -11,6 +11,7 @@ parser.add_argument('--qps', '-q', type=float, default=0.5, help='QPS')
 parser.add_argument('--max_batch_size', '-b', type=int, default=8, help='Max batch size')
 parser.add_argument('--shallow_exit_layer', '-l', type=int, default=16, help='Shallow exit layer')
 parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Confidence threshold')
+parser.add_argument('--num_ee_threshold', type=int, default=3, help='Minimum number of requests that must want to EE before partial early exit is triggered (for rebatching).')
 parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
 parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='Early exit head path')
 parser.add_argument('--csv_path', type=str, default="/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/", help='Path to save CSV results')
@@ -41,8 +42,9 @@ models = {
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'TheBloke/Llama-2-70B-GPTQ', 'logentry': 'llama2-70b-ee'}, # 4 bit quant
     'llama-2-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'caisarl76/llama2-70B-8bit', 'logentry': 'llama2-70b-ee'}, # 8 bit quant
-    'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'}
-
+    'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'},
+    
+    'llama-2-7b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama2-7b-ee'},
 }
 
 # vattention allocates memory in power of two while fa_paged/fi_paged

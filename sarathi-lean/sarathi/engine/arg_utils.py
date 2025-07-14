@@ -73,6 +73,7 @@ class EngineArgs:
     shallow_exit_layer: Optional[int] = None
     conf_threshold: Optional[float] = None
     early_exit_head_path: Optional[str] = None
+    num_ee_threshold: Optional[int] = None
     kv_method: str = "copy"
 
     def __post_init__(self):
@@ -151,6 +152,7 @@ class EngineArgs:
             conf_threshold=self.conf_threshold,
             max_num_seqs=self.max_num_seqs,
             early_exit_head_path=self.early_exit_head_path,
+            num_ee_threshold=self.num_ee_threshold,
             kv_method=self.kv_method,
         )
         elem_size = torch.tensor([1], dtype=model_config.hf_config.dtype).element_size()

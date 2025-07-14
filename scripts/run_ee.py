@@ -9,7 +9,7 @@ import cProfile
 
 def main():
     # configurable
-    gpu_mem_util = 0.99
+    gpu_mem_util = 0.9
 
     models = utils.models
     attention_backends = ['fa_paged_256', 'fi_paged_16', 'fa_vattn_2mb', 'fa_vattn_256kb', 'fi_vattn_2mb', 'fi_vattn_256kb']
@@ -23,9 +23,10 @@ def main():
 
 
     # models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb_sync']
-    models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
+    # models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-3-70b'}, ['fa_vattn_2mb_sync']
+    models, attention_backends = {'llama-2-7b'}, ['fa_vattn_2mb_sync']
 
     num_requests = utils.args.num_requests
     qps_values = [utils.args.qps]
@@ -35,6 +36,7 @@ def main():
     ee_policy = utils.args.ee_policy
     early_exit_head_path = utils.args.early_exit_head_path
     csv_path = utils.args.csv_path
+    num_ee_threshold = utils.args.num_ee_threshold
     kv_method = utils.args.kv_method
 
     for model in models:
@@ -50,7 +52,7 @@ def main():
                     'python', main,
                         '--model_name', utils.models[model]['hfrecord'],
                         '--model_tensor_parallel_degree', f'{tp_dim}',
-                        '--request_generator_provider', 'synthetic',
+                        '--request_generator_provider', 'real',
                         '--synthetic_request_generator_length_provider', 'trace',
                         '--synthetic_request_generator_interval_provider', 'poisson', #'static',
                         '--poisson_request_interval_generator_qps', f'{qps}',
@@ -67,6 +69,7 @@ def main():
                         '--metrics_store_keep_individual_batch_metrics', 'false',
                         '--output_dir', f'{experiment_dir}/dataset_{utils.dataset_name}_model_{model_logentry}_tp_{tp_dim}_attn_{backend}_qps_{qps}_reqs_{num_requests}/',
                         '--synthetic_request_generator_num_requests', str(num_requests),
+                        '--real_request_generator_num_requests', str(num_requests),
                         '--trace_request_length_generator_max_tokens', str(max_tokens),
                         '--trace_request_length_generator_min_tokens', str(0),
                         '--model_block_size', f'{kv_block_size}',
@@ -76,6 +79,7 @@ def main():
                         '--ee_policy', f'{ee_policy}',
                         '--shallow_exit_layer', f'{shallow_exit_layer}',
                         '--conf_threshold', f'{conf_threshold}',
+                        '--num_ee_threshold', f'{num_ee_threshold}',
                         '--early_exit_head_path', f'{early_exit_head_path}',
                         '--csv_path', f'{csv_path}',
                         '--kv_method', f'{kv_method}',

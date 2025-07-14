@@ -276,7 +276,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -406,6 +406,7 @@ class LlamaModel(nn.Module):
 
         self.early_exit_head = None
         self.rebatching_time = 0
+        self.num_ee_threshold = getattr(config, 'num_ee_threshold', 3)
 
         self.kv_method = config.kv_method # "postfill" or "copy"
         self.recompute_seq_id_to_hidden_states = defaultdict(list) # seq_id -> a list of hidden states. This hidden states is the output of EE'ed layer and will be used for recomputing kv cache.
@@ -442,6 +443,8 @@ class LlamaModel(nn.Module):
         mask = torch.where(conf <= self.conf_threshold, 0.0, 1.0).bool()
 
         num_ee = torch.sum(mask).item()
+        num_ee_threshold = self.num_ee_threshold if self.num_ee_threshold is not None else 3 # For rebatching, we don't want to partial EE if too few requests want to EE. This number can be higher for larger batch size.
+        print(f"[LlamaModel.get_skip_mask] num_ee: {num_ee}, num_ee_threshold: {num_ee_threshold}")
         if rebatching_ee_factor > 0:
             num_ee_threshold = hidden_states.size(0) * rebatching_ee_factor
         else:
