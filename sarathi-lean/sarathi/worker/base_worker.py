@@ -295,6 +295,7 @@ class BaseWorker:
         self.profiler.export_chrome_trace(
             f"{self.metrics_config.output_dir}/profiler_trace_rank_{self.rank}.json"
         )
+        print(f"Profiling results saved to {self.metrics_config.output_dir}/profiler_trace_rank_{self.rank}.json")
 
     @synchronized
     def cleanup(self) -> None:
