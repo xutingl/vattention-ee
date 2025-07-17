@@ -44,6 +44,7 @@ class Sampler(nn.Module):
         hidden_states: torch.Tensor,
         seq_metadata_list: List[SequenceMetadata],
         lm_logits: Optional[torch.Tensor] = None,
+        conf: Optional[torch.Tensor] = None,
     ) -> SamplerOutputs:
         if lm_logits is not None:
             logits = lm_logits
@@ -55,11 +56,12 @@ class Sampler(nn.Module):
             logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
 
         # Measuring conf score
-        probs = torch.softmax(logits, dim=-1, dtype=torch.float)
-        top_2 = torch.topk(probs, dim=-1, k=2)[0]
+        if conf is None:
+            probs = torch.softmax(logits, dim=-1, dtype=torch.float)
+            top_2 = torch.topk(probs, dim=-1, k=2)[0]
 
-        conf = (top_2[..., 0] - top_2[..., 1]).squeeze()
-        conf = conf.mean().item()
+            conf = (top_2[..., 0] - top_2[..., 1]).squeeze()
+            conf = conf.mean().item()
 
 
         # Apply temperature scaling.

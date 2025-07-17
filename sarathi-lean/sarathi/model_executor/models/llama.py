@@ -459,7 +459,7 @@ class LlamaModel(nn.Module):
         if ee_policy != "rebatching":
 
             conf_median = torch.median(conf)
-            conf = torch.mean(conf)
+            conf = torch.mean(conf).item()
             if ee_policy == "eager":
                 need_skip = torch.any(mask)
             elif ee_policy == "lazy":
@@ -471,6 +471,9 @@ class LlamaModel(nn.Module):
                 need_skip = conf_median <= self.conf_threshold
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
+        else:
+            exited_conf = torch.masked_select(conf, mask)
+            conf = exited_conf.mean().item()
         
 
         if not return_conf:
@@ -646,6 +649,8 @@ class LlamaModel(nn.Module):
         
         check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) <= self.max_batch_size and len(recompute_dict) == 0
 
+        conf = None
+
         has_ee = False
         for i in range(len(self.layers)):
             layer = self.layers[i]
@@ -720,8 +725,8 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, None
     
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
@@ -792,11 +797,11 @@ class LlamaModel(nn.Module):
                     hidden_states = self.norm(hidden_states)
                 # print(f"[LlamaModel.forward] returning flush_buffer 1: deep_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates, None, True, {}
+                return hidden_states, seq_ids_in_batch, self.exited_rates, None, True, {}, None
             
             else:
                 #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
-                return None, None, self.exited_rates, None, False, {}
+                return None, None, self.exited_rates, None, False, {}, None
 
         # 1. Process normal requests.
         if self.kv_method == "postfill":
@@ -808,6 +813,7 @@ class LlamaModel(nn.Module):
 
         #self.measure_batch_size(hidden_states, seq_ids_in_batch)
 
+        conf = None
         has_ee = False
 
         for i in range(len(self.layers)):
@@ -954,8 +960,8 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}. rebatching spent time: {self.rebatching_time:.2f}. avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}. \n number of batchsize=1,2,3,4: {self.batch_size_lst.count(1)}, {self.batch_size_lst.count(2)}, {self.batch_size_lst.count(3)}, {self.batch_size_lst.count(4)}")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, None
 
 
 class LlamaForCausalLM(nn.Module):
@@ -1002,12 +1008,12 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, rebatching_ee_factor=rebatching_ee_factor)
+        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, rebatching_ee_factor=rebatching_ee_factor)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)
 
-        return hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict
+        return hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf
 
     _column_parallel_layers = []
     _row_parallel_layers = ["o_proj", "down_proj"]

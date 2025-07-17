@@ -207,7 +207,7 @@ class BaseWorker:
 
         # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
         # recompute dict: seq_id -> recompute_length
-        sampler_outputs, output_seq_ids, updated_seq_metadata_list, exited_rates, perplexity, is_ee, is_flush, recompute_dict = self.model_runner.run(
+        sampler_outputs, output_seq_ids, updated_seq_metadata_list, exited_rates, conf_score, is_ee, is_flush, recompute_dict = self.model_runner.run(
             seq_metadata_list,
             self.gpu_cache,
             cache_engine=self.cache_engine,
@@ -259,7 +259,7 @@ class BaseWorker:
             batch_stage_end_time,
         )
 
-        return sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs, exited_rates, perplexity, is_ee, is_flush #, self.cache_engine.num_free_blocks()
+        return sampler_outputs, output_seq_ids, seq_metadata_list, scheduler_outputs, exited_rates, conf_score, is_ee, is_flush #, self.cache_engine.num_free_blocks()
 
     @synchronized
     def get_metrics_store(self) -> MetricsStore:
