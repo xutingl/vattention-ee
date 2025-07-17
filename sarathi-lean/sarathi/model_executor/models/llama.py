@@ -458,6 +458,7 @@ class LlamaModel(nn.Module):
 
         if ee_policy != "rebatching":
 
+            conf_median = torch.median(conf)
             conf = torch.mean(conf)
             if ee_policy == "eager":
                 need_skip = torch.any(mask)
@@ -466,6 +467,8 @@ class LlamaModel(nn.Module):
             elif ee_policy == "average":
                 val = 0.0 if conf <= self.conf_threshold else 1.0
                 need_skip = torch.tensor(val, device=hidden_states.device).bool()
+            elif ee_policy == "median":
+                need_skip = conf_median <= self.conf_threshold
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
         
