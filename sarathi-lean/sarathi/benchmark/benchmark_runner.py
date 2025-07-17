@@ -267,7 +267,11 @@ class BenchmarkRunner:
 
         tokens_per_iter = num_output_tokens / sum(self.ee_iter_count)
 
-        avg_conf_score_ee = sum(avg_conf_score_ee_lst) / len(avg_conf_score_ee_lst)
+        if len(avg_conf_score_ee_lst) > 0:
+            avg_conf_score_ee = sum(avg_conf_score_ee_lst) / len(avg_conf_score_ee_lst)
+        else:
+            avg_conf_score_ee = 0
+
         avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / len(avg_conf_score_non_ee_lst)
         avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / (len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
 

@@ -487,12 +487,14 @@ class BaseLLMEngine:
             print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {avg_normal_iter_time}, {avg_ee_iter_time}, {avg_deep_iter_time}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
 
             overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
-            if overhead > 0:
+            if avg_deep_iter_time == 0:
+                self.rebatching_ee_factor = 0  # or some default value, or skip this step
+            else:
                 self.rebatching_ee_factor = overhead / avg_deep_iter_time
-                rebatching_num_ee_threshold = math.ceil(self.rebatching_ee_factor * self.model_config.max_num_seqs)
-                print(f"[BaseLLMEngine] rebatching_ee_factor updated to: {self.rebatching_ee_factor}. rebatching_num_ee_threshold updated to: {rebatching_num_ee_threshold}")
-                if rebatching_num_ee_threshold == self.model_config.max_num_seqs:
-                    print(f"[BaseLLMEngine] Warning!!: rebatching_num_ee_threshold is equal to max_batch_size.")
+            rebatching_num_ee_threshold = math.ceil(self.rebatching_ee_factor * self.model_config.max_num_seqs)
+            print(f"[BaseLLMEngine] rebatching_ee_factor updated to: {self.rebatching_ee_factor}. rebatching_num_ee_threshold updated to: {rebatching_num_ee_threshold}")
+            if rebatching_num_ee_threshold == self.model_config.max_num_seqs:
+                print(f"[BaseLLMEngine] Warning!!: rebatching_num_ee_threshold is equal to max_batch_size.")
 
             else:
                 print(f"[BaseLLMEngine] overhead is negative. rebatching_ee_factor is not updated.")
