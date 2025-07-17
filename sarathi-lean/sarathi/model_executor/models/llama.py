@@ -382,7 +382,7 @@ class LlamaModel(nn.Module):
         self.ee_policy = config.ee_policy
         self.shallow_exit_layer = config.shallow_exit_layer
         self.conf_threshold = config.conf_threshold
-        self.exited_rates = [0, 1] # [0]: exited, [1]: not exited. Initialized `not exited` to 1 to avoid division by 0.
+        self.exited_rates = [0, 1] # [0]: early-exited, [1]: not early-exited. Initialized `not early-exited` to 1 to avoid division by 0.
 
         self.max_batch_size = config.max_num_seqs
         # self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1) # Buffers the hidden states of the token arrived at first layer

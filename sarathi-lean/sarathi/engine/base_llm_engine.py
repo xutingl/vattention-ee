@@ -468,13 +468,14 @@ class BaseLLMEngine:
         #                 seq.prompt_processing_finished = True
                 
         end_time = time.perf_counter()
+        iteration_time = end_time - step_start_time
         if is_flush:
-            self.deep_iter_times.append(end_time - step_start_time)
+            self.deep_iter_times.append(iteration_time)
         else:
             if is_ee:
-                self.ee_iter_times.append(end_time - step_start_time)
+                self.ee_iter_times.append(iteration_time)
             else:
-                self.normal_iter_times.append(end_time - step_start_time)
+                self.normal_iter_times.append(iteration_time)
         
         request_outputs = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
 

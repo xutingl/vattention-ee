@@ -135,6 +135,8 @@ class BenchmarkRunner:
             kv_method=self._config.kv_method,
         )
 
+        self.ee_iter_count = [0, 0] # [# EE-iter, # non-EE-iter]
+
     def _get_input_params(
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
@@ -202,12 +204,15 @@ class BenchmarkRunner:
                 if is_ee:
                     avg_conf_score_ee = (avg_conf_score_ee * num_conf_score_ee + Decimal(conf_score) * Decimal(len(step_outputs))) / (num_conf_score_ee + Decimal(len(step_outputs)))
                     num_conf_score_ee += Decimal(len(step_outputs))
+                    self.ee_iter_count[0] += 1
+                else:
+                    self.ee_iter_count[1] += 1
                 
                 avg_conf_score = (avg_conf_score * num_conf_score + Decimal(conf_score) * Decimal(len(step_outputs))) / (num_conf_score + Decimal(len(step_outputs)))
                 num_conf_score += Decimal(len(step_outputs))
 
             num_steps += 1
-            #print(f"[BenchmarkRunner]step {num_steps} ended. step_outputs: {step_outputs}")
+
 
             for output in step_outputs:
                 if output.finished:
@@ -227,6 +232,8 @@ class BenchmarkRunner:
 
         if self._config.enable_profiling:
             self._llm_engine.stop_profiling()
+
+        
 
         self._llm_engine.cleanup() # clean up the engine so we have gpu memory for bert_score
 
@@ -263,6 +270,8 @@ class BenchmarkRunner:
 
         output_throughput = num_output_tokens / (end_time - start_time)
 
+        tokens_per_iter = num_output_tokens / sum(self.ee_iter_count)
+
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
@@ -277,6 +286,9 @@ class BenchmarkRunner:
             "num_no_ee_tokens": exited_rates[1],
             "avg_conf_score": float(avg_conf_score),
             "avg_conf_score_ee": float(avg_conf_score_ee),
+            "num_ee_iter": self.ee_iter_count[0],
+            "num_no_ee_iter": self.ee_iter_count[1],
+            "tokens_per_iter": tokens_per_iter,
         })
         df = df.sort_values(by="seq_id")
 
@@ -292,6 +304,7 @@ class BenchmarkRunner:
             f"Replica {self._replica_id} exiting after processing {len(self._requests)} ({num_steps} iterations), Total time taken: {end_time - start_time:.2f} seconds"
         )
         logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates[#ee, #no ee]: {exited_rates}. Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}")
+        logger.info(f"Num EE iter: {self.ee_iter_count[0]}, Num non-EE iter: {self.ee_iter_count[1]}. Total iter: {sum(self.ee_iter_count)}. Tokens per iter: {tokens_per_iter:.2f}")
         logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
         logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
 
