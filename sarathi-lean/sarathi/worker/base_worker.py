@@ -80,6 +80,10 @@ class BaseWorker:
         self.rebatching = self.model_config.ee_policy == "rebatching"
         self.scheduled_seq_metadata_map = {} # seq_id -> SequenceScheduleMetadata
 
+        self.profile_memory = False
+        if self.profile_memory:
+            torch.cuda.memory._record_memory_history()
+
     def _verify_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
 
@@ -296,6 +300,11 @@ class BaseWorker:
             f"{self.metrics_config.output_dir}/profiler_trace_rank_{self.rank}.json"
         )
         print(f"Profiling results saved to {self.metrics_config.output_dir}/profiler_trace_rank_{self.rank}.json")
+
+        if self.profile_memory:
+            memory_snapshot_path = f"{self.metrics_config.output_dir}/memory_snapshot_rank_{self.rank}_{self.model_config.ee_policy}.pickle"
+            torch.cuda.memory._dump_snapshot(memory_snapshot_path)
+            print(f"Memory snapshot saved to {memory_snapshot_path}")
 
     @synchronized
     def cleanup(self) -> None:
