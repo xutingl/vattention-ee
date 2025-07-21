@@ -135,6 +135,13 @@ class BenchmarkRunner:
         )
 
         self.ee_iter_count = [0, 0] # [# EE-iter, # non-EE-iter]
+        
+        self.normal_iter_times = []
+        self.deep_iter_times = []
+        self.ee_iter_times = []
+        self.normal_iter_num_output_tokens = []
+        self.ee_iter_num_output_tokens = []
+        self.deep_iter_num_output_tokens = []
 
     def _get_input_params(
         self, request: Request, first_request_time: float
@@ -192,12 +199,13 @@ class BenchmarkRunner:
 
         # Run the engine.
         while num_processed_requests < len(self._requests):
+            iter_start_time = time.perf_counter()
             elapsed_time = time.monotonic() - start_time
             if elapsed_time > self._time_limit:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee = self._llm_engine.step()
+            step_outputs, exited_rates, conf_score, is_ee, is_flush = self._llm_engine.step()
             if conf_score is not None:
                 if is_ee:
                     self.ee_iter_count[0] += 1
@@ -222,6 +230,18 @@ class BenchmarkRunner:
                     finished_output.append(raw_string)
                 # else:
                 #     print(f"[BenchmarkRunner._run] Output id {output.seq_id} not finished")
+
+            iteration_time = time.perf_counter() - iter_start_time
+            if is_flush:
+                self.deep_iter_times.append(iteration_time)
+                self.deep_iter_num_output_tokens.append(len(step_outputs))
+            else:
+                if is_ee:
+                    self.ee_iter_times.append(iteration_time)
+                    self.ee_iter_num_output_tokens.append(len(step_outputs))
+                else:
+                    self.normal_iter_times.append(iteration_time)
+                    self.normal_iter_num_output_tokens.append(len(step_outputs))
         end_time = time.monotonic()
         pbar.close()
 
@@ -275,6 +295,20 @@ class BenchmarkRunner:
         avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / len(avg_conf_score_non_ee_lst)
         avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / (len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
 
+        # Iteration time stats
+        normal_iter_count = len(self.normal_iter_times)
+        ee_iter_count = len(self.ee_iter_times)
+        deep_iter_count = len(self.deep_iter_times)
+        total_iter_count = normal_iter_count + ee_iter_count + deep_iter_count
+        avg_normal_iter_time = sum(self.normal_iter_times) / max(1,normal_iter_count)
+        avg_ee_iter_time = sum(self.ee_iter_times) / max(1,ee_iter_count)
+        avg_deep_iter_time = sum(self.deep_iter_times) / max(1,deep_iter_count)
+        total_iter_time = sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)
+        avg_normal_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) / max(1,normal_iter_count)
+        avg_ee_iter_num_output_tokens = sum(self.ee_iter_num_output_tokens) / max(1,ee_iter_count)
+        avg_deep_iter_num_output_tokens = sum(self.deep_iter_num_output_tokens) / max(1,deep_iter_count)
+        total_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) + sum(self.ee_iter_num_output_tokens) + sum(self.deep_iter_num_output_tokens)
+
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
@@ -293,6 +327,13 @@ class BenchmarkRunner:
             "num_ee_iter": self.ee_iter_count[0],
             "num_no_ee_iter": self.ee_iter_count[1],
             "tokens_per_iter": tokens_per_iter,
+            "avg_normal_iter_time": avg_normal_iter_time,
+            "avg_ee_iter_time": avg_ee_iter_time,
+            "avg_deep_iter_time": avg_deep_iter_time,
+            "total_iter_time": total_iter_time,
+            "avg_normal_iter_num_output_tokens": avg_normal_iter_num_output_tokens,
+            "avg_ee_iter_num_output_tokens": avg_ee_iter_num_output_tokens,
+            "avg_deep_iter_num_output_tokens": avg_deep_iter_num_output_tokens,
         })
         df = df.sort_values(by="seq_id")
 
@@ -309,6 +350,8 @@ class BenchmarkRunner:
         )
         logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates(#tokens generated via ee vs. non-ee): {exited_rates}.")
         logger.info(f"Num EE iter: {self.ee_iter_count[0]}, Num non-EE iter: {self.ee_iter_count[1]}. Total iter: {sum(self.ee_iter_count)}. Tokens per iter: {tokens_per_iter:.2f}")
+        logger.info(f"Avg normal iter time: {avg_normal_iter_time}, Avg ee iter time: {avg_ee_iter_time}, Avg deep iter time: {avg_deep_iter_time}, Total iter time: {total_iter_time}")
+        logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee iter num output tokens: {avg_ee_iter_num_output_tokens}, Avg deep iter num output tokens: {avg_deep_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
         logger.info(f"Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}. Avg conf_score non_ee: {avg_conf_score_non_ee}")
         logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
         logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")

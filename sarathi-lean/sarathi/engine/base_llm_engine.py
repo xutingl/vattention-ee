@@ -508,7 +508,7 @@ class BaseLLMEngine:
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))
-        return request_outputs, exited_rates, conf, is_ee
+        return request_outputs, exited_rates, conf, is_ee, is_flush
 
     def _run_workers(
         self,
