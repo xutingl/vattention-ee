@@ -84,6 +84,8 @@ class BaseWorker:
         if self.profile_memory:
             torch.cuda.memory._record_memory_history()
 
+        self.prev_iter_is_ee = False
+
     def _verify_parallel_config(self) -> None:
         assert self.parallel_config.pipeline_parallel_size == 1
 
@@ -203,7 +205,11 @@ class BaseWorker:
 
         if not self.rebatching:
             # For rebatching, this is moved to llama model
-            self.cache_engine.step(seq_metadata_list)
+
+            if not (self.prev_iter_is_ee and self.model_config.kv_method == "postfill"): # For postfill, this will be done in the model
+                self.cache_engine.step(seq_metadata_list)
+        
+        self.prev_iter_is_ee = False
 
         # seq_metadata_list is updated with output_seq_ids to reflect that output requests might be different from input requests
         # recompute dict: seq_id -> recompute_length
@@ -214,6 +220,9 @@ class BaseWorker:
             seq_ids_in_batch=seq_ids_in_batch,
             rebatching_ee_factor=rebatching_ee_factor
         )
+
+        if is_ee:
+            self.prev_iter_is_ee = True
 
         scheduler_sends_flush_signal = len(scheduler_outputs.scheduled_seq_metadata_list) == 0
         if recompute_dict and not scheduler_sends_flush_signal: # Don't reassign prompt_chunk_len for flush signal (empty scheduled_seq_metadata_list) now. Do it after we set the updated scheduler_outputs

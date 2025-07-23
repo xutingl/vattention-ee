@@ -72,8 +72,11 @@ class ModelRunner:
         )
 
         self.ee_policy = self.model_config.ee_policy
+        self.kv_method = self.model_config.kv_method
         self.rebatching = self.ee_policy == "rebatching"
         self.seq_metadata_map = {}
+
+        self.prev_iter_is_ee = False
 
     def _prepare_inputs(
         self,
@@ -246,8 +249,11 @@ class ModelRunner:
 
         if not self.rebatching:
             # For rebatching, this is moved to llama model
-            get_attention_wrapper().begin_forward(seq_metadata_list)
+            
+            if not (self.prev_iter_is_ee and self.kv_method == "postfill"): # For postfill, this will be done in the model
+                get_attention_wrapper().begin_forward(seq_metadata_list)
         
+        self.prev_iter_is_ee = False
             
         with self._model_execution_e2e_timer:
             # Execute the model.
@@ -266,6 +272,9 @@ class ModelRunner:
                     f"RuntimeError: {e} for seq_metadata_list: {seq_metadata_list}"
                 )
                 raise e
+            
+            if lm_logits is not None:
+                self.prev_iter_is_ee = True
             
             if self.rebatching:
                 for matadata in seq_metadata_list:

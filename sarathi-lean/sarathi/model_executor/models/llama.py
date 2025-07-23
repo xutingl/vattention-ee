@@ -411,6 +411,7 @@ class LlamaModel(nn.Module):
         self.kv_method = config.kv_method # "postfill" or "copy"
         self.recompute_seq_id_to_hidden_states = defaultdict(list) # seq_id -> a list of hidden states. This hidden states is the output of EE'ed layer and will be used for recomputing kv cache.
         self.recompute_seq_id_to_positions = defaultdict(list) # seq_id -> a list of positions. This positions is the output of EE'ed layer and will be used for recomputing kv cache.
+        self.recompute_seq_id_to_input_hidden_states = dict() # seq_id -> this request's input hidden states.
     
     def softmax_confidence(
         self,
@@ -561,7 +562,8 @@ class LlamaModel(nn.Module):
         
         final_hidden_states = torch.cat([all_recompute_hidden_states_tensor, non_recompute_hidden_states], dim=0)
         final_positions = torch.cat([all_recompute_positions_tensor, non_recompute_positions], dim=0)
-        final_seq_ids = list(recompute_req_to_idx.keys()) + list(non_recompute_req_to_idx.keys())        
+        final_seq_ids = list(recompute_req_to_idx.keys()) + list(non_recompute_req_to_idx.keys())
+        print(f"[LlamaModel.check_req_for_kv_recompute] recompute_dict: {recompute_dict}. final_seq_ids: {final_seq_ids}")
         return recompute_dict, final_hidden_states, final_positions, final_seq_ids
     
     """
@@ -629,6 +631,9 @@ class LlamaModel(nn.Module):
         
         if self.embed_tokens:
             hidden_states = self.embed_tokens(hidden_states)
+        
+        # Store input hidden states for recomputing kv cache
+        input_hidden_states = hidden_states
 
         if self.kv_method == "postfill" and seq_ids_in_batch is not None and self.ee_policy != "rebatching":
             recompute_dict, hidden_states, positions, seq_ids_in_batch = self.check_req_for_kv_recompute(hidden_states, positions, seq_ids_in_batch)
@@ -688,7 +693,7 @@ class LlamaModel(nn.Module):
                             seq_metadata.seq.recompute_length += 1
 
                             # Store the hidden states and positions for recomputing kv cache
-                            self.recompute_seq_id_to_hidden_states[ee_req_id].append(normed_hidden_states[idx])
+                            self.recompute_seq_id_to_hidden_states[ee_req_id].append(input_hidden_states[idx])
                             self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
                         recompute_dict = {} # When EE, we don't need to recompute kv cache. Postfill will possiblly happen in the next forward.
 
@@ -773,6 +778,10 @@ class LlamaModel(nn.Module):
 
         incoming_batch_size = len(seq_ids_in_batch)
 
+        # Store input hidden states for recomputing kv cache
+        for i, seq_id in enumerate(seq_ids_in_batch):
+            self.recompute_seq_id_to_input_hidden_states[seq_id] = hidden_states[i]
+
 
         # 0. Flush: If we receive an empty batch, we process any leftover hidden states in the buffer. Scheduler will send a flush request if deep_buffer is full or starving.
         flush_buffer = incoming_batch_size == 0
@@ -855,7 +864,7 @@ class LlamaModel(nn.Module):
                                 seq_metadata.seq.recompute_length += 1
 
                                 # Store the hidden states and positions for recomputing kv cache
-                                self.recompute_seq_id_to_hidden_states[ee_req_id].append(normed_hidden_states[idx])
+                                self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
                                 self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
 
 
@@ -927,7 +936,7 @@ class LlamaModel(nn.Module):
                                 seq_metadata.seq.recompute_length += 1
 
                                 # Store the hidden states and positions for recomputing kv cache
-                                self.recompute_seq_id_to_hidden_states[ee_req_id].append(normed_hidden_states[idx])
+                                self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
                                 self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
 
 

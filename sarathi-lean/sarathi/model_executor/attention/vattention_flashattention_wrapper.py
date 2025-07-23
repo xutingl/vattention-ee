@@ -164,6 +164,7 @@ class VAttentionFlashAttentionWrapper(BaseAttentionWrapper):
                     causal=True,
                     softmax_scale=softmax_scale,
                     )
+                print(f"[VAttentionFlashAttentionWrapper.forward] prefillseq_output shape: {seq_output.shape}")
 
             with self.get_timer(OperationMetrics.ATTN_OUTPUT_RESHAPE, layer_id):
                 output[token_offset : token_offset + query_len].copy_(
@@ -172,9 +173,13 @@ class VAttentionFlashAttentionWrapper(BaseAttentionWrapper):
             
             token_offset += query_len
             idx += 1
+        
+        print(f"[VAttentionFlashAttentionWrapper.forward] token_offset: {token_offset}, output shape: {output.shape}")
        
         if self.decode_batch_size == 0:
             return output
+        
+        print(f"[VAttentionFlashAttentionWrapper.forward] decode batch size: {self.decode_batch_size}")
 
         with self.get_timer(OperationMetrics.ATTN_INPUT_RESHAPE, layer_id):
             decode_query = query[
