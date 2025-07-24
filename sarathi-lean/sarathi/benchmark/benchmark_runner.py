@@ -309,6 +309,14 @@ class BenchmarkRunner:
         avg_deep_iter_num_output_tokens = sum(self.deep_iter_num_output_tokens) / max(1,deep_iter_count)
         total_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) + sum(self.ee_iter_num_output_tokens) + sum(self.deep_iter_num_output_tokens)
 
+        ee_penalty_by_tokens = (1 - avg_conf_score_ee) / max(1, sum(self.ee_iter_num_output_tokens))
+        ee_penalty_by_iter = (1 - avg_conf_score_ee) / max(1, ee_iter_count)
+
+        baseline_bert_score = 0.8330790978670121
+        avg_bert_score = sum(bert_scores) / len(bert_scores)
+        ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
+        ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
+
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
@@ -334,6 +342,10 @@ class BenchmarkRunner:
             "avg_normal_iter_num_output_tokens": avg_normal_iter_num_output_tokens,
             "avg_ee_iter_num_output_tokens": avg_ee_iter_num_output_tokens,
             "avg_deep_iter_num_output_tokens": avg_deep_iter_num_output_tokens,
+            "ee_penalty_by_tokens": ee_penalty_by_tokens,
+            "ee_penalty_by_iter": ee_penalty_by_iter,
+            "ee_bert_penalty_by_tokens": ee_bert_penalty_by_tokens,
+            "ee_bert_penalty_by_iter": ee_bert_penalty_by_iter,
         })
         df = df.sort_values(by="seq_id")
 
@@ -353,6 +365,8 @@ class BenchmarkRunner:
         logger.info(f"Avg normal iter time: {avg_normal_iter_time}, Avg ee iter time: {avg_ee_iter_time}, Avg deep iter time: {avg_deep_iter_time}, Total iter time: {total_iter_time}")
         logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee iter num output tokens: {avg_ee_iter_num_output_tokens}, Avg deep iter num output tokens: {avg_deep_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
         logger.info(f"Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}. Avg conf_score non_ee: {avg_conf_score_non_ee}")
+        logger.info(f"EE penalty by tokens: {ee_penalty_by_tokens}, EE penalty by iter: {ee_penalty_by_iter}")
+        logger.info(f"EE BERT penalty by tokens: {ee_bert_penalty_by_tokens}, EE BERT penalty by iter: {ee_bert_penalty_by_iter}")
         logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
         logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
 
