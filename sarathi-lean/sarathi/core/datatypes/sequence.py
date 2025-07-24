@@ -185,8 +185,6 @@ class Sequence:
         # Check if the sequence has reached max_tokens.
         if self.get_output_len() == self.sampling_params.max_tokens:
             self.set_status(SequenceStatus.FINISHED_LENGTH_CAPPED)
-            if self.seq_id == 2:
-                print(f"[Sequence] length capped!!!!!!! seq_id: {self.seq_id}. status: {self.get_status()}. seq obj id:{id(self)}")
             return
 
         # Check if the sequence has generated the EOS token.
