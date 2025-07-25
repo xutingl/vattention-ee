@@ -317,6 +317,15 @@ class BenchmarkRunner:
         ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
         ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
 
+        # Calculate overhead c and num_ee_threshold. This is not used in the model, jsut to check num_ee_threshold here is the same as what we get in llm_engine.
+        overhead = 0
+        rebatching_threshold_ratio = 0
+        num_ee_threshold = 0
+        if self._config.ee_policy == "rebatching":
+            overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
+            rebatching_threshold_ratio = overhead / avg_deep_iter_time
+            num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
+
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
@@ -364,6 +373,7 @@ class BenchmarkRunner:
         logger.info(f"Num EE iter: {self.ee_iter_count[0]}, Num non-EE iter: {self.ee_iter_count[1]}. Total iter: {sum(self.ee_iter_count)}. Tokens per iter: {tokens_per_iter:.2f}")
         logger.info(f"Avg normal iter time: {avg_normal_iter_time}, Avg ee iter time: {avg_ee_iter_time}, Avg deep iter time: {avg_deep_iter_time}, Total iter time: {total_iter_time}")
         logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee iter num output tokens: {avg_ee_iter_num_output_tokens}, Avg deep iter num output tokens: {avg_deep_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
+        logger.info(f"Overhead: {overhead}, Rebaching threshold ratio: {rebatching_threshold_ratio}, Num EE threshold: {num_ee_threshold}. [Measured in benchmark_runner. The one measured in llm_engine is actually used.]")
         logger.info(f"Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}. Avg conf_score non_ee: {avg_conf_score_non_ee}")
         logger.info(f"EE penalty by tokens: {ee_penalty_by_tokens}, EE penalty by iter: {ee_penalty_by_iter}")
         logger.info(f"EE BERT penalty by tokens: {ee_bert_penalty_by_tokens}, EE BERT penalty by iter: {ee_bert_penalty_by_iter}")

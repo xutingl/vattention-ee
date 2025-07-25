@@ -492,7 +492,7 @@ class BaseLLMEngine:
                     self.rebatching_ee_factor = 0  # or some default value, or skip this step
                 else:
                     self.rebatching_ee_factor = overhead / avg_deep_iter_time
-                rebatching_num_ee_threshold = math.ceil(self.rebatching_ee_factor * self.model_config.max_num_seqs)
+                rebatching_num_ee_threshold = self.rebatching_ee_factor * self.model_config.max_num_seqs
                 print(f"[BaseLLMEngine] rebatching_ee_factor updated to: {self.rebatching_ee_factor}. rebatching_num_ee_threshold updated to: {rebatching_num_ee_threshold}")
                 if rebatching_num_ee_threshold == self.model_config.max_num_seqs:
                     print(f"[BaseLLMEngine] Warning!!: rebatching_num_ee_threshold is equal to max_batch_size.")
