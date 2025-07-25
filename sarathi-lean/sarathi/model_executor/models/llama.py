@@ -469,7 +469,7 @@ class LlamaModel(nn.Module):
                 val = 0.0 if conf <= self.conf_threshold else 1.0
                 need_skip = torch.tensor(val, device=hidden_states.device).bool()
             elif ee_policy == "median":
-                need_skip = conf_median <= self.conf_threshold
+                need_skip = conf_median >= self.conf_threshold
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
         else:
