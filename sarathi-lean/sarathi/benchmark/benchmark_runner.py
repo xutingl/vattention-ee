@@ -8,6 +8,7 @@ import wandb
 from tqdm import tqdm
 import pandas as pd
 from pathlib import Path
+import numpy as np
 
 from sarathi import LLMEngine, SamplingParams
 from sarathi.benchmark.config import Config
@@ -143,6 +144,9 @@ class BenchmarkRunner:
         self.ee_iter_num_output_tokens = []
         self.deep_iter_num_output_tokens = []
 
+        self.prefill_times = []
+        self.decode_times = []
+
     def _get_input_params(
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
@@ -197,6 +201,8 @@ class BenchmarkRunner:
         avg_conf_score_ee_lst = []
         avg_conf_score_non_ee_lst = []
 
+        request_duration_lst = []
+
         # Run the engine.
         while num_processed_requests < len(self._requests):
             iter_start_time = time.perf_counter()
@@ -205,14 +211,7 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee, is_flush = self._llm_engine.step()
-            if conf_score is not None:
-                if is_ee:
-                    self.ee_iter_count[0] += 1
-                    avg_conf_score_ee_lst.append(conf_score)
-                else:
-                    self.ee_iter_count[1] += 1
-                    avg_conf_score_non_ee_lst.append(conf_score)
+            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill = self._llm_engine.step()
 
             num_steps += 1
 
@@ -228,20 +227,37 @@ class BenchmarkRunner:
                     raw_string = fr"{output.text}"
                     finished_seq_id_lst.append(output.seq_id)
                     finished_output.append(raw_string)
-                # else:
-                #     print(f"[BenchmarkRunner._run] Output id {output.seq_id} not finished")
+                    request_duration_lst.append(output.completion_time)
+
+
+
 
             iteration_time = time.perf_counter() - iter_start_time
-            if is_flush:
-                self.deep_iter_times.append(iteration_time)
-                self.deep_iter_num_output_tokens.append(len(step_outputs))
+
+            if is_prefill:
+                self.prefill_times.append(iteration_time)
             else:
-                if is_ee:
-                    self.ee_iter_times.append(iteration_time)
-                    self.ee_iter_num_output_tokens.append(len(step_outputs))
+                # Only collect EE related metrics for decode iterations.
+                self.decode_times.append(iteration_time)
+
+                if conf_score is not None:
+                    if is_ee:
+                        self.ee_iter_count[0] += 1
+                        avg_conf_score_ee_lst.append(conf_score)
+                    else:
+                        self.ee_iter_count[1] += 1
+                        avg_conf_score_non_ee_lst.append(conf_score)
+
+                if is_flush:
+                    self.deep_iter_times.append(iteration_time)
+                    self.deep_iter_num_output_tokens.append(len(step_outputs))
                 else:
-                    self.normal_iter_times.append(iteration_time)
-                    self.normal_iter_num_output_tokens.append(len(step_outputs))
+                    if is_ee:
+                        self.ee_iter_times.append(iteration_time)
+                        self.ee_iter_num_output_tokens.append(len(step_outputs))
+                    else:
+                        self.normal_iter_times.append(iteration_time)
+                        self.normal_iter_num_output_tokens.append(len(step_outputs))
         end_time = time.monotonic()
         pbar.close()
 
@@ -312,7 +328,17 @@ class BenchmarkRunner:
         ee_penalty_by_tokens = (1 - avg_conf_score_ee) / max(1, sum(self.ee_iter_num_output_tokens))
         ee_penalty_by_iter = (1 - avg_conf_score_ee) / max(1, ee_iter_count)
 
-        baseline_bert_score = 0.8330790978670121
+        # TBT: Time between tokens (inter token latency) = decoding iteration time
+        tbt_avg = sum(self.decode_times) / max(1, len(self.decode_times))
+        tbt_p95 = np.percentile(self.decode_times, 95)
+        tbt_p99 = np.percentile(self.decode_times, 99)
+
+        # Statictics of request duration
+        request_duration_avg = sum(request_duration_lst) / max(1, len(request_duration_lst))
+        request_duration_p95 = np.percentile(request_duration_lst, 95)
+        request_duration_p99 = np.percentile(request_duration_lst, 99)
+
+        baseline_bert_score = 0.8330790978670121 # For llama2-13b
         avg_bert_score = sum(bert_scores) / len(bert_scores)
         ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
         ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
@@ -355,6 +381,13 @@ class BenchmarkRunner:
             "ee_penalty_by_iter": ee_penalty_by_iter,
             "ee_bert_penalty_by_tokens": ee_bert_penalty_by_tokens,
             "ee_bert_penalty_by_iter": ee_bert_penalty_by_iter,
+            "tbt_avg": tbt_avg,
+            "tbt_p95": tbt_p95,
+            "tbt_p99": tbt_p99,
+            "request_duration": request_duration_lst,
+            "request_duration_avg": request_duration_avg,
+            "request_duration_p95": request_duration_p95,
+            "request_duration_p99": request_duration_p99,
         })
         df = df.sort_values(by="seq_id")
 
@@ -379,6 +412,9 @@ class BenchmarkRunner:
         logger.info(f"EE BERT penalty by tokens: {ee_bert_penalty_by_tokens}, EE BERT penalty by iter: {ee_bert_penalty_by_iter}")
         logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
         logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
+        logger.info(f"Prefill time (measured in benchmark_runner): {sum(self.prefill_times)}, Decode time (measured in benchmark_runner): {sum(self.decode_times)}")
+        logger.info(f"TBT avg: {tbt_avg}, TBT p95: {tbt_p95}, TBT p99: {tbt_p99}")
+        logger.info(f"Request duration avg: {request_duration_avg}, Request duration p95: {request_duration_p95}, Request duration p99: {request_duration_p99}")
 
 
     def _add_requests(self) -> None:

@@ -42,6 +42,10 @@ class SchedulerOutputs:
     def seq_ids(self) -> List[str]:
         return [metadata.seq_id for metadata in self.scheduled_seq_metadata_list]
 
+    @property
+    def is_prefill(self) -> bool:
+        return any(metadata.is_prompt for metadata in self.scheduled_seq_metadata_list)
+
     def __repr__(self) -> str:
         return (
             f"SchedulerOutputs(id={self.id}, "

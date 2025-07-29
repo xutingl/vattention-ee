@@ -469,6 +469,10 @@ class BaseLLMEngine:
                 
         end_time = time.perf_counter()
         iteration_time = end_time - step_start_time
+
+        is_prefill = scheduler_outputs.is_prefill
+
+        # if not is_prefill: # We don't measure prefill time and only focus on decode time?? But seems to decrease performance.
         if is_flush:
             self.deep_iter_times.append(iteration_time)
         else:
@@ -477,7 +481,7 @@ class BaseLLMEngine:
             else:
                 self.normal_iter_times.append(iteration_time)
         
-        request_outputs = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
+        request_outputs: List[RequestOutput] = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
 
         avg_normal_iter_time = sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))
         avg_ee_iter_time = sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))
@@ -508,7 +512,7 @@ class BaseLLMEngine:
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))
-        return request_outputs, exited_rates, conf, is_ee, is_flush
+        return request_outputs, exited_rates, conf, is_ee, is_flush, is_prefill
 
     def _run_workers(
         self,

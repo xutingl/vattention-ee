@@ -6,6 +6,7 @@ from sarathi.core.datatypes.block import LogicalTokenBlock
 from sarathi.core.datatypes.sampling_params import SamplingParams
 from sarathi.core.datatypes.sequence_state import SequenceState
 from sarathi.core.datatypes.sequence_status import SequenceStatus
+import time
 
 
 class Sequence:
@@ -58,6 +59,9 @@ class Sequence:
         self.recompute_length = 0 # Each time a sequence is EE'ed, the length is incremented by 1. The first time it enters deep layer, it will be treated as a prefill step and the value is the length of the prompt to be prefilled, then it is reset to 0.
         self.currently_recomputing = False
 
+        self.prompt_processing_finished_at = 0.0
+        self.decode_finished_at = 0.0
+
     def get_status(self) -> SequenceStatus:
         return self.state._status
 
@@ -96,6 +100,7 @@ class Sequence:
         if self.prompt_tokens_processed == len(self.prompt_token_ids):
             self.prompt_processing_finished = True
             self.state.on_prompt_processing_completed()
+            self.prompt_processing_finished_at = time.perf_counter()
 
     def append_token_id(
         self,
@@ -180,11 +185,13 @@ class Sequence:
                 # not included in the output.
                 self.output_text = self.output_text[: -len(stop_str)]
                 self.set_status(SequenceStatus.FINISHED_STOPPED)
+                self.decode_finished_at = time.perf_counter()
                 return
 
         # Check if the sequence has reached max_tokens.
         if self.get_output_len() == self.sampling_params.max_tokens:
             self.set_status(SequenceStatus.FINISHED_LENGTH_CAPPED)
+            self.decode_finished_at = time.perf_counter()
             return
 
         # Check if the sequence has generated the EOS token.
@@ -192,7 +199,11 @@ class Sequence:
             not self.sampling_params.ignore_eos
         ) and self.get_last_token_id() == self.eos_token_id:
             self.set_status(SequenceStatus.FINISHED_STOPPED)
+            self.decode_finished_at = time.perf_counter()
             return
+    
+    def get_completion_time(self) -> float:
+        return self.decode_finished_at - self.prompt_processing_finished_at
 
     def __repr__(self) -> str:
         return (
@@ -260,6 +271,7 @@ class SequenceScheduleMetadata:
 
     def __repr__(self) -> str:
         return self.__str__()
+
 
 
 class SequenceMetadata:
