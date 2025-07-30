@@ -211,7 +211,7 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill = self._llm_engine.step()
+            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill, latency_only_ee_iter_time = self._llm_engine.step()
 
             num_steps += 1
 
@@ -239,6 +239,12 @@ class BenchmarkRunner:
             else:
                 # Only collect EE related metrics for decode iterations.
                 self.decode_times.append(iteration_time)
+
+                if latency_only_ee_iter_time is not None:
+                    # To account for latency-only EE, we need to add the latency-only EE iter time to the decode time.
+                    # Notice: this is "double counting" iteration time. So when policy is latency-only, `self.decode_times` can only be used to calculate TBT. It is inaccurate to use it to calculate throughput or TPOT.
+                    self.decode_times.append(latency_only_ee_iter_time)
+
 
                 if conf_score is not None:
                     if is_ee:

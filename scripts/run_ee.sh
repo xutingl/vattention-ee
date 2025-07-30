@@ -11,6 +11,8 @@
 
 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=100 --shallow_exit_layer=25 --conf_threshold=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_100_batch_4_conf_08_layer_25_rebatching_copy.txt
 
+python scripts/run_ee.py --ee_policy=latency-only --max_batch_size=4  --num_requests=100 --shallow_exit_layer=25 --conf_threshold=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_100_batch_4_conf_08_layer_25_latency_only_copy.txt
+
 
 nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/rebatching_copy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_4_batch_2_conf_06_layer_24_rebatching_copy.txt
 

@@ -258,7 +258,7 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf = self.model(
+                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, latency_only_ee_iter_time = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
@@ -295,4 +295,4 @@ class ModelRunner:
 
         is_ee = lm_logits is not None
 
-        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, is_ee, is_flush, recompute_dict
+        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time
