@@ -291,11 +291,12 @@ class BaseSchedulerConfig(ABC):
         max_num_seqs: int,
         max_model_len: int,
         num_pipeline_stages: int,
+        buffer_age_factor: float=0.0,
     ) -> None:
         self.max_num_seqs = max_num_seqs
         self.max_model_len = max_model_len
         self.num_pipeline_stages = num_pipeline_stages
-
+        self.buffer_age_factor = buffer_age_factor
     @property
     def max_num_batched_tokens(self):
         pass
@@ -321,8 +322,9 @@ class VLLMSchedulerConfig(BaseSchedulerConfig):
         max_model_len: int,
         num_pipeline_stages: int,
         max_num_batched_tokens: int,
+        buffer_age_factor: float=0.0,
     ) -> None:
-        super().__init__(max_num_seqs, max_model_len, num_pipeline_stages)
+        super().__init__(max_num_seqs, max_model_len, num_pipeline_stages, buffer_age_factor)
         self._max_num_batched_tokens = (
             max_num_batched_tokens if max_num_batched_tokens else max_model_len
         )

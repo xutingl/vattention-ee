@@ -17,6 +17,7 @@ parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='
 parser.add_argument('--csv_path', type=str, default="/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/", help='Path to save CSV results')
 parser.add_argument('--kv_method', type=str, default='copy', help='Technique to fill missing kv cache')
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
+parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))

@@ -39,6 +39,7 @@ def main():
     num_ee_threshold = utils.args.num_ee_threshold
     kv_method = utils.args.kv_method
     enable_profiling = utils.args.enable_profiling
+    buffer_age_factor = utils.args.buffer_age_factor
 
     for model in models:
         for qps in qps_values:
@@ -84,6 +85,7 @@ def main():
                         '--early_exit_head_path', f'{early_exit_head_path}',
                         '--csv_path', f'{csv_path}',
                         '--kv_method', f'{kv_method}',
+                        '--buffer_age_factor', f'{buffer_age_factor}',
                         # Pytorch profiler
                         '--enable_profiling', 'true' if enable_profiling else 'false',
                     ]

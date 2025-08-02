@@ -133,6 +133,9 @@ class BenchmarkRunner:
             early_exit_head_path=self._config.early_exit_head_path,
             num_ee_threshold=self._config.num_ee_threshold,
             kv_method=self._config.kv_method,
+
+            # Scheduler config for rebatching
+            buffer_age_factor=self._config.buffer_age_factor,
         )
 
         self.ee_iter_count = [0, 0] # [# EE-iter, # non-EE-iter]
@@ -151,7 +154,7 @@ class BenchmarkRunner:
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
         sampling_params = SamplingParams(
-            ignore_eos=False,
+            ignore_eos=False, #[TODO] How does True affect throughput and bert score?
             # max_tokens=request.num_decode_tokens,
             max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
             #temperature=0.5,
@@ -401,7 +404,7 @@ class BenchmarkRunner:
         csv_path.mkdir(parents=True, exist_ok=True)
 
         # numrequests_batchsize_layer_conf_policy_kvmethod.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}.csv"
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}_age_{self._config.buffer_age_factor}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 
