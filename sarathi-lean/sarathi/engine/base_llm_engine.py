@@ -81,8 +81,10 @@ class BaseLLMEngine:
             f"seed={model_config.seed}, "
             f"attention_backend={model_config.attention_backend})\n"
             f"EE configs: ee_policy={model_config.ee_policy}, "
-            f"shallow_exit_layer={model_config.shallow_exit_layer}, "
-            f"conf_threshold={model_config.conf_threshold}, "
+            f"shallow_exit_layer_1={model_config.shallow_exit_layer_1}, "
+            f"shallow_exit_layer_2={model_config.shallow_exit_layer_2}, "
+            f"conf_threshold_1={model_config.conf_threshold_1}, "
+            f"conf_threshold_2={model_config.conf_threshold_2}, "
             f"max_num_seqs(max batch size)={model_config.max_num_seqs}, "
         )
         # TODO(woosuk): Print more configs in debug mode.
@@ -445,7 +447,7 @@ class BaseLLMEngine:
         # print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
         # print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, is_ee, is_flush, latency_only_ee_iter_time = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, is_ee, ee_from_layer, is_flush_1, is_flush_2, latency_only_ee_iter_time = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
@@ -455,7 +457,7 @@ class BaseLLMEngine:
        
         if self.rebatching:
             output_seqs = [self.seq_manager.seq_map[seq_id] for seq_id in output_seq_ids]
-            self.scheduler.on_rebatching(seq_metadata_list, output_seqs)
+            self.scheduler.on_rebatching(seq_metadata_list, output_seqs, ee_from_layer, is_flush_1, is_flush_2)
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         
@@ -473,7 +475,7 @@ class BaseLLMEngine:
         is_prefill = scheduler_outputs.is_prefill
 
         # if not is_prefill: # We don't measure prefill time and only focus on decode time?? But seems to decrease performance.
-        if is_flush:
+        if is_flush_1 or is_flush_2:
             self.deep_iter_times.append(iteration_time)
         else:
             if is_ee:
@@ -512,7 +514,7 @@ class BaseLLMEngine:
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))
-        return request_outputs, exited_rates, conf, is_ee, is_flush, is_prefill, latency_only_ee_iter_time
+        return request_outputs, exited_rates, conf, is_ee, ee_from_layer, is_flush_1, is_flush_2, is_prefill, latency_only_ee_iter_time
 
     def _run_workers(
         self,

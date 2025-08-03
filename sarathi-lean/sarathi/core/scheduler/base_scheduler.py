@@ -51,7 +51,8 @@ class BaseScheduler(ABC):
         self.running: List[Sequence] = []
 
         # Sequence groups in the EE or start buffer. Needed for rebatching.
-        self.rebatching_buffer: List[Sequence] = []
+        self.rebatching_buffer_1: List[Sequence] = []
+        self.rebatching_buffer_2: List[Sequence] = []
 
     def set_block_manager(self, model_config):
         attn_cfg = model_config.attention_backend

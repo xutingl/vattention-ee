@@ -70,8 +70,10 @@ class EngineArgs:
     keep_individual_batch_metrics: bool = False
     attention_backend: str = "flash_attention"
     ee_policy: str = "off"
-    shallow_exit_layer: Optional[int] = None
-    conf_threshold: Optional[float] = None
+    shallow_exit_layer_1: Optional[int] = None
+    shallow_exit_layer_2: Optional[int] = None
+    conf_threshold_1: Optional[float] = None
+    conf_threshold_2: Optional[float] = None
     early_exit_head_path: Optional[str] = None
     num_ee_threshold: Optional[int] = None
     kv_method: str = "copy"
@@ -150,8 +152,10 @@ class EngineArgs:
             max_model_len=self.max_model_len,
             attention_backend=self.attention_backend,
             ee_policy=self.ee_policy,
-            shallow_exit_layer=self.shallow_exit_layer,
-            conf_threshold=self.conf_threshold,
+            shallow_exit_layer_1=self.shallow_exit_layer_1,
+            shallow_exit_layer_2=self.shallow_exit_layer_2,
+            conf_threshold_1=self.conf_threshold_1,
+            conf_threshold_2=self.conf_threshold_2,
             max_num_seqs=self.max_num_seqs,
             early_exit_head_path=self.early_exit_head_path,
             num_ee_threshold=self.num_ee_threshold,

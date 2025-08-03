@@ -128,8 +128,10 @@ class BenchmarkRunner:
             download_dir=self._config.download_dir,
             # EE config
             ee_policy=self._config.ee_policy,
-            shallow_exit_layer=self._config.shallow_exit_layer,
-            conf_threshold=self._config.conf_threshold,
+            shallow_exit_layer_1=self._config.shallow_exit_layer_1,
+            shallow_exit_layer_2=self._config.shallow_exit_layer_2,
+            conf_threshold_1=self._config.conf_threshold_1,
+            conf_threshold_2=self._config.conf_threshold_2,
             early_exit_head_path=self._config.early_exit_head_path,
             num_ee_threshold=self._config.num_ee_threshold,
             kv_method=self._config.kv_method,
@@ -141,11 +143,15 @@ class BenchmarkRunner:
         self.ee_iter_count = [0, 0] # [# EE-iter, # non-EE-iter]
         
         self.normal_iter_times = []
-        self.deep_iter_times = []
-        self.ee_iter_times = []
+        self.flush1_iter_times = []
+        self.flush2_iter_times = []
+        self.ee1_iter_times = []
+        self.ee2_iter_times = []
         self.normal_iter_num_output_tokens = []
-        self.ee_iter_num_output_tokens = []
-        self.deep_iter_num_output_tokens = []
+        self.ee1_iter_num_output_tokens = []
+        self.ee2_iter_num_output_tokens = []
+        self.flush1_iter_num_output_tokens = []
+        self.flush2_iter_num_output_tokens = []
 
         self.prefill_times = []
         self.decode_times = []
@@ -214,7 +220,7 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill, latency_only_ee_iter_time = self._llm_engine.step()
+            step_outputs, exited_rates, conf_score, is_ee, ee_from_layer, is_flush_1, is_flush_2, is_prefill, latency_only_ee_iter_time = self._llm_engine.step()
 
             num_steps += 1
 
@@ -257,13 +263,20 @@ class BenchmarkRunner:
                         self.ee_iter_count[1] += 1
                         avg_conf_score_non_ee_lst.append(conf_score)
 
-                if is_flush:
-                    self.deep_iter_times.append(iteration_time)
-                    self.deep_iter_num_output_tokens.append(len(step_outputs))
+                if is_flush_1:
+                    self.flush1_iter_times.append(iteration_time)
+                    self.flush1_iter_num_output_tokens.append(len(step_outputs))
+                elif is_flush_2:
+                    self.flush2_iter_times.append(iteration_time)
+                    self.flush2_iter_num_output_tokens.append(len(step_outputs))
                 else:
                     if is_ee:
-                        self.ee_iter_times.append(iteration_time)
-                        self.ee_iter_num_output_tokens.append(len(step_outputs))
+                        if ee_from_layer == 1:
+                            self.ee1_iter_times.append(iteration_time)
+                            self.ee1_iter_num_output_tokens.append(len(step_outputs))
+                        elif ee_from_layer == 2:
+                            self.ee2_iter_times.append(iteration_time)
+                            self.ee2_iter_num_output_tokens.append(len(step_outputs))
                     else:
                         self.normal_iter_times.append(iteration_time)
                         self.normal_iter_num_output_tokens.append(len(step_outputs))
@@ -322,20 +335,26 @@ class BenchmarkRunner:
 
         # Iteration time stats
         normal_iter_count = len(self.normal_iter_times)
-        ee_iter_count = len(self.ee_iter_times)
-        deep_iter_count = len(self.deep_iter_times)
-        total_iter_count = normal_iter_count + ee_iter_count + deep_iter_count
+        ee1_iter_count = len(self.ee1_iter_times)
+        ee2_iter_count = len(self.ee2_iter_times)
+        flush1_iter_count = len(self.flush1_iter_times)
+        flush2_iter_count = len(self.flush2_iter_times)
+        total_iter_count = normal_iter_count + ee1_iter_count + ee2_iter_count + flush1_iter_count + flush2_iter_count
         avg_normal_iter_time = sum(self.normal_iter_times) / max(1,normal_iter_count)
-        avg_ee_iter_time = sum(self.ee_iter_times) / max(1,ee_iter_count)
-        avg_deep_iter_time = sum(self.deep_iter_times) / max(1,deep_iter_count)
-        total_iter_time = sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)
+        avg_ee1_iter_time = sum(self.ee1_iter_times) / max(1,ee1_iter_count)
+        avg_ee2_iter_time = sum(self.ee2_iter_times) / max(1,ee2_iter_count)
+        avg_flush1_iter_time = sum(self.flush1_iter_times) / max(1,flush1_iter_count)
+        avg_flush2_iter_time = sum(self.flush2_iter_times) / max(1,flush2_iter_count)
+        total_iter_time = sum(self.normal_iter_times) + sum(self.ee1_iter_times) + sum(self.ee2_iter_times) + sum(self.flush1_iter_times) + sum(self.flush2_iter_times)
         avg_normal_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) / max(1,normal_iter_count)
-        avg_ee_iter_num_output_tokens = sum(self.ee_iter_num_output_tokens) / max(1,ee_iter_count)
-        avg_deep_iter_num_output_tokens = sum(self.deep_iter_num_output_tokens) / max(1,deep_iter_count)
-        total_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) + sum(self.ee_iter_num_output_tokens) + sum(self.deep_iter_num_output_tokens)
+        avg_ee1_iter_num_output_tokens = sum(self.ee1_iter_num_output_tokens) / max(1,ee1_iter_count)
+        avg_ee2_iter_num_output_tokens = sum(self.ee2_iter_num_output_tokens) / max(1,ee2_iter_count)
+        avg_flush1_iter_num_output_tokens = sum(self.flush1_iter_num_output_tokens) / max(1,flush1_iter_count)
+        avg_flush2_iter_num_output_tokens = sum(self.flush2_iter_num_output_tokens) / max(1,flush2_iter_count)
+        total_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) + sum(self.ee1_iter_num_output_tokens) + sum(self.ee2_iter_num_output_tokens) + sum(self.flush1_iter_num_output_tokens) + sum(self.flush2_iter_num_output_tokens)
 
         ee_penalty_by_tokens = (1 - avg_conf_score_ee) / max(1, sum(self.ee_iter_num_output_tokens))
-        ee_penalty_by_iter = (1 - avg_conf_score_ee) / max(1, ee_iter_count)
+        ee_penalty_by_iter = (1 - avg_conf_score_ee) / max(1, ee1_iter_count)
 
         # TBT: Time between tokens (inter token latency) = decoding iteration time
         tbt_avg = sum(self.decode_times) / max(1, len(self.decode_times))
@@ -350,15 +369,15 @@ class BenchmarkRunner:
         baseline_bert_score = 0.8330790978670121 # For llama2-13b
         avg_bert_score = sum(bert_scores) / len(bert_scores)
         ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
-        ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
+        ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee1_iter_count + ee2_iter_count)
 
         # Calculate overhead c and num_ee_threshold. This is not used in the model, jsut to check num_ee_threshold here is the same as what we get in llm_engine.
         overhead = 0
         rebatching_threshold_ratio = 0
         num_ee_threshold = 0
         if self._config.ee_policy == "rebatching":
-            overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
-            rebatching_threshold_ratio = overhead / avg_deep_iter_time
+            overhead = avg_ee1_iter_time + avg_ee2_iter_time - avg_normal_iter_time
+            rebatching_threshold_ratio = overhead / avg_ee2_iter_time
             num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
 
         df = pd.DataFrame({
@@ -380,12 +399,16 @@ class BenchmarkRunner:
             "num_no_ee_iter": self.ee_iter_count[1],
             "tokens_per_iter": tokens_per_iter,
             "avg_normal_iter_time": avg_normal_iter_time,
-            "avg_ee_iter_time": avg_ee_iter_time,
-            "avg_deep_iter_time": avg_deep_iter_time,
+            "avg_ee1_iter_time": avg_ee1_iter_time,
+            "avg_ee2_iter_time": avg_ee2_iter_time,
+            "avg_flush1_iter_time": avg_flush1_iter_time,
+            "avg_flush2_iter_time": avg_flush2_iter_time,
             "total_iter_time": total_iter_time,
             "avg_normal_iter_num_output_tokens": avg_normal_iter_num_output_tokens,
-            "avg_ee_iter_num_output_tokens": avg_ee_iter_num_output_tokens,
-            "avg_deep_iter_num_output_tokens": avg_deep_iter_num_output_tokens,
+            "avg_ee1_iter_num_output_tokens": avg_ee1_iter_num_output_tokens,
+            "avg_ee2_iter_num_output_tokens": avg_ee2_iter_num_output_tokens,
+            "avg_flush1_iter_num_output_tokens": avg_flush1_iter_num_output_tokens,
+            "avg_flush2_iter_num_output_tokens": avg_flush2_iter_num_output_tokens,
             "ee_penalty_by_tokens": ee_penalty_by_tokens,
             "ee_penalty_by_iter": ee_penalty_by_iter,
             "ee_bert_penalty_by_tokens": ee_bert_penalty_by_tokens,
@@ -404,7 +427,7 @@ class BenchmarkRunner:
         csv_path.mkdir(parents=True, exist_ok=True)
 
         # numrequests_batchsize_layer_conf_policy_kvmethod.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}_age_{self._config.buffer_age_factor}.csv"
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer_1}_{self._config.shallow_exit_layer_2}_conf_{self._config.conf_threshold_1}_{self._config.conf_threshold_2}_{self._config.ee_policy}_{self._config.kv_method}_age_{self._config.buffer_age_factor}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 
@@ -413,8 +436,8 @@ class BenchmarkRunner:
         )
         logger.info(f"Replica {self._replica_id} processed {num_output_tokens} output tokens. Time taken: {end_time - start_time:.2f} seconds. Throughput: {output_throughput:.2f} tokens/sec. Exited rates(#tokens generated via ee vs. non-ee): {exited_rates}.")
         logger.info(f"Num EE iter: {self.ee_iter_count[0]}, Num non-EE iter: {self.ee_iter_count[1]}. Total iter: {sum(self.ee_iter_count)}. Tokens per iter: {tokens_per_iter:.2f}")
-        logger.info(f"Avg normal iter time: {avg_normal_iter_time}, Avg ee iter time: {avg_ee_iter_time}, Avg deep iter time: {avg_deep_iter_time}, Total iter time: {total_iter_time}")
-        logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee iter num output tokens: {avg_ee_iter_num_output_tokens}, Avg deep iter num output tokens: {avg_deep_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
+        logger.info(f"Avg normal iter time: {avg_normal_iter_time}, Avg ee1 iter time: {avg_ee1_iter_time}, Avg ee2 iter time: {avg_ee2_iter_time}, Avg flush1 iter time: {avg_flush1_iter_time}, Avg flush2 iter time: {avg_flush2_iter_time}, Total iter time: {total_iter_time}")
+        logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee1 iter num output tokens: {avg_ee1_iter_num_output_tokens}, Avg ee2 iter num output tokens: {avg_ee2_iter_num_output_tokens}, Avg flush1 iter num output tokens: {avg_flush1_iter_num_output_tokens}, Avg flush2 iter num output tokens: {avg_flush2_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
         logger.info(f"Overhead: {overhead}, Rebaching threshold ratio: {rebatching_threshold_ratio}, Num EE threshold: {num_ee_threshold}. [Measured in benchmark_runner. The one measured in llm_engine is actually used.]")
         logger.info(f"Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}. Avg conf_score non_ee: {avg_conf_score_non_ee}")
         logger.info(f"EE penalty by tokens: {ee_penalty_by_tokens}, EE penalty by iter: {ee_penalty_by_iter}")

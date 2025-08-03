@@ -59,13 +59,14 @@ class VLLMScheduler(BaseScheduler):
         # print(f"[VLLMScheduler._schedule] Start of iteration: {self._iteration_id}:")
         # print(f"[VLLMScheduler._schedule] running list: {self.running}")
         
-        if len(self.rebatching_buffer) > 0:
+        if len(self.rebatching_buffer_1) > 0 or len(self.rebatching_buffer_2) > 0:
             self.buffer_age += 1
 
-        age_adjusted_buffer_size = len(self.rebatching_buffer) * (1 + self.buffer_age * self.buffer_age_factor)
+        age_adjusted_buffer_size_1 = len(self.rebatching_buffer_1) * (1 + self.buffer_age * self.buffer_age_factor)
+        age_adjusted_buffer_size_2 = len(self.rebatching_buffer_2) * (1 + self.buffer_age * self.buffer_age_factor)
 
         # Need to run requests in the rebatching buffer first
-        if age_adjusted_buffer_size >= self.scheduler_config.max_num_seqs or len(self.rebatching_buffer) > len(self.waiting) or self.buffer_age > self.buffer_age_threshold:
+        if age_adjusted_buffer_size_1 >= self.scheduler_config.max_num_seqs or age_adjusted_buffer_size_2 >= self.scheduler_config.max_num_seqs or len(self.rebatching_buffer_1) >= len(self.waiting) or len(self.rebatching_buffer_2) >= len(self.waiting) or self.buffer_age > self.buffer_age_threshold:
             # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
             self.buffer_age = 0
             return SchedulerOutputs(id=self._iteration_id,
@@ -102,7 +103,7 @@ class VLLMScheduler(BaseScheduler):
             if len(self.running) + 1 > self.scheduler_config.max_num_seqs:
                 break
 
-            if len(self.rebatching_buffer) > 2 * self.scheduler_config.max_num_seqs + 1:
+            if len(self.rebatching_buffer_1) > 2 * self.scheduler_config.max_num_seqs + 1 or len(self.rebatching_buffer_2) > 2 * self.scheduler_config.max_num_seqs + 1:
                 break
 
             seq = self.waiting.pop(0)
@@ -184,40 +185,59 @@ class VLLMScheduler(BaseScheduler):
         )
     
 
-    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence]):
+    def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence], ee_from_layer: int, is_flush_1: bool, is_flush_2: bool):
         # 1. Handle the case where requests come out from the rebatching buffer.
         # Loop through outputs. If a request is in the rebatching buffer, and is outputted, then it is moved to the running list.
         # If this happens, we need to move all existing sequences in the running list to `waiting`
-        # print(f"[VLLMScheduler.on_rebatching] output_seqs: {output_seqs}. running list: {self.running}")
-        rebatching_buffer_flushed = False
+
         output_seq_ids = []
         for output_seq in output_seqs:
             output_seq_ids.append(output_seq.seq_id)
 
-            # print(f"[VLLMScheduler.on_rebatching] in output list: {output_seq.seq_id}")
 
-            if output_seq.seq_id in self.rebatching_buffer:
-                rebatching_buffer_flushed = True
-                break
-
-        if rebatching_buffer_flushed:
+        if is_flush_1:
 
             for output_seq in output_seqs:
                 assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
                 # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
                 self.running.insert(0, output_seq)
-                self.rebatching_buffer.remove(output_seq.seq_id)
+                self.rebatching_buffer_1.remove(output_seq.seq_id)
             return
+        
+        if is_flush_2:
+            for output_seq in output_seqs:
+                assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
+                # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
+                self.running.insert(0, output_seq)
+                self.rebatching_buffer_2.remove(output_seq.seq_id)
+            return
+        
+        if ee_from_layer != -1:
+            for input_seq_metadata in scheduled_seq_metadata_list:
+                if input_seq_metadata.seq.seq_id not in output_seq_ids:
+                    input_seq_metadata.seq.set_status(SequenceStatus.IN_BUFFER)
 
-        # 2. Handle the case where requests are scheduled, but not outputted. The missing requests are moved to the rebatching buffer.
-        # Loop through the scheduled list (input list): if a request is in the input list but not in the output list, then it is moved to the rebatching buffer.
-        for input_seq_metadata in scheduled_seq_metadata_list:
-            if input_seq_metadata.seq.seq_id not in output_seq_ids:
-                # This sequence is in the input but not in the output --> it is in the rebatching buffer
-                input_seq_metadata.seq.set_status(SequenceStatus.IN_BUFFER)
-                self.rebatching_buffer.append(input_seq_metadata.seq.seq_id)
-                # remove the sequence from the running list
-                if input_seq_metadata.seq in self.running:
-                    self.running.remove(input_seq_metadata.seq)
+                    if ee_from_layer == 1:
+                        self.rebatching_buffer_1.append(input_seq_metadata.seq.seq_id)
+                    elif ee_from_layer == 2:
+                        self.rebatching_buffer_2.append(input_seq_metadata.seq.seq_id)
+                    else:
+                        raise ValueError(f"ee_from_layer: {ee_from_layer} is not valid")
+                    
+                    if input_seq_metadata.seq in self.running:
+                        self.running.remove(input_seq_metadata.seq)
+                    
 
-                # print(f"[VLLMScheduler.on_rebatching] added to rebatching buffer: {input_seq_metadata.seq.seq_id}, status: {input_seq_metadata.seq.get_status()}!!!!!")
+
+        # # 2. Handle the case where requests are scheduled, but not outputted. The missing requests are moved to the rebatching buffer.
+        # # Loop through the scheduled list (input list): if a request is in the input list but not in the output list, then it is moved to the rebatching buffer.
+        # for input_seq_metadata in scheduled_seq_metadata_list:
+        #     if input_seq_metadata.seq.seq_id not in output_seq_ids:
+        #         # This sequence is in the input but not in the output --> it is in the rebatching buffer
+        #         input_seq_metadata.seq.set_status(SequenceStatus.IN_BUFFER)
+        #         self.rebatching_buffer.append(input_seq_metadata.seq.seq_id)
+        #         # remove the sequence from the running list
+        #         if input_seq_metadata.seq in self.running:
+        #             self.running.remove(input_seq_metadata.seq)
+
+

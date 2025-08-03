@@ -30,7 +30,7 @@ class vATTNCacheEngine(BaseCacheEngine):
         parallel_config: ParallelConfig,
         mem_alloc_backend: str,
     ) -> None:
-        self.max_batch_size = cache_config.max_batch_size * 2 + 1 # 1 batch and 1 buffer
+        self.max_batch_size = cache_config.max_batch_size * 3 + 1 # 1 batch and 1 buffer
         self.device = torch.empty(1).cuda().device if not in_wsl() else torch.device("cuda")
         self.device_idx = int(str(self.device).split(":")[-1])
         self.max_model_seq_len = model_config.max_model_len

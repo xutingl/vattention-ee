@@ -112,8 +112,10 @@ metrics_store:
   keep_individual_batch_metrics: false
 
 ee_policy: "off"
-shallow_exit_layer: 16
-conf_threshold: 0.8
+shallow_exit_layer_1: 16
+shallow_exit_layer_2: 32
+conf_threshold_1: 0.95
+conf_threshold_2: 0.8
 num_ee_threshold: -1
 early_exit_head_path: ""
 csv_path: "/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/"

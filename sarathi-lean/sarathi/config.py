@@ -66,8 +66,10 @@ class ModelConfig:
         max_model_len: Optional[int] = None,
         attention_backend: Optional[str] = None,
         ee_policy: str = "off",
-        shallow_exit_layer: Optional[int] = None,
-        conf_threshold: Optional[float] = None,
+        shallow_exit_layer_1: Optional[int] = None,
+        shallow_exit_layer_2: Optional[int] = None,
+        conf_threshold_1: Optional[float] = None,
+        conf_threshold_2: Optional[float] = None,
         max_num_seqs: Optional[int] = None, # max batch size
         early_exit_head_path: Optional[str] = None,
         num_ee_threshold: Optional[int] = None,
@@ -83,8 +85,10 @@ class ModelConfig:
         self.revision = revision
         self.attention_backend = attention_backend
         self.ee_policy = ee_policy
-        self.shallow_exit_layer = shallow_exit_layer
-        self.conf_threshold = conf_threshold
+        self.shallow_exit_layer_1 = shallow_exit_layer_1
+        self.shallow_exit_layer_2 = shallow_exit_layer_2
+        self.conf_threshold_1 = conf_threshold_1
+        self.conf_threshold_2 = conf_threshold_2
         self.max_num_seqs = max_num_seqs
         self.early_exit_head_path = early_exit_head_path
         self.num_ee_threshold = num_ee_threshold
@@ -94,8 +98,10 @@ class ModelConfig:
         self.hf_config.update(
             {
                 'ee_policy': ee_policy,
-                'shallow_exit_layer': shallow_exit_layer,
-                'conf_threshold': conf_threshold,
+                'shallow_exit_layer_1': shallow_exit_layer_1,
+                'shallow_exit_layer_2': shallow_exit_layer_2,
+                'conf_threshold_1': conf_threshold_1,
+                'conf_threshold_2': conf_threshold_2,
                 'max_num_seqs': max_num_seqs,
                 'early_exit_head_path': early_exit_head_path,
                 'num_ee_threshold': num_ee_threshold,

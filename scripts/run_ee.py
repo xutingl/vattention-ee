@@ -31,8 +31,10 @@ def main():
     num_requests = utils.args.num_requests
     qps_values = [utils.args.qps]
     max_batch_size = utils.args.max_batch_size
-    shallow_exit_layer = utils.args.shallow_exit_layer
-    conf_threshold = utils.args.conf_threshold
+    shallow_exit_layer_1 = utils.args.shallow_exit_layer_1
+    shallow_exit_layer_2 = utils.args.shallow_exit_layer_2
+    conf_threshold_1 = utils.args.conf_threshold_1
+    conf_threshold_2 = utils.args.conf_threshold_2
     ee_policy = utils.args.ee_policy
     early_exit_head_path = utils.args.early_exit_head_path
     csv_path = utils.args.csv_path
@@ -79,8 +81,10 @@ def main():
                         '--gpu_memory_utilization', f'{gpu_mem_util}',
                         # EE configs
                         '--ee_policy', f'{ee_policy}',
-                        '--shallow_exit_layer', f'{shallow_exit_layer}',
-                        '--conf_threshold', f'{conf_threshold}',
+                        '--shallow_exit_layer_1', f'{shallow_exit_layer_1}',
+                        '--shallow_exit_layer_2', f'{shallow_exit_layer_2}',
+                        '--conf_threshold_1', f'{conf_threshold_1}',
+                        '--conf_threshold_2', f'{conf_threshold_2}',
                         '--num_ee_threshold', f'{num_ee_threshold}',
                         '--early_exit_head_path', f'{early_exit_head_path}',
                         '--csv_path', f'{csv_path}',

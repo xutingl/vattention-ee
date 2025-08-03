@@ -21,3 +21,8 @@ nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_
 nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/average_nocopy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=average --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_4_batch_2_conf_06_layer_24_average_nocopy.txt
 
 nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/off_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=off --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_4_batch_2_off.txt
+
+
+
+# multi-exit
+python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=100 --shallow_exit_layer_1=16 --shallow_exit_layer_2=32 --conf_threshold_1=0.95 --conf_threshold_2=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_100_batch_4_multi.txt
