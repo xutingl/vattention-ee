@@ -473,10 +473,10 @@ class LlamaModel(nn.Module):
             elif ee_policy == "lazy":
                 need_skip = torch.all(mask)
             elif ee_policy == "average":
-                val = 0.0 if conf <= self.conf_threshold else 1.0
+                val = 0.0 if conf <= conf_threshold else 1.0
                 need_skip = torch.tensor(val, device=hidden_states.device).bool()
             elif ee_policy == "median":
-                need_skip = conf_median >= self.conf_threshold
+                need_skip = conf_median >= conf_threshold
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
         else:
@@ -677,9 +677,12 @@ class LlamaModel(nn.Module):
                 else:
                     lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
 
+                conf_threshold = self.conf_threshold_1 if i == self.shallow_exit_layer_1 else self.conf_threshold_2
+
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
+                    conf_threshold=conf_threshold,
                     ee_policy=self.ee_policy,
                     return_conf=True
                 )

@@ -353,7 +353,7 @@ class BenchmarkRunner:
         avg_flush2_iter_num_output_tokens = sum(self.flush2_iter_num_output_tokens) / max(1,flush2_iter_count)
         total_iter_num_output_tokens = sum(self.normal_iter_num_output_tokens) + sum(self.ee1_iter_num_output_tokens) + sum(self.ee2_iter_num_output_tokens) + sum(self.flush1_iter_num_output_tokens) + sum(self.flush2_iter_num_output_tokens)
 
-        ee_penalty_by_tokens = (1 - avg_conf_score_ee) / max(1, sum(self.ee_iter_num_output_tokens))
+        ee_penalty_by_tokens = (1 - avg_conf_score_ee) / max(1, sum(self.ee1_iter_num_output_tokens) + sum(self.ee2_iter_num_output_tokens))
         ee_penalty_by_iter = (1 - avg_conf_score_ee) / max(1, ee1_iter_count)
 
         # TBT: Time between tokens (inter token latency) = decoding iteration time
@@ -368,7 +368,7 @@ class BenchmarkRunner:
 
         baseline_bert_score = 0.8330790978670121 # For llama2-13b
         avg_bert_score = sum(bert_scores) / len(bert_scores)
-        ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
+        ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee1_iter_num_output_tokens) + sum(self.ee2_iter_num_output_tokens))
         ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee1_iter_count + ee2_iter_count)
 
         # Calculate overhead c and num_ee_threshold. This is not used in the model, jsut to check num_ee_threshold here is the same as what we get in llm_engine.
