@@ -347,7 +347,8 @@ class BenchmarkRunner:
         request_duration_p95 = np.percentile(request_duration_lst, 95)
         request_duration_p99 = np.percentile(request_duration_lst, 99)
 
-        baseline_bert_score = 0.8330790978670121 # For llama2-13b
+        # baseline_bert_score = 0.8330790978670121 # For llama2-13b
+        baseline_bert_score = 0.825637583732605 # For llama2-70b
         avg_bert_score = sum(bert_scores) / len(bert_scores)
         ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
         ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
@@ -404,7 +405,7 @@ class BenchmarkRunner:
         csv_path.mkdir(parents=True, exist_ok=True)
 
         # numrequests_batchsize_layer_conf_policy_kvmethod.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}_age_{self._config.buffer_age_factor}.csv"
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 
