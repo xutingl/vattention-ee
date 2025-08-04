@@ -377,7 +377,7 @@ class BenchmarkRunner:
         num_ee_threshold = 0
         if self._config.ee_policy == "rebatching":
             overhead = avg_ee1_iter_time + avg_ee2_iter_time - avg_normal_iter_time
-            rebatching_threshold_ratio = overhead / avg_ee2_iter_time
+            rebatching_threshold_ratio = overhead / (avg_ee2_iter_time + 10**-5)
             num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
 
         df = pd.DataFrame({

@@ -63,10 +63,10 @@ class VLLMScheduler(BaseScheduler):
             self.buffer_age += 1
 
         age_adjusted_buffer_size_1 = len(self.rebatching_buffer_1) * (1 + self.buffer_age * self.buffer_age_factor)
-        age_adjusted_buffer_size_2 = len(self.rebatching_buffer_2) * (1 + self.buffer_age * self.buffer_age_factor)
+        # age_adjusted_buffer_size_2 = len(self.rebatching_buffer_2) * (1 + self.buffer_age * self.buffer_age_factor)
 
         # Need to run requests in the rebatching buffer first
-        if age_adjusted_buffer_size_1 >= self.scheduler_config.max_num_seqs or age_adjusted_buffer_size_2 >= self.scheduler_config.max_num_seqs or (len(self.rebatching_buffer_1) >= len(self.waiting) and len(self.rebatching_buffer_1) > 0) or (len(self.rebatching_buffer_2) >= len(self.waiting) and len(self.rebatching_buffer_2) > 0) or self.buffer_age > self.buffer_age_threshold:
+        if age_adjusted_buffer_size_1 >= self.scheduler_config.max_num_seqs or (len(self.rebatching_buffer_1) >= len(self.waiting) and len(self.rebatching_buffer_1) > 0) or self.buffer_age > self.buffer_age_threshold:
             # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
             self.buffer_age = 0
             return SchedulerOutputs(id=self._iteration_id,
@@ -196,6 +196,7 @@ class VLLMScheduler(BaseScheduler):
 
         
         if is_flush_2:
+            raise NotImplementedError("Flush 2 is not supported for ramp 2.")
             for output_seq in output_seqs:
                 assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
                 # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
@@ -212,7 +213,7 @@ class VLLMScheduler(BaseScheduler):
                 self.rebatching_buffer_1.remove(output_seq.seq_id)
 
         
-        if ee_from_layer != -1:
+        if ee_from_layer == 1:
             for input_seq_metadata in scheduled_seq_metadata_list:
                 if input_seq_metadata.seq.seq_id not in output_seq_ids:
                     input_seq_metadata.seq.set_status(SequenceStatus.IN_BUFFER)
