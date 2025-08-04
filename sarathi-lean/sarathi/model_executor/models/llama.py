@@ -698,7 +698,7 @@ class LlamaModel(nn.Module):
                         if self.kv_method == "copy":
                             self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
                         elif self.kv_method == "postfill":
-                            normed_hidden_states = self.norm(hidden_states)
+
                             for idx, ee_req_id in enumerate(seq_ids_in_batch):
                                 seq_metadata = self.seq_metadata_map[ee_req_id]
                                 seq_metadata.seq.recompute_length += 1
@@ -782,8 +782,9 @@ class LlamaModel(nn.Module):
         incoming_batch_size = len(seq_ids_in_batch)
 
         # Store input hidden states for recomputing kv cache
-        for i, seq_id in enumerate(seq_ids_in_batch):
-            self.recompute_seq_id_to_input_hidden_states[seq_id] = hidden_states[i]
+        if self.kv_method == "postfill":
+            for i, seq_id in enumerate(seq_ids_in_batch):
+                self.recompute_seq_id_to_input_hidden_states[seq_id] = hidden_states[i]
 
 
         # 0. Flush: If we receive an empty batch, we process any leftover hidden states in the buffer. Scheduler will send a flush request if deep_buffer is full or starving.
