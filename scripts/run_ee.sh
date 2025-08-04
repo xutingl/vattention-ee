@@ -26,3 +26,5 @@ nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_
 
 # multi-exit
 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=100 --shallow_exit_layer_1=16 --shallow_exit_layer_2=32 --conf_threshold_1=0.95 --conf_threshold_2=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" > outputs_13b/req_100_batch_4_multi.txt
+
+python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=100 --shallow_exit_layer_1=40 --shallow_exit_layer_2=60 --conf_threshold_1=0.95 --conf_threshold_2=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_70b_multi/" --kv_method="copy" > outputs_70b_multi/req_100_batch_4_multi.txt
