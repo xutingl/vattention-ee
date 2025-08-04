@@ -295,6 +295,7 @@ class HiddenStatesBuffer():
         #start_time = time.perf_counter()
         num_hidden_states = hidden_states.size(0)
         slots = []
+        assert len(self.available_slots) >= num_hidden_states, f"Not enough slots in buffer. num_hidden_states: {num_hidden_states}, len(available_slots): {len(self.available_slots)}. hidden_states_map: {self.hidden_states_map}"
         for i in range(num_hidden_states):
             slot = self.available_slots.pop()
             slots.append(slot)
@@ -415,7 +416,7 @@ class LlamaModel(nn.Module):
         self.recompute_seq_id_to_positions = defaultdict(list) # seq_id -> a list of positions. This positions is the output of EE'ed layer and will be used for recomputing kv cache.
         self.recompute_seq_id_to_input_hidden_states = dict() # seq_id -> this request's input hidden states.
 
-        self.ramp_2_type = "lazy"
+        self.ramp_2_type = "rebatching"
     
     def softmax_confidence(
         self,
@@ -972,21 +973,100 @@ class LlamaModel(nn.Module):
 
                 if need_skip:
                     has_ee = True
+                    if not self.ramp_2_type == "rebatching":
+                        
+                        if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                                self.exited_rates[0] += hidden_states.size(0)
 
-                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        # Copy layer i-1's kv cache for the prev token to layer i - last layer.
+                        if self.kv_method == "copy":
+                            self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
+                        elif self.kv_method == "postfill":
+                            raise NotImplementedError("Postfill is not supported for ramp 2.")
+                        
+
+                        if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
                             self.exited_rates[0] += hidden_states.size(0)
+                        
+                        break
 
-                    # Copy layer i-1's kv cache for the prev token to layer i - last layer.
-                    if self.kv_method == "copy":
-                        self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
-                    elif self.kv_method == "postfill":
-                        raise NotImplementedError("Postfill is not supported for ramp 2.")
-                    
+                    else:
+                        rebatching_start_time = time.perf_counter()
 
-                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
-                        self.exited_rates[0] += hidden_states.size(0)
-                    
-                    break
+                        if torch.all(skip_mask):
+                            self.exited_rates[0] += len(seq_ids_in_batch)
+                            # 3.1 If all requests want to EE, no rebatching is done.
+
+                            if self.kv_method == "copy":
+                                self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
+                            elif self.kv_method == "postfill":
+                                for idx, ee_req_id in enumerate(seq_ids_in_batch):
+                                    seq_metadata = self.seq_metadata_map[ee_req_id]
+                                    seq_metadata.seq.recompute_length += 1
+
+                                    # Store the hidden states and positions for recomputing kv cache
+                                    self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
+                                    self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
+
+                        else:
+                            exited_req_indices = torch.where(skip_mask)[0]
+                            if self.kv_method == "copy":
+                                # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
+                                token_indices = positions[exited_req_indices]
+                                seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
+
+                                self.fill_missing_kvcache_with_copy(i-1, cache_engine, token_indices, exited_req_indices=exited_req_indices, seq_ids_to_copy=seq_ids_to_copy)
+
+                            self.exited_rates[0] += len(exited_req_indices)
+                            self.exited_rates[1] += (len(seq_ids_in_batch) - len(exited_req_indices))
+
+                            # print(f"[LlamaModel.forward] partial {seq_ids_in_batch}. exited rates: {self.exited_rates}")
+
+                            lm_logits = lm_logits[exited_req_indices]
+                            # assert lm_logits.size(0) == len(req_indices), f"lm_logits size: {lm_logits.size()}, req_indices size: {len(req_indices)}"
+
+
+                            req_idx_in_batch_to_buffer = []
+                            seq_ids_in_batch_to_buffer = []
+
+                            for req_idx, skip in enumerate(skip_mask):
+                                if skip:
+                                    pass
+                                    
+                                else:
+                                    # 3.2 Put requests that don't EE into `deep_buffer`.
+                                    req_idx_in_batch_to_buffer.append(req_idx)
+                                    seq_ids_in_batch_to_buffer.append(seq_ids_in_batch[req_idx])
+                                
+                            self.deep_buffer_2.add_hidden_states(hidden_states[req_idx_in_batch_to_buffer], seq_ids_in_batch_to_buffer, positions[req_idx_in_batch_to_buffer])
+
+
+                            # Keep requests EE
+                            hidden_states = hidden_states[skip_mask]
+                            seq_ids_in_batch = [seq_ids_in_batch[i] for i in range(len(seq_ids_in_batch)) if skip_mask[i]] #seq_ids_in_batch[skip_mask]
+                            positions = positions[skip_mask]
+                            # print(f"EE'ed seq_ids: {seq_ids_in_batch}")
+
+                            if self.kv_method == "postfill":
+                                for idx, ee_req_id in enumerate(seq_ids_in_batch):
+                                    seq_metadata = self.seq_metadata_map[ee_req_id]
+                                    seq_metadata.seq.recompute_length += 1
+
+                                    # Store the hidden states and positions for recomputing kv cache
+                                    self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
+                                    self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
+
+                            self.rebatching_time += time.perf_counter() - rebatching_start_time
+                        
+                        # EE from shallow_exit_layer_1
+                        if self.norm:
+                            hidden_states = self.norm(hidden_states)
+
+                        is_flush_1 = start_at_exit_layer_1
+                        
+                        # returns: hidden_states, seq_ids_in_batch, exited_rates, lm_logits, ee_from_layer (-1 for no ee), is_flush_1, is_flush_2, recompute_dict, conf, latency_only_ee_iter_time
+                        return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, 2, is_flush_1, False, recompute_dict, conf, None
+
 
                 else:
                     self.exited_rates[1] += len(seq_ids_in_batch)
@@ -999,6 +1079,7 @@ class LlamaModel(nn.Module):
         is_flush_1 = start_at_exit_layer_1
 
         if has_ee:
+            assert self.ramp_2_type != "rebatching"
             return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, 2, is_flush_1, False, recompute_dict, conf, None
         else:
             return hidden_states, seq_ids_in_batch, self.exited_rates, None, -1, is_flush_1, False, recompute_dict, None, None
