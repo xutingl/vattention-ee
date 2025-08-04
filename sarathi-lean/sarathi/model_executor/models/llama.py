@@ -849,19 +849,19 @@ class LlamaModel(nn.Module):
         conf = None
         has_ee = False
 
-        # Layer [0, shallow_exit_layer_1 - 1]
-        if not start_at_exit_layer_1:
-            for i in range(self.shallow_exit_layer_1):
-                layer = self.layers[i]
-                hidden_states = layer(positions, hidden_states, kv_caches[i])
-        
-            # Check shallow_exit_layer_1
-            if cache_engine and hidden_states.size(0) <= self.max_batch_size and not recompute_dict:
+        start_at_layer = self.shallow_exit_layer_1 if start_at_exit_layer_1 else 0
+
+        for i in range(start_at_layer, len(self.layers)):
+            layer = self.layers[i]
+
+            check_for_ee_at_ramp_1 = cache_engine and hidden_states.size(0) <= self.max_batch_size and not recompute_dict and start_at_layer == 0
+
+            if check_for_ee_at_ramp_1 and i == self.shallow_exit_layer_1:
                 if self.early_exit_head:
                     lm_logits = self.early_exit_head(self.norm(hidden_states))
                 else:
                     lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
-
+                
                 skip_mask, conf, need_skip = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
@@ -870,7 +870,7 @@ class LlamaModel(nn.Module):
                     return_conf=True,
                     rebatching_ee_factor=rebatching_ee_factor
                 )
-
+        
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
                     rebatching_start_time = time.perf_counter()
@@ -953,13 +953,9 @@ class LlamaModel(nn.Module):
                 else:
                     # print(f"[LlamaModel.forward] no ee {seq_ids_in_batch}. exited rates: {self.exited_rates}")
                     self.exited_rates[1] += len(seq_ids_in_batch)
-        
-        # Layer [shallow_exit_layer_1, last_layer]
-        for i in range(self.shallow_exit_layer_1, len(self.layers)):
-            layer = self.layers[i]
-
-            # Check shallow_exit_layer_2
-            if cache_engine and hidden_states.size(0) <= self.max_batch_size and not recompute_dict:
+            
+            check_for_ee_at_ramp_2 = cache_engine and hidden_states.size(0) <= self.max_batch_size and not recompute_dict
+            if check_for_ee_at_ramp_2 and i == self.shallow_exit_layer_2:
                 if self.early_exit_head:
                     lm_logits = self.early_exit_head(self.norm(hidden_states))
                 else:
@@ -976,101 +972,25 @@ class LlamaModel(nn.Module):
 
                 if need_skip:
                     has_ee = True
-                    if self.ramp_2_type == "rebatching":
-                        # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
-                        rebatching_start_time = time.perf_counter()
 
-
-                        if torch.all(skip_mask):
-
-                            self.exited_rates[0] += len(seq_ids_in_batch)
-                            # 3.1 If all requests want to EE, no rebatching is done.
-
-                            if self.kv_method == "copy":
-                                self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
-                            elif self.kv_method == "postfill":
-                                for idx, ee_req_id in enumerate(seq_ids_in_batch):
-                                    seq_metadata = self.seq_metadata_map[ee_req_id]
-                                    seq_metadata.seq.recompute_length += 1
-
-                                    # Store the hidden states and positions for recomputing kv cache
-                                    self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
-                                    self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
-                        else:
-                            exited_req_indices = torch.where(skip_mask)[0]
-                            if self.kv_method == "copy":
-                                # Need to copy the KV cache for the requests that EE i.e. skip_mask[i] is True.
-                                token_indices = positions[exited_req_indices]
-                                seq_ids_to_copy = [seq_ids_in_batch[i] for i in exited_req_indices]
-
-                                self.fill_missing_kvcache_with_copy(i-1, cache_engine, token_indices, exited_req_indices=exited_req_indices, seq_ids_to_copy=seq_ids_to_copy)
-
-                            self.exited_rates[0] += len(exited_req_indices)
-                            self.exited_rates[1] += (len(seq_ids_in_batch) - len(exited_req_indices))
-
-                            lm_logits = lm_logits[exited_req_indices]
-
-
-
-                            req_idx_in_batch_to_buffer = []
-                            seq_ids_in_batch_to_buffer = []
-
-                            for req_idx, skip in enumerate(skip_mask):
-                                if skip:
-                                    pass
-                                    
-                                else:
-                                    # 3.2 Put requests that don't EE into `deep_buffer`.
-                                    req_idx_in_batch_to_buffer.append(req_idx)
-                                    seq_ids_in_batch_to_buffer.append(seq_ids_in_batch[req_idx])
-                                
-                            self.deep_buffer_2.add_hidden_states(hidden_states[req_idx_in_batch_to_buffer], seq_ids_in_batch_to_buffer, positions[req_idx_in_batch_to_buffer])
-
-
-                            # Keep requests EE
-                            hidden_states = hidden_states[skip_mask]
-                            seq_ids_in_batch = [seq_ids_in_batch[i] for i in range(len(seq_ids_in_batch)) if skip_mask[i]] #seq_ids_in_batch[skip_mask]
-                            positions = positions[skip_mask]
-                            # print(f"EE'ed seq_ids: {seq_ids_in_batch}")
-
-                            if self.kv_method == "postfill":
-                                for idx, ee_req_id in enumerate(seq_ids_in_batch):
-                                    seq_metadata = self.seq_metadata_map[ee_req_id]
-                                    seq_metadata.seq.recompute_length += 1
-
-                                    # Store the hidden states and positions for recomputing kv cache
-                                    self.recompute_seq_id_to_hidden_states[ee_req_id].append(self.recompute_seq_id_to_input_hidden_states[ee_req_id])
-                                    self.recompute_seq_id_to_positions[ee_req_id].append(positions[idx])
-
-
-
-                            
-                        self.rebatching_time += time.perf_counter() - rebatching_start_time
-                        break
-                    else:
-                        # Ramp 2 is not rebatching.
-
-                        if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
                             self.exited_rates[0] += hidden_states.size(0)
 
-                        # Copy layer i-1's kv cache for the prev token to layer i - last layer.
-                        if self.kv_method == "copy":
-                            self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
-                        elif self.kv_method == "postfill":
-                            raise NotImplementedError("Postfill is not supported for ramp 2.")
-                        
-
-                        if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
-                            self.exited_rates[0] += hidden_states.size(0)
-                        
-                        break
-
-
-                else:
-                    # print(f"[LlamaModel.forward] no ee {seq_ids_in_batch}. exited rates: {self.exited_rates}")
-                    self.exited_rates[1] += len(seq_ids_in_batch)
+                    # Copy layer i-1's kv cache for the prev token to layer i - last layer.
+                    if self.kv_method == "copy":
+                        self.fill_missing_kvcache_with_copy(i-1, cache_engine, positions, exited_req_indices=None, seq_ids_to_copy=seq_ids_in_batch)
+                    elif self.kv_method == "postfill":
+                        raise NotImplementedError("Postfill is not supported for ramp 2.")
                     
 
+                    if hidden_states.size(0) <= self.max_batch_size: # Only count decoding requests
+                        self.exited_rates[0] += hidden_states.size(0)
+                    
+                    break
+
+                else:
+                    self.exited_rates[1] += len(seq_ids_in_batch)
+            
             hidden_states = layer(positions, hidden_states, kv_caches[i])
         
         if self.norm:
