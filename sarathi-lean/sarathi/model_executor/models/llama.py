@@ -917,7 +917,6 @@ class LlamaModel(nn.Module):
                         # print(f"EE'ed seq_ids: {seq_ids_in_batch}")
 
                         if self.kv_method == "postfill":
-                            normed_hidden_states = self.norm(hidden_states)
                             for idx, ee_req_id in enumerate(seq_ids_in_batch):
                                 seq_metadata = self.seq_metadata_map[ee_req_id]
                                 seq_metadata.seq.recompute_length += 1

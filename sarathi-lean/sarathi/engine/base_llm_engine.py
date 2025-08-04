@@ -455,7 +455,7 @@ class BaseLLMEngine:
        
         if self.rebatching:
             output_seqs = [self.seq_manager.seq_map[seq_id] for seq_id in output_seq_ids]
-            self.scheduler.on_rebatching(seq_metadata_list, output_seqs)
+            self.scheduler.on_rebatching(seq_metadata_list, output_seqs, is_ee, is_flush)
             seq_metadata_list = output_seq_metadata_list
             scheduler_outputs = updated_scheduler_outputs
         
