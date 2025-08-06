@@ -194,13 +194,14 @@ class VLLMScheduler(BaseScheduler):
         for output_seq in output_seqs:
             output_seq_ids.append(output_seq.seq_id)
 
-        if is_flush:
+        if is_flush or len(output_seqs) > len(scheduled_seq_metadata_list):
 
             for output_seq in output_seqs:
-                assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
-                # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
-                self.running.insert(0, output_seq)
-                self.rebatching_buffer.remove(output_seq.seq_id)
+                if output_seq.seq_id in self.rebatching_buffer:
+                    assert output_seq not in self.running, f"seq_id: {output_seq.seq_id}, status: {output_seq.get_status()}"
+                    # output_seq_metadata.seq.set_status(SequenceStatus.RUNNING) # meant to set the status of IN_BUFFER to RUNNING
+                    self.running.insert(0, output_seq)
+                    self.rebatching_buffer.remove(output_seq.seq_id)
             return
         
 
