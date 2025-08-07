@@ -458,7 +458,7 @@ class LlamaModel(nn.Module):
 
         num_ee = torch.sum(mask).item()
 
-        num_ee_threshold = self.get_adaptive_rebatching_threshold(hidden_states.size(0), rebatching_ee_factor)
+        num_ee_threshold = self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)
 
         # For latency-only mode: process individual EE just like rebatching; no num_ee_threshold needed.
         if ee_policy == "latency-only":
@@ -941,7 +941,7 @@ class LlamaModel(nn.Module):
                     self.exited_rates[1] += len(seq_ids_in_batch)
 
                     # If there are enough requests in the `deep_buffer`, we will add them to the current deep iteration i.e. concate them to current hidden_states.
-                    if len(self.deep_buffer) > self.get_adaptive_rebatching_threshold(hidden_states.size(0), rebatching_ee_factor):
+                    if len(self.deep_buffer) >= max(self.max_batch_size//2, self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)):
                         # Take hidden states from `deep_buffer`
                         deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer.take_hidden_states()
 
