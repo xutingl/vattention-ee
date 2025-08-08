@@ -227,7 +227,7 @@ class BenchmarkRunner:
                     print(f"[BenchmarkRunner._run] Output id {output.seq_id} Finished=====================================")
                     print(output.text)
                     print("=====================================")
-                    raw_string = fr"{output.text}"
+                    raw_string = fr"\"{output.text}\""
                     finished_seq_id_lst.append(output.seq_id)
                     finished_output.append(raw_string)
                     request_duration_lst.append(output.completion_time)
