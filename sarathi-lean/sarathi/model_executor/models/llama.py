@@ -834,7 +834,6 @@ class LlamaModel(nn.Module):
                 start_at_exit_layer_1 = True
 
             else:
-                #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 return None, None, self.exited_rates, None, -1, False,False, {}, None, None
 
         # 1. Process normal requests.
@@ -1070,6 +1069,16 @@ class LlamaModel(nn.Module):
 
                 else:
                     self.exited_rates[1] += len(seq_ids_in_batch)
+
+                    if len(self.deep_buffer_2) > 2:
+                        # Take hidden states from `deep_buffer`
+                        deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer_2.take_hidden_states()
+
+                        hidden_states = torch.cat([hidden_states, deep_buffer_hidden_states], dim=0)
+                        seq_ids_in_batch.extend(deep_buffer_seq_ids)
+                        positions = torch.cat([positions, deep_buffer_positions], dim=0)
+
+                        self.update_seqs_in_kvcache(seq_ids_in_batch, cache_engine)
             
             hidden_states = layer(positions, hidden_states, kv_caches[i])
         
