@@ -150,6 +150,10 @@ class BenchmarkRunner:
         self.prefill_times = []
         self.decode_times = []
 
+        # Total per sequence, per iteration
+        self.num_seq_would_ee_but_stay = 0 # Number of sequences that want to EE, but did not EE
+        self.num_seq_would_not_ee_but_ee = 0 # Number of sequences that do not want to EE, but EE'ed
+
     def _get_input_params(
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
@@ -214,9 +218,16 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill, latency_only_ee_iter_time = self._llm_engine.step()
+            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self._llm_engine.step()
 
             num_steps += 1
+
+            if is_ee:
+                assert num_seq_would_ee_but_stay == 0
+            else:
+                assert num_seq_would_not_ee_but_ee == 0
+            self.num_seq_would_ee_but_stay += num_seq_would_ee_but_stay
+            self.num_seq_would_not_ee_but_ee += num_seq_would_not_ee_but_ee
 
 
             for output in step_outputs:
@@ -365,6 +376,7 @@ class BenchmarkRunner:
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
             "output": finished_output,
+            "num_output_tokens": num_output_tokens,
             "time": end_time - start_time,
             "throughput": output_throughput,
             "rougeL": rougeL_scores,
@@ -398,6 +410,8 @@ class BenchmarkRunner:
             "request_duration_avg": request_duration_avg,
             "request_duration_p95": request_duration_p95,
             "request_duration_p99": request_duration_p99,
+            "num_seq_would_ee_but_stay": self.num_seq_would_ee_but_stay,
+            "num_seq_would_not_ee_but_ee": self.num_seq_would_not_ee_but_ee,
         })
         df = df.sort_values(by="seq_id")
 

@@ -445,7 +445,7 @@ class BaseLLMEngine:
         # print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
         # print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, is_ee, is_flush, latency_only_ee_iter_time = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, is_ee, is_flush, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
@@ -512,7 +512,7 @@ class BaseLLMEngine:
         # self.scheduler.block_manager.reset_free_blocks()
         # sampler_outputs, num_free_blocks = zip(*sampler_outputs)
         # self.scheduler.block_manager.set_free_blocks(min(num_free_blocks))
-        return request_outputs, exited_rates, conf, is_ee, is_flush, is_prefill, latency_only_ee_iter_time
+        return request_outputs, exited_rates, conf, is_ee, is_flush, is_prefill, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
 
     def _run_workers(
         self,
