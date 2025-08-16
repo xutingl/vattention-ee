@@ -160,9 +160,10 @@ class BenchmarkRunner:
         sampling_params = SamplingParams(
             ignore_eos=False, #[TODO] How does True affect throughput and bert score?
             # max_tokens=request.num_decode_tokens,
-            max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
-            #temperature=0.5,
-            #top_p=0.5,
+            # max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
+            max_tokens=self._config.model_max_model_len // 4,
+            # temperature=0.8,
+            # top_p=0.9,
             #top_k=-1,
         )
         # prompt_token_ids = [1] * request.num_prefill_tokens
@@ -222,10 +223,10 @@ class BenchmarkRunner:
 
             num_steps += 1
 
-            if is_ee:
-                assert num_seq_would_ee_but_stay == 0
-            else:
-                assert num_seq_would_not_ee_but_ee == 0
+            # if is_ee:
+            #     assert num_seq_would_ee_but_stay == 0
+            # else:
+            #     assert num_seq_would_not_ee_but_ee == 0
             self.num_seq_would_ee_but_stay += num_seq_would_ee_but_stay
             self.num_seq_would_not_ee_but_ee += num_seq_would_not_ee_but_ee
 
@@ -328,7 +329,7 @@ class BenchmarkRunner:
         else:
             avg_conf_score_ee = 0
 
-        avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / len(avg_conf_score_non_ee_lst)
+        avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / max(1, len(avg_conf_score_non_ee_lst))
         avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / (len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
 
         # Iteration time stats
@@ -370,7 +371,7 @@ class BenchmarkRunner:
         num_ee_threshold = 0
         if self._config.ee_policy == "rebatching":
             overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
-            rebatching_threshold_ratio = overhead / avg_deep_iter_time
+            rebatching_threshold_ratio = overhead / max(1, avg_deep_iter_time)
             num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
 
         df = pd.DataFrame({

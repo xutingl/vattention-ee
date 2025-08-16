@@ -276,7 +276,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -287,12 +287,12 @@ class HiddenStatesBuffer():
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
         self.dtype = torch.bfloat16
-        self.time_spent_adding = 0
-        self.time_spent_taking = 0
+        self.time_spent_adding = []
+        self.time_spent_taking = []
     
         
     def add_hidden_states(self, hidden_states: torch.Tensor, req_ids: List[int], positions: torch.Tensor) -> None:
-        #start_time = time.perf_counter()
+        start_time = time.perf_counter()
         num_hidden_states = hidden_states.size(0)
         slots = []
         for i in range(num_hidden_states):
@@ -302,7 +302,7 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        #self.time_spent_adding += time.perf_counter() - start_time
+        self.time_spent_adding.append(time.perf_counter() - start_time)
 
         
             
@@ -316,7 +316,7 @@ class HiddenStatesBuffer():
         output_positions: Tensor. positions corresponding to the hidden states. <num>
     """
     def take_hidden_states(self, num: int=-1) -> Tuple[torch.Tensor, List[int], torch.Tensor]: 
-        #start_time = time.perf_counter()
+        start_time = time.perf_counter()
         if num == -1:
             num = self.batch_size
         # assert num <= len(self.hidden_states_map), f"Not enough hidden states in buffer. num: {num}, len(hidden_states_map): {len(self.hidden_states_map)}"
@@ -335,7 +335,7 @@ class HiddenStatesBuffer():
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
 
-        #self.time_spent_taking += time.perf_counter() - start_time
+        self.time_spent_taking.append(time.perf_counter() - start_time)
         return output_hidden_states, output_req_ids, output_positions
 
     def __len__(self):
@@ -396,7 +396,9 @@ class LlamaModel(nn.Module):
         self.conf_sum = 0.0
         self.exited_cnt = 0
 
-        self.update_kvcache_time_cnt = 0
+        self.update_kvcache_time_lst = []
+        self.ee_overhead_time_lst = []
+        self.fill_kvcache_time_lst = []
 
 
 
@@ -588,7 +590,7 @@ class LlamaModel(nn.Module):
         seq_ids_in_batch: List[int],
         cache_engine: vATTNCacheEngine,
     ) -> None:  
-        #start_time = time.perf_counter()
+        start_time = time.perf_counter()
         # assert self.ee_policy == "rebatching", "update_seqs_in_kvcache is only used in rebatching mode."
         # updated_seq_metadata_list = [self.seq_metadata_map[seq_id] for seq_id in seq_ids_in_batch] 
         updated_seq_metadata_list = []
@@ -599,10 +601,10 @@ class LlamaModel(nn.Module):
         cache_engine.step(updated_seq_metadata_list) # Originally in base_worker
         get_attention_wrapper().begin_forward(updated_seq_metadata_list) # Originally in model_runner
 
-        #self.update_kvcache_time_cnt += time.perf_counter() - start_time
+        self.update_kvcache_time_lst.append(time.perf_counter() - start_time)
     
     def fill_missing_kvcache_with_copy(self, exited_layer: int, cache_engine: vATTNCacheEngine, token_indices: torch.Tensor, exited_req_indices: Optional[torch.Tensor] = None, seq_ids_to_copy: Optional[List[int]] = None):
-
+        start_time = time.perf_counter()
         # Copy method 1
         # seq_ids_to_copy = seq_ids_in_batch
         # for l in range(exited_layer, len(self.layers)):
@@ -614,6 +616,8 @@ class LlamaModel(nn.Module):
 
         # Copy method 3
         # cache_engine.copy_kv_cache(exited_layer, seq_ids_to_copy, token_indices)
+
+        self.fill_kvcache_time_lst.append(time.perf_counter() - start_time)
 
 
 
@@ -777,6 +781,16 @@ class LlamaModel(nn.Module):
         if self.ee_policy != "rebatching" or hidden_states.size(0) > self.prefill_batch_size_limit: # Rebatching disabled
             return self.forward_without_rebatching(hidden_states, positions, kv_caches, lm_head, cache_engine, seq_ids_in_batch, seq_metadata_list=seq_metadata_list)
         
+        # Print time spent in each function
+        print(f"[LlamaModel.forward] time spent in each function:")
+        print(f"time adding hidden states: {sum(self.deep_buffer.time_spent_adding) / max(len(self.deep_buffer.time_spent_adding), 1)}, length: {len(self.deep_buffer.time_spent_adding)}")
+        print(f"time taking hidden states: {sum(self.deep_buffer.time_spent_taking) / max(len(self.deep_buffer.time_spent_taking), 1)}, length: {len(self.deep_buffer.time_spent_taking)}")
+        print(f"time updating kvcache: {sum(self.update_kvcache_time_lst) / max(len(self.update_kvcache_time_lst), 1)}, length: {len(self.update_kvcache_time_lst)}")
+        print(f"time EE overhead: {sum(self.ee_overhead_time_lst) / max(len(self.ee_overhead_time_lst), 1)}, length: {len(self.ee_overhead_time_lst)}")
+        print(f"time fill kvcache: {sum(self.fill_kvcache_time_lst) / max(len(self.fill_kvcache_time_lst), 1)}, length: {len(self.fill_kvcache_time_lst)}")
+        print(f"================================================")
+
+        
 
         # Rebatching enabled
 
@@ -838,7 +852,7 @@ class LlamaModel(nn.Module):
 
         conf = None
         has_ee = False
-        has_flush_buffer = False
+        num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = 0, 0
 
         for i in range(len(self.layers)):
             layer = self.layers[i]
@@ -848,6 +862,7 @@ class LlamaModel(nn.Module):
                 else:
                     lm_logits = _get_logits(self.norm(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
 
+                ee_check_start_time = time.perf_counter()
                 skip_mask, conf, need_skip, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self.get_skip_mask(
                     logits=lm_logits,
                     hidden_states=hidden_states,
@@ -855,6 +870,7 @@ class LlamaModel(nn.Module):
                     return_conf=True,
                     rebatching_ee_factor=rebatching_ee_factor
                 )
+                self.ee_overhead_time_lst.append(time.perf_counter() - ee_check_start_time)
 
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)
@@ -947,6 +963,7 @@ class LlamaModel(nn.Module):
 
                     # If there are enough requests in the `deep_buffer`, we will add them to the current deep iteration i.e. concate them to current hidden_states.
                     if len(self.deep_buffer) >= max(self.max_batch_size//2, self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)):
+                    # if len(self.deep_buffer) >= 6:
                         # Take hidden states from `deep_buffer`
                         deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer.take_hidden_states()
 
