@@ -233,6 +233,9 @@ class BenchmarkRunner:
             self.num_seq_would_ee_but_stay += num_seq_would_ee_but_stay
             self.num_seq_would_not_ee_but_ee += num_seq_would_not_ee_but_ee
 
+            if isinstance(conf_lst, float):
+                conf_lst = [conf_lst]
+
             if is_ee:
                 self.ee_conf_lst.extend(conf_lst)
             else:
