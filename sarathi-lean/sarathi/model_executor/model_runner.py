@@ -258,7 +258,7 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self.model(
+                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
@@ -284,7 +284,7 @@ class ModelRunner:
         # print(f"[ModelRunner] output length: {len(output)}")
         with self._sampler_e2e_timer:
             if self.sampler is not None:
-                output, conf_score = self.sampler(output, seq_metadata_list, lm_logits, conf)
+                output, conf_score, conf_lst = self.sampler(output, seq_metadata_list, lm_logits, conf, conf_lst)
 
         # for seq_metadata in seq_metadata_list:
         #     if seq_metadata.seq.seq_id == 1:
@@ -295,4 +295,4 @@ class ModelRunner:
 
         is_ee = lm_logits is not None
 
-        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
+        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, conf_lst, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee

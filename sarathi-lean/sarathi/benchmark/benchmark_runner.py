@@ -154,15 +154,19 @@ class BenchmarkRunner:
         self.num_seq_would_ee_but_stay = 0 # Number of sequences that want to EE, but did not EE
         self.num_seq_would_not_ee_but_ee = 0 # Number of sequences that do not want to EE, but EE'ed
 
+        self.ee_conf_lst = []
+        self.non_ee_conf_lst = []
+
     def _get_input_params(
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
         sampling_params = SamplingParams(
             ignore_eos=False, #[TODO] How does True affect throughput and bert score?
             # max_tokens=request.num_decode_tokens,
-            max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
-            #temperature=0.5,
-            #top_p=0.5,
+            # max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
+            max_tokens=self._config.model_max_model_len // 4,
+            # temperature=0.8,
+            # top_p=0.9,
             #top_k=-1,
         )
         # prompt_token_ids = [1] * request.num_prefill_tokens
@@ -218,16 +222,21 @@ class BenchmarkRunner:
                 break
             
             #print(f"[BenchmarkRunner]step {num_steps} started")
-            step_outputs, exited_rates, conf_score, is_ee, is_flush, is_prefill, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self._llm_engine.step()
+            step_outputs, exited_rates, conf_score, conf_lst, is_ee, is_flush, is_prefill, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self._llm_engine.step()
 
             num_steps += 1
 
-            if is_ee:
-                assert num_seq_would_ee_but_stay == 0
-            else:
-                assert num_seq_would_not_ee_but_ee == 0
+            # if is_ee:
+            #     assert num_seq_would_ee_but_stay == 0
+            # else:
+            #     assert num_seq_would_not_ee_but_ee == 0
             self.num_seq_would_ee_but_stay += num_seq_would_ee_but_stay
             self.num_seq_would_not_ee_but_ee += num_seq_would_not_ee_but_ee
+
+            if is_ee:
+                self.ee_conf_lst.extend(conf_lst)
+            else:
+                self.non_ee_conf_lst.extend(conf_lst)
 
 
             for output in step_outputs:
@@ -328,7 +337,7 @@ class BenchmarkRunner:
         else:
             avg_conf_score_ee = 0
 
-        avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / len(avg_conf_score_non_ee_lst)
+        avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / max(1, len(avg_conf_score_non_ee_lst))
         avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / (len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
 
         # Iteration time stats
@@ -370,8 +379,30 @@ class BenchmarkRunner:
         num_ee_threshold = 0
         if self._config.ee_policy == "rebatching":
             overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
-            rebatching_threshold_ratio = overhead / avg_deep_iter_time
+            rebatching_threshold_ratio = overhead / max(1, avg_deep_iter_time)
             num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
+
+        all_conf_lst = self.ee_conf_lst + self.non_ee_conf_lst
+
+        median_conf_score_ee = np.median(self.ee_conf_lst)
+        median_conf_score_non_ee = np.median(self.non_ee_conf_lst)
+        median_conf_score = np.median(all_conf_lst)
+
+        p99_conf_score_ee = np.percentile(self.ee_conf_lst, 1)
+        p99_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 1)
+        p99_conf_score = np.percentile(all_conf_lst, 1)
+
+        p95_conf_score_ee = np.percentile(self.ee_conf_lst, 5)
+        p95_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 5)
+        p95_conf_score = np.percentile(all_conf_lst, 5)
+
+        p90_conf_score_ee = np.percentile(self.ee_conf_lst, 10)
+        p90_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 10)
+        p90_conf_score = np.percentile(all_conf_lst, 10)
+
+        mean_conf_score_ee = sum(self.ee_conf_lst) / max(1, len(self.ee_conf_lst))
+        mean_conf_score_non_ee = sum(self.non_ee_conf_lst) / max(1, len(self.non_ee_conf_lst))
+        mean_conf_score = sum(all_conf_lst) / max(1, len(all_conf_lst))
 
         df = pd.DataFrame({
             "seq_id": finished_seq_id_lst,
@@ -389,6 +420,21 @@ class BenchmarkRunner:
             "avg_conf_score": avg_conf_score,
             "avg_conf_score_ee": avg_conf_score_ee,
             "avg_conf_score_non_ee": avg_conf_score_non_ee,
+            "median_conf_score": median_conf_score,
+            "median_conf_score_ee": median_conf_score_ee,
+            "median_conf_score_non_ee": median_conf_score_non_ee,
+            "p99_conf_score": p99_conf_score,
+            "p99_conf_score_ee": p99_conf_score_ee,
+            "p99_conf_score_non_ee": p99_conf_score_non_ee,
+            "p95_conf_score": p95_conf_score,
+            "p95_conf_score_ee": p95_conf_score_ee,
+            "p95_conf_score_non_ee": p95_conf_score_non_ee,
+            "p90_conf_score": p90_conf_score,
+            "p90_conf_score_ee": p90_conf_score_ee,
+            "p90_conf_score_non_ee": p90_conf_score_non_ee,
+            "mean_conf_score": mean_conf_score,
+            "mean_conf_score_ee": mean_conf_score_ee,
+            "mean_conf_score_non_ee": mean_conf_score_non_ee,
             "num_ee_iter": self.ee_iter_count[0],
             "num_no_ee_iter": self.ee_iter_count[1],
             "tokens_per_iter": tokens_per_iter,
@@ -432,6 +478,9 @@ class BenchmarkRunner:
         logger.info(f"Avg normal iter num output tokens: {avg_normal_iter_num_output_tokens}, Avg ee iter num output tokens: {avg_ee_iter_num_output_tokens}, Avg deep iter num output tokens: {avg_deep_iter_num_output_tokens}, Total iter num output tokens: {total_iter_num_output_tokens}")
         logger.info(f"Overhead: {overhead}, Rebaching threshold ratio: {rebatching_threshold_ratio}, Num EE threshold: {num_ee_threshold}. [Measured in benchmark_runner. The one measured in llm_engine is actually used.]")
         logger.info(f"Avg conf_score: {avg_conf_score}. Avg conf_score ee: {avg_conf_score_ee}. Avg conf_score non_ee: {avg_conf_score_non_ee}")
+        logger.info(f"Median conf_score: {median_conf_score}. Median conf_score ee: {median_conf_score_ee}. Median conf_score non_ee: {median_conf_score_non_ee}")
+        logger.info(f"P99 conf_score: {p99_conf_score}. P99 conf_score ee: {p99_conf_score_ee}. P99 conf_score non_ee: {p99_conf_score_non_ee}")
+        logger.info(f"Mean conf_score: {mean_conf_score}. Mean conf_score ee: {mean_conf_score_ee}. Mean conf_score non_ee: {mean_conf_score_non_ee}")
         logger.info(f"EE penalty by tokens: {ee_penalty_by_tokens}, EE penalty by iter: {ee_penalty_by_iter}")
         logger.info(f"EE BERT penalty by tokens: {ee_bert_penalty_by_tokens}, EE BERT penalty by iter: {ee_bert_penalty_by_iter}")
         logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
@@ -439,6 +488,7 @@ class BenchmarkRunner:
         logger.info(f"Prefill time (measured in benchmark_runner): {sum(self.prefill_times)}, Decode time (measured in benchmark_runner): {sum(self.decode_times)}")
         logger.info(f"TBT avg: {tbt_avg}, TBT p95: {tbt_p95}, TBT p99: {tbt_p99}")
         logger.info(f"Request duration avg: {request_duration_avg}, Request duration p95: {request_duration_p95}, Request duration p99: {request_duration_p99}")
+        logger.info(f"Num seq would ee but stay: {self.num_seq_would_ee_but_stay}, Num seq would not ee but ee: {self.num_seq_would_not_ee_but_ee}")
 
 
     def _add_requests(self) -> None:

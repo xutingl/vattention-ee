@@ -45,6 +45,7 @@ class Sampler(nn.Module):
         seq_metadata_list: List[SequenceMetadata],
         lm_logits: Optional[torch.Tensor] = None,
         conf: Optional[torch.Tensor] = None,
+        conf_lst: Optional[List[float]] = None,
     ) -> SamplerOutputs:
         if lm_logits is not None:
             logits = lm_logits
@@ -61,6 +62,10 @@ class Sampler(nn.Module):
             top_2 = torch.topk(probs, dim=-1, k=2)[0]
 
             conf = (top_2[..., 0] - top_2[..., 1]).squeeze()
+            assert conf_lst is None
+            conf_lst = conf.tolist()
+            if isinstance(conf_lst, float):
+                conf_lst = [conf_lst]
             conf = conf.mean().item()
 
 
@@ -91,7 +96,7 @@ class Sampler(nn.Module):
         # entropy = -torch.sum(probs * logprobs, dim=-1).mean().item()
 
         # Sample the next tokens.
-        return _sample(probs, logprobs, seq_metadata_list), conf
+        return _sample(probs, logprobs, seq_metadata_list), conf, conf_lst
 
 
 def _get_logits(
