@@ -391,15 +391,25 @@ class BenchmarkRunner:
         median_conf_score_non_ee = np.median(self.non_ee_conf_lst)
         median_conf_score = np.median(all_conf_lst)
 
-        p99_conf_score_ee = np.percentile(self.ee_conf_lst, 1)
+        if len(self.ee_conf_lst) > 0:
+            p99_conf_score_ee = np.percentile(self.ee_conf_lst, 1)
+        else:
+            p99_conf_score_ee = 0
         p99_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 1)
         p99_conf_score = np.percentile(all_conf_lst, 1)
+            
 
-        p95_conf_score_ee = np.percentile(self.ee_conf_lst, 5)
+        if len(self.ee_conf_lst) > 0:
+            p95_conf_score_ee = np.percentile(self.ee_conf_lst, 5)
+        else:
+            p95_conf_score_ee = 0
         p95_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 5)
         p95_conf_score = np.percentile(all_conf_lst, 5)
 
-        p90_conf_score_ee = np.percentile(self.ee_conf_lst, 10)
+        if len(self.ee_conf_lst) > 0:
+            p90_conf_score_ee = np.percentile(self.ee_conf_lst, 10)
+        else:
+            p90_conf_score_ee = 0
         p90_conf_score_non_ee = np.percentile(self.non_ee_conf_lst, 10)
         p90_conf_score = np.percentile(all_conf_lst, 10)
 
