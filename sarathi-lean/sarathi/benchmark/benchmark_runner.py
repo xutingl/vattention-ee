@@ -327,9 +327,12 @@ class BenchmarkRunner:
             # Compute rougeL fmeasure
             rougeL = scorer.score(reference, output)['rougeL'].fmeasure
             rougeL_scores.append(rougeL)
-            # Compute bert_score F1
-            P, R, F1 = bert_score.score([output], [reference], lang='en')
-            bert_scores.append(F1[0].item())
+
+
+        # Compute bert_score F1
+
+        P, R, F1 = bert_score.score(finished_output, reference_summaries, lang='en')
+        bert_scores.extend(F1.tolist())
 
         output_throughput = num_output_tokens / (end_time - start_time)
 
