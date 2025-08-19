@@ -1,0 +1,18 @@
+2025-08-18 22:19:42,104 INFO Replica 0 exiting after processing 500 (21164 iterations), Total time taken: 1096.86 seconds
+2025-08-18 22:19:42,104 INFO Replica 0 processed 82444 output tokens. Time taken: 1096.86 seconds. Throughput: 75.16 tokens/sec. Exited rates(#tokens generated via ee vs. non-ee): [6231, 76214].
+2025-08-18 22:19:42,105 INFO Num EE iter: 1561, Num non-EE iter: 19112. Total iter: 20673. Tokens per iter: 3.99
+2025-08-18 22:19:42,105 INFO Avg normal iter time: 0.0519574103632715, Avg ee iter time: 0.045679455232841705, Avg deep iter time: 0.0, Total iter time: 1064.3156564813107
+2025-08-18 22:19:42,105 INFO Avg normal iter num output tokens: 3.987704060276266, Avg ee iter num output tokens: 3.99167200512492, Avg deep iter num output tokens: 0.0, Total iter num output tokens: 82444
+2025-08-18 22:19:42,106 INFO Overhead: 0, Rebaching threshold ratio: 0, Num EE threshold: 0. [Measured in benchmark_runner. The one measured in llm_engine is actually used.]
+2025-08-18 22:19:42,106 INFO Avg conf_score: 0.5763335250472933. Avg conf_score ee: 0.8337910644218449. Avg conf_score non_ee: 0.5553053114137816
+2025-08-18 22:19:42,106 INFO Median conf_score: 0.6590574979782104. Median conf_score ee: 0.9697265625. Median conf_score non_ee: 0.6014895439147949
+2025-08-18 22:19:42,107 INFO P99 conf_score: 0.0019157195836305618. P99 conf_score ee: 0.00586395263671875. P99 conf_score non_ee: 0.0018097728490829468
+2025-08-18 22:19:42,107 INFO Mean conf_score: 0.5767030243451942. Mean conf_score ee: 0.8339596498722327. Mean conf_score non_ee: 0.5558073999574245
+2025-08-18 22:19:42,108 INFO EE penalty by tokens: 2.667452023401622e-05, EE penalty by iter: 0.00010647593566826078
+2025-08-18 22:19:42,108 INFO EE BERT penalty by tokens: 2.1317085127753242e-06, EE BERT penalty by iter: 8.509081193531739e-06
+2025-08-18 22:19:42,108 INFO RougeL: 0.09730719702145053, Bert_score: 0.8123549079895019
+2025-08-18 22:19:42,109 INFO Prefill time: 31.544926745817065, Decode time: 1023.5814630929381, TPOT: 0.01241547551177694
+2025-08-18 22:19:42,109 INFO Prefill time (measured in benchmark_runner): 32.478365862742066, Decode time (measured in benchmark_runner): 1064.3156564813107
+2025-08-18 22:19:42,110 INFO TBT avg: 0.051483367507440175, TBT p95: 0.05971594266593456, TBT p99: 0.06461283758282661
+2025-08-18 22:19:42,110 INFO Request duration avg: 8.667066960707308, Request duration p95: 14.463928863126785, Request duration p99: 14.678417346142233
+2025-08-18 22:19:42,111 INFO Num seq would ee but stay: 19109, Num seq would not ee but ee: 1422
