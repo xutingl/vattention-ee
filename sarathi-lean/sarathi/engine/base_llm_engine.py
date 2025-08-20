@@ -428,7 +428,7 @@ class BaseLLMEngine:
         self.scheduler.block_manager.set_free_blocks(min(outputs))
         start_time = time.perf_counter()
         with self._scheduler_timer:
-            scheduler_outputs = self.scheduler.schedule()
+            scheduler_outputs, priority_reqs = self.scheduler.schedule()
         if not self.rebatching and scheduler_outputs.is_empty(): # For rebatching, we want to run workers even if there are no outputs, because there could be hidden states in the buffer.
             return []
 
@@ -450,7 +450,8 @@ class BaseLLMEngine:
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
             seq_ids_in_batch=seq_ids_in_batch,
-            rebatching_ee_factor=self.rebatching_ee_factor
+            rebatching_ee_factor=self.rebatching_ee_factor,
+            priority_reqs=priority_reqs
         )
        
         if self.rebatching:

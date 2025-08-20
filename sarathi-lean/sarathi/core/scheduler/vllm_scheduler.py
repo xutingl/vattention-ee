@@ -33,7 +33,13 @@ class VLLMScheduler(BaseScheduler):
 
         self.buffer_age = 0
         self.buffer_age_threshold = 100
-        self.buffer_age_factor = scheduler_config.buffer_age_factor
+        # self.buffer_age_factor = scheduler_config.buffer_age_factor
+
+        # self.request_age_threshold = 70
+
+        self.buffer_age_factor = 0
+
+        self.request_age_threshold = scheduler_config.buffer_age_factor
 
     def get_block_space_manager_class(self):
         return vAttentionBlockSpaceManager if is_vattention_backend() else VLLMBlockSpaceManager 
@@ -41,6 +47,11 @@ class VLLMScheduler(BaseScheduler):
     def _schedule(self) -> SchedulerOutputs:
         # Fix the current time.
         now = time.monotonic()
+
+        priority_reqs = []
+        for seq_id in self.request_age_map:
+            if self.request_age_map[seq_id] > self.request_age_threshold:
+                priority_reqs.append(seq_id)
 
         ignored_seq_ids: List[int] = []
         preempted_seq_ids: List[int] = []
@@ -71,7 +82,7 @@ class VLLMScheduler(BaseScheduler):
             return SchedulerOutputs(id=self._iteration_id,
                                     ignored_seq_ids=[],
                                     preempted_seq_ids=[],
-                                    scheduled_seq_metadata_list=[])
+                                    scheduled_seq_metadata_list=[]), priority_reqs
 
 
        
@@ -112,6 +123,7 @@ class VLLMScheduler(BaseScheduler):
                 SequenceScheduleMetadata.from_sequence(seq)
             )
             self.running.append(seq)
+            self.request_age_map[seq.seq_id] = 0
 
         if scheduled_seq_metadata_list or ignored_seq_ids:
             # print(f"[VLLMScheduler._schedule] returning scheduled list: {[metadata.seq_id for metadata in scheduled_seq_metadata_list]}")
@@ -120,7 +132,7 @@ class VLLMScheduler(BaseScheduler):
                 ignored_seq_ids=ignored_seq_ids,
                 preempted_seq_ids=[],
                 scheduled_seq_metadata_list=scheduled_seq_metadata_list,
-            )
+            ), priority_reqs
 
         # NOTE(woosuk): Preemption happens only when there is no available slot
         # to keep all the sequence groups in the RUNNING state.
@@ -181,7 +193,7 @@ class VLLMScheduler(BaseScheduler):
             ignored_seq_ids=[],
             preempted_seq_ids=preempted_seq_ids,
             scheduled_seq_metadata_list=scheduled_seq_metadata_list,
-        )
+        ), priority_reqs
     
 
     def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence], is_ee: bool, is_flush: bool):

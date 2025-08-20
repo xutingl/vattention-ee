@@ -53,6 +53,8 @@ class BaseScheduler(ABC):
         # Sequence groups in the EE or start buffer. Needed for rebatching.
         self.rebatching_buffer: List[Sequence] = []
 
+        self.request_age_map = {} # seq_id -> age
+
     def set_block_manager(self, model_config):
         attn_cfg = model_config.attention_backend
         self.attention_backend = attn_cfg
@@ -100,14 +102,14 @@ class BaseScheduler(ABC):
                 ignored_seq_ids=[],
                 preempted_seq_ids=[],
                 scheduled_seq_metadata_list=[],
-            )
+            ), []
 
-        scheduler_outputs = self._schedule()
+        scheduler_outputs, priority_reqs = self._schedule()
 
         if not scheduler_outputs.is_empty():
             self.num_running_batches += 1
 
-        return scheduler_outputs
+        return scheduler_outputs, priority_reqs
 
     def remove_finished_seqs(self) -> None:
         self.running = [seq for seq in self.running if not seq.is_finished() and not seq.is_in_buffer()]
@@ -116,11 +118,16 @@ class BaseScheduler(ABC):
         for seq in self.running:
             if seq.is_finished():
                 self._free_seq(seq)
+                self.request_age_map.pop(seq.seq_id)
 
     def on_step_completed(self) -> None:
         self.free_finished_seqs()
         self.remove_finished_seqs()
         self.num_running_batches -= 1
+
+        # Increase all request ages by 1
+        for seq_id in self.request_age_map:
+            self.request_age_map[seq_id] += 1
 
     def _allocate(self, seq: Sequence) -> None:
         self.block_manager.allocate(seq)

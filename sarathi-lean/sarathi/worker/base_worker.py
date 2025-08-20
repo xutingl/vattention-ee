@@ -195,6 +195,7 @@ class BaseWorker:
         preempted_seq: Optional[List] = None,
         seq_ids_in_batch: Optional[torch.Tensor] = None, # <batch_size>
         rebatching_ee_factor: float = 0,
+        priority_reqs: List[int] = [],
     ) -> Optional[SamplerOutputs]:
         
         batch_stage_start_time = time.monotonic()
@@ -218,7 +219,8 @@ class BaseWorker:
             self.gpu_cache,
             cache_engine=self.cache_engine,
             seq_ids_in_batch=seq_ids_in_batch,
-            rebatching_ee_factor=rebatching_ee_factor
+            rebatching_ee_factor=rebatching_ee_factor,
+            priority_reqs=priority_reqs
         )
 
         if is_ee:
