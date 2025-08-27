@@ -28,6 +28,12 @@ def main():
     # models, attention_backends = {'llama-3-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-2-7b'}, ['fa_vattn_2mb_sync']
 
+    # models, attention_backends = {'qwen-3-8b'}, ['fa_vattn_2mb_sync']
+
+    models, attention_backends = {'qwen-7b-chat'}, ['fa_vattn_2mb_sync']
+
+    
+
     num_requests = utils.args.num_requests
     qps_values = [utils.args.qps]
     max_batch_size = utils.args.max_batch_size

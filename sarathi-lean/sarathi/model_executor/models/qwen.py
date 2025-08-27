@@ -280,6 +280,7 @@ class QWenLMHeadModel(nn.Module):
         hidden_states: torch.Tensor,
         positions: torch.Tensor,
         kv_caches: List[KVCache],
+        **kwargs,
     ) -> torch.Tensor:
         if not self.is_pipeline_first_stage:
             # hidden_states_shape: num_tokens x hidden_size
@@ -294,7 +295,7 @@ class QWenLMHeadModel(nn.Module):
         if not self.is_pipeline_last_stage:
             send(hidden_states)
 
-        return hidden_states
+        return hidden_states, None, None, None, None, None, None, None, None, 0, 0
 
     _column_parallel_weights = []
     _row_parallel_weights = ["c_proj.weight"]
