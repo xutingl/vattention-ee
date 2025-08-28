@@ -30,7 +30,8 @@ def main():
 
     # models, attention_backends = {'qwen-3-8b'}, ['fa_vattn_2mb_sync']
 
-    models, attention_backends = {'qwen-7b-chat'}, ['fa_vattn_2mb_sync']
+    # models, attention_backends = {'qwen-7b-chat'}, ['fa_vattn_2mb_sync']
+    models, attention_backends = {'qwen-14b-chat'}, ['fa_vattn_2mb_sync']
 
     
 

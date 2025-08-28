@@ -49,6 +49,7 @@ models = {
     'llama-2-7b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama2-7b-ee'},
     'qwen-3-8b': {'tp': 1, 'hfrecord': 'Qwen/Qwen3-8B', 'logentry': 'qwen-3-8b-ee'},
     'qwen-7b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-7B-Chat', 'logentry': 'qwen-7b-chat-ee'},
+    'qwen-14b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-14B-Chat', 'logentry': 'qwen-14b-chat-ee'},
 }
 
 # vattention allocates memory in power of two while fa_paged/fi_paged
