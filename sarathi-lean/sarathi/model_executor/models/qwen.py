@@ -543,7 +543,7 @@ class QWenModel(nn.Module):
                 if self.early_exit_head:
                     lm_logits = self.early_exit_head(self.ln_f(hidden_states))
                 else:
-                    lm_logits = _get_logits(self.ln_f(hidden_states), self.sampler.embedding, self.sampler.vocab_size)
+                    lm_logits, _ = lm_head(self.ln_f(hidden_states))
 
                 ee_check_start_time = time.perf_counter()
                 conf = softmax_confidence(lm_logits)
