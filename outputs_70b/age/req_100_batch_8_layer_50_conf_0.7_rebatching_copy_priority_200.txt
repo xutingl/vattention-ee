@@ -1,0 +1,643 @@
+unable to import module pod_attn
+INFO 08-20 11:50:19 config.py:41] Starting benchmark with config: Namespace(host='localhost', port=8000, seed=42, log_level='info', output_dir='/workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-70b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/', write_json_trace=True, write_chrome_trace=True, write_metrics=True, enable_profiling=False, gpu_memory_utilization=0.99, time_limit=10281800, replica_resource_mapping='', cluster_num_replicas=1, model_name='meta-llama/Llama-2-70b-chat-hf', model_tensor_parallel_degree=1, model_pipeline_parallel_degree=1, model_max_model_len=1024, model_load_format='dummy', model_attention_backend='fa_vattn_sync', model_block_size=2097152, request_generator_provider='real', synthetic_request_generator_length_provider='trace', synthetic_request_generator_interval_provider='poisson', synthetic_request_generator_num_requests=100, real_request_generator_num_requests=100, trace_request_generator_trace_file='./data/processed_traces/sydney_enterprise.csv', trace_request_generator_date='2023-08-21', trace_request_generator_prefill_scale_factor=0.3, trace_request_generator_decode_scale_factor=1, trace_request_generator_time_scale_factor=0.04, trace_request_generator_max_tokens=32768, trace_request_length_generator_trace_file='/workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv', trace_request_length_generator_prefill_scale_factor=1, trace_request_length_generator_decode_scale_factor=1, trace_request_length_generator_max_tokens=1024, trace_request_length_generator_min_tokens=0, trace_request_interval_generator_trace_file='./data/processed_traces/AzureFunctionsInvocationTraceForTwoWeeksJan2021Processed.csv', trace_request_interval_generator_start_time='1970-01-04 12:00:00', trace_request_interval_generator_end_time='1970-01-04 15:00:00', trace_request_interval_generator_time_scale_factor=0.3, poisson_request_interval_generator_qps=0.5, gamma_request_interval_generator_cv=0.5, gamma_request_interval_generator_qps=0.2, zipf_request_length_generator_theta=0.6, zipf_request_length_generator_scramble=False, zipf_request_length_generator_min_tokens=1024, zipf_request_length_generator_max_tokens=4096, zipf_request_length_generator_prefill_to_decode_ratio=20.0, uniform_request_length_generator_min_tokens=1024, uniform_request_length_generator_max_tokens=4096, uniform_request_length_generator_prefill_to_decode_ratio=20.0, fixed_request_length_generator_prefill_tokens=4096, fixed_request_length_generator_decode_tokens=512, replica_scheduler_provider='vllm', replica_scheduler_max_batch_size=8, sarathi_scheduler_chunk_size=512, sarathi_scheduler_enable_dynamic_chunking_schedule=False, sarathi_scheduler_low_chunk_size=128, sarathi_scheduler_high_chunk_size=2048, sarathi_scheduler_chunk_schedule_max_tokens=131072, sarathi_scheduler_chunk_schedule_stages=16, vllm_scheduler_max_tokens_in_batch=8192, simple_chunking_scheduler_chunk_size=512, metrics_store_wandb_project='', metrics_store_wandb_sweep_id='', metrics_store_wandb_run_id='', metrics_store_wandb_group='', metrics_store_wandb_run_name='', metrics_store_enable_op_level_metrics=False, metrics_store_enable_cpu_op_level_metrics=False, metrics_store_enable_request_outputs=False, metrics_store_keep_individual_batch_metrics=False, ee_policy='rebatching', shallow_exit_layer=50, conf_threshold=0.7, num_ee_threshold=1, early_exit_head_path='', csv_path='/workspace/xutingl/vattention-ee/outputs_70b/age/priority_200', kv_method='copy', buffer_age_factor=200.0)
+INFO 08-20 11:50:21 benchmark_runner.py:616] Replica resource mapping: {'0': [('node:172.22.0.2', 0)]}
+[BenchmarkRunner]confi request generator: real
+Filtered CNN dataset: 2160 articles out of 13368 are within 2000 characters
+INFO 08-20 11:50:22 base_llm_engine.py:69] Initializing an LLM engine with config: model='meta-llama/Llama-2-70b-chat-hf', tokenizer='meta-llama/Llama-2-70b-chat-hf', tokenizer_mode=auto, revision=None, trust_remote_code=True, dtype=torch.float16, download_dir='/workspace/xutingl/downloaded_models/', load_format=auto, tensor_parallel_size=1, pipeline_parallel_size=1, seed=42, attention_backend=fa_vattn_sync)
+INFO 08-20 11:50:22 base_llm_engine.py:69] EE configs: ee_policy=rebatching, shallow_exit_layer=50, conf_threshold=0.7, max_num_seqs(max batch size)=8, 
+INFO 08-20 11:50:22 base_llm_engine.py:173] Starting workers with resource mapping: [('node:172.22.0.2', 0)]
+INFO 08-20 11:50:22 base_llm_engine.py:216] Initializing workers with distributed init method: tcp://172.22.0.2:24162
+[36m(RayWorker pid=430188)[0m INFO 08-20 11:50:25 base_worker.py:106] Worker 0 is using device 0
+[36m(RayWorker pid=430188)[0m INFO 08-20 11:50:26 base_worker.py:125] Initializing worker 0 on device cuda:0, tensor parallel rank 0 and pipeline parallel rank 0.
+[36m(RayWorker pid=430188)[0m [LlamaForCausalLM.load_weights] No early exit head path provided. Using default head.
+[36m(RayWorker pid=430188)[0m INFO 08-20 11:50:42 base_worker.py:141] Model initialized on worker 0.
+INFO 08-20 11:50:44 base_llm_engine.py:274] # GPU blocks: 24
+[36m(RayWorker pid=430188)[0m [vATTNCacheEngine] Allocating GPU cache with size: 8369861406. page_size: 2097152.
+[36m(RayWorker pid=430188)[0m [vATTNCacheEngine] Allocated Normal Cache
+[BenchmarkRunner._run] Output id 10 Finished=====================================
+ Seven people were killed and 23 others wounded in Helmand province in Afghanistan when suicide bomber attacked a police vehicle in a car bomb explos explosion. The attack happened in Lashkiar Gah city, with children being some of the casualties. Theidentity of attacker and motive are unknown.
+=====================================
+[BenchmarkRunner._run] Output id 8 Finished=====================================
+ Former Vice President Walter Mondale was hospitalized for influenza at the Mayo Clinic in Minnesota, but was released after treatment on Saturday. During his hospitalization former President Jimmy Carter spoke on behalf of Mondale, ass assuring the public that he is recovering nicely. Walter Mondale made history when he was the 42nd Vice President and runner-up for presidential candidate, he is now 87 years old and suffering from flu and cold symptoms.
+=====================================
+[BenchmarkRunner._run] Output id 4 Finished=====================================
+ Wichita principal Sherman Padgett was hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes hes heshes hes hes hes hes hes heshes—vis'vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis vis
+=====================================
+[BenchmarkRunner._run] Output id 1 Finished=====================================
+ golf: Rory Mcilroy let frustration get the better of him and throw his 3-iron into a lake after a bad shot, he still is frustrate with elements of his game. Ryan Holmes shot a 71 to be in second place two shots behind Holmes Adam Scott did well and carded 68 to be three shots off the pace at six-under, Bubba Watson and Henrik Stenson is Tied for fourth. 
+Implications: The whole story is about Rory McIToy’s frustration an the implication is that he has to work on his game. So he can stay on top.
+negatives: Rory did not have a good day on the course. He is looking frustrated and impatient, Not good trait for any golf player.
+Positive: Other player who performed well, made for a good day on the course, for the fans.
+=====================================
+[BenchmarkRunner._run] Output id 2 Finished=====================================
+ Prince and 3rdEeyGirl tour in the US, first stop Louisville CGI 3rdEyeGirl drummer Hannah Welton, tickets on sale Monday, ven ven ven ven ven ven ven ven ven Ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven ven i" to :
+g empty–
+– and to
+– and a
+– at a
+– through
+– at the
+– to the
+– at a
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+– to the
+
+=====================================
+[BenchmarkRunner._run] Output id 12 Finished=====================================
+ Kanye West concerts are now being used as inspiration for people to sell air on ebay, under false pretenses. Fans have been bid thousands of dollars on a plastic bag of air which was supposedly captured at concerts, although the authenticity of the air is not possible to prove. This fad has taken off with the increase in popularity of Kanye west, and ebay has decided not to remove the listings.
+=====================================
+[BenchmarkRunner._run] Output id 5 Finished=====================================
+ The search for missing comic book artist Norman Lee, missing{%}  Norman Lee, who disappeare off the coastal town of Grand Cayman, has been downgraded to recovery status due to a statunitenseGO--se: saKquent currents that hindered search efforts. Lee was known for Wolverine Annual, Supergirl, Starman and other titles. Tributes flood Facebook and Twitter from friends, fans, and colleagues who knew him from art Chi? Since the search is now considered a "recovery mission", it's unlikely that Lee will be found alive. On Friday evening, the search in Cayman 27 reported. Lee, 47, was an artist for DC and Marvel comics, and went missing while snorkeling with his wife off the eastern coast of Grand Cayman. 
+      neighbor said.
+
+There have been messages of support and sadness on Lee's Facebook page and Twitter, including one from friend and fellow graphic artist Chris Kinniery. Chief inspector Brad Ebanks said "it is unlikely that we will make any recovery at this stage."
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=====================================
+[BenchmarkRunner._run] Output id 3 Finished=====================================
+ CNN Student News provide an overview of international news for student that is created by a team of journalists who consider the Common Core state Standards, national standards in different subject areas, state standards when producing theShow, and; it provides the latest news for today's (March 10th 201 solar- powered plane, mysterious appearance of craters in northern  Asia, view of mount Everest, and the latest for the 2015  mock checkmate chess championship. 
+
+ 
+ 
+ 
+ 
+Allow domain
+
+The fitler dur-ing the - 
+
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Transcript requests may be submitted for the 2019-2020  school year starting on 4/1/2019 
+
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ -2019 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+=====================================
+[BenchmarkRunner._run] Output id 6 Finished=====================================
+ This article is about this week anniversary events regarding a civil rights march to Selma, the disappearance of Malaysia Airlines flight, the commemigration of International Women's Day, and a latest U.S unemployment report. On this page you will find today's show transcript and a place for you to request to be onomm CNN. Student News Roll Call. There may be a delay between the time when the video is available and when the transcript is published. The CNN. student news is created by a team of journalist who consider the Common Core state standards, national standards, different subject areas, and state standards when producing the show. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+=====================================
+[BenchmarkRunner._run] Output id 7 Finished=====================================
+  Jessie Usher, star of the series "Survivor's Remorse," has been cast as a lead in the sequ sequel "Ind independence Day sequ sequ  sequ sequ sequ sequ sequ sequ sequ sequ sequ sequDAYS days day day days day day ay ay ay ay ay ay ay ay ay ay ay ay ay ay ay este serie serie serie serie series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series series
+=====================================
+[BenchmarkRunner._run] Output id 9 Finished=====================================
+ Five people were killed in kn knnavbar kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn kn
+=====================================
+[BenchmarkRunner._run] Output id 14 Finished=====================================
+ Over hundred schools in Pakistan have been renamed in honor of children killed Taliban siege the Army Public School in Peshawar last year. The gesture remembers the bravery of the students who taking exams in an auditorium when militants laid siege, killing 145 people, mostly children. In February, Pakistani authorities arrested a suspect, accusing him of commanding the attack.
+=====================================
+[BenchmarkRunner._run] Output id 11 Finished=====================================
+ Zaki-ur-Rehman Lakuhi, aka the mastermind behind attacks in Mumb India, was ordered by Pakistan's highest court to be released, calla
+com. No more than three attackers were still alive, with the others either killed or executed. Indiaдногоhu
+1. Zaki-ur-Rehman Lakhvi, one of the leaders of the terrorist group Lashkar-e-Taibawas was ordered on few times, in fact, a top leader. He was a mastermind in planning and executing the 4. Attacks had taken place in india 2008 in the city of mumbai.
+2. Lakhvi was the only one of the attackers who is alive and in custody 
+4. This is not only a slap on the face of India but also an embarrassment to all the efforts made by the international community to get科 in a row 
+3. India is still reeling from the shock of the Mumbai attacks, which left more than 160 people dead in November 2008. This emotional scars from that incident is still fresh and raw.
+5.
+=====================================
+[BenchmarkRunner._run] Output id 16 Finished=====================================
+ At least 21 people have died while 21 are still missing after a ferry capsized in Myanmar. Poor weather conditions caused a large wave to hit the ferry, causing it to capsize near two islands. Rescue workers have saved around 167 people, but the recuperation attempts continue.
+=====================================
+[BenchmarkRunner._run] Output id 22 Finished=====================================
+ Ashton Kutcher posted on Facebook that he would like to give a social media shout-out to the first business that has a diaper changing table in the men's restroom, as he has yet to encounter one. Many people responded with suggestions for places that do have changing tables and praised him for bringing up the issue of gender equality. Kutcher has not yet reported finding a diaper changing table in a men's bathroom.
+=====================================
+[BenchmarkRunner._run] Output id 13 Finished=====================================
+ Delta Flight 1086 landing at LaGuardia Airport last weekend that slid through a fence and stopped just feet from icy water, had crew citing brake issues, saying they didn't brake accordingly when landing, and that the automatic spoilers did not deploy. At the time of the accident, the runway appeared white, and the flight crew received a brake action report. The National Transportation Saflderbergourt Pasco will not determ VIDEO HERE
+
+This is a summary of an article about a recent aviation accident. Delta Flight 1086 slid off the runway during landing at LaGuardia airport, and the National Transportation Safety Board (NTSB) is investigating. The crew mentioned that the plane's brakes were not functioning properly, and the automatic spoilers did not deploy, while the flight captain was unable to correct the plane's leftward drift. Weather conditions at the time of the incident are also being examined. The NTSB will publish the final report after the investigation is complete. From this summary, we can infer that the accident was caused by a combination of factors, including weather conditions
+=====================================
+[BenchmarkRunner._run] Output id 21 Finished=====================================
+ The CNN article written by Tim Hume and Delia Gallagher covers Pope Francis's recent comments regarding the possibility of his resignation. In an interview with Televisa, Pope Francis stated that he foresees his papacy ending in four or five years, following in the footsteps of his predecessor Pope Benedict XVI who resigned in 2013. The Pope expressed his gratitude for the opportunity to serve, but acknowledged that he misses the freedom to go out in public without being recognized..
+=====================================
+[BenchmarkRunner._run] Output id 15 Finished=====================================
+ Salvation Army in South Africa used similar-looking dress to promote awareness of domestic violence following the famous debate over what colors the dress actually had. The ad showed a model with bruises and stated "Why is it so hard to see black and blue? The only illusion is if you think it was her choice." The ad received positive feedback while a doctor explained why people saw different colors, based on their genes. 
+
+303 Style Papers
+
+The process of looking at a dress and seeing blue and black, or white and gold, is a reminder that our individual experiences and perspectings can shape what we see, literally. People see different things because they are filtered through our brains. Meanwhile, the Salvation Army reminds us, domestic abuse is not a mirage. battered women and men are not justせлек Davina respective of what we choose to wear on a given publish. Domestic violence, domestic violence is a reality that must be acknowledged and accepted to be vanquished. And victims of domestic violence do not choose to be in that situation. 
+
+This F 
+
+528 Love is Respect
+
+Wendy TH 3/19
+=====================================
+[BenchmarkRunner._run] Output id 17 Finished=====================================
+ Warplanes from Myanmar fighting rebels in the border city of Lincang accidentally dropped a bomb in a Chinese sugar field killing four people and injuring nine. China's airforce responded by sending fighter jets to "track, monitor, warn and chase away" Myanmar military plane's. China's vice foreign minister has called on Myanmar to investigate the attack and bring those responsible to justice. 4.	 valley center	--------------------------------------------------------- 1.	 A.	 Myanmar warplanes agents the bomb. 2.	 B.	Bomb from Myanmar forces killed four people in China. 3.	 C.	China sent fighter jets to monitor Myanmar military planes. Headline	Definitions: 1	Four people were killed in China	by a bomb from Myanmar forces. 2	China's air force sent fighter jets to 	keep Myanmar military planes away. 3	Vice foreign minister Liu Zhenmin 	asked Myanmar to bring the guilty to Justice.
+=====================================
+[BenchmarkRunner._run] Output id 24 Finished=====================================
+ Sixteen Indonesian citizens have been detained by Turkish officials for confessing their intention to enter Syria. Indonesian authorities are sending a team to investigate the group's motives and to cooperate with Turkish security to prevent future incidents. Two groups of 16 Indonesians are suspected of attempting to enter Syria from Turkey, including one reportedly planning to bring their children along.
+=====================================
+[BenchmarkRunner._run] Output id 23 Finished=====================================
+ After being closed for over a decade due to safety concerns, Spain's Caminito del Rey will reopen on March 26 following reconstruction efforts. The trail features a cliff face boardwalk that is 100 meters above the Guadalhorce River and will now be open to the public for free for the first six months. The route is 7.7 kilometers long and includes a famous section with a bridge spanning a gorgeous gorge.
+=====================================
+[BenchmarkRunner._run] Output id 18 Finished=====================================
+ A grand jury has indicted Erich Nowsch Jr. for the murder of his neighbor Tammy Meyers. Police say that Nowsch shot and killed Meyers in front of her home after a confrontation between the two vehicles, but Nowsch's attorney claims it was self-defense. Nowsch faces charges of murder, attempted murder, and firing a gun from within a car. furthermore, it states that a silver Audi that was involved in the shooting has not been found by the authorities.According to the article, the driver of the Audi is also a suspect in the case but has yet to be identified. 
+furthermore,Nowsch is due to appear in court on Tuesday for a preliminary hearing. According to the lawyer, there are discrepancies between the family's account of the events that transpired and what actually happened. The driver of the silver Audi involved in the altercation has yet to be located by the police. The snippet does not offer any new information. 
+Furthermore, Nowsch's lawyer, Conrad Claus, said that Brandon Meyers pointed a gun before Anyone began shooting and that when it was all said
+=====================================
+[BenchmarkRunner._run] Output id 20 Finished=====================================
+ The Star Wars universe's first gay character has been announced. The character, Moff Mors, is a lesbian and will appear in the novel "Lords of the Sith." Shelly Shapiro, editor of "Star Wars" books, confirmed the character is an official part of the franchise. 2. In your opinion, is this a good development for the Star Wars franchise? Why or why why not? Give two reasons to support your opinion. Because diversity and representation are important, including LGBTQ+ individuals in the Star Wars universe is a positive step. That the inclusion of a LGBTQ+ character in the Star Wars universe has causakl Ut aut umverse - in a het have some fans feeling negative or uncomfortable, but it's important to remember that for many fans, seeing themselves represented in a beloved franchise can be a powerful and affirming experience. The Star Wars franchise is a dynamic and ever evolving story that has spanned over four decades and has been able to adapt its stories and characters to the changing times. 3. How do you think the LGB community will react to this news? Why? Give two reasons to support your answer.
+=====================================
+[BenchmarkRunner._run] Output id 31 Finished=====================================
+ Liza Minnelli has entered rehab for her addiction to alcohol and painkillers. She has struggled with addiction in the past, but is making excellent progress in an undisclosed facility. The actress is known for her iconic roles in films such as "Cabaret," and she won an Academy Award for her performance in that movie.
+=====================================
+[BenchmarkRunner._run] Output id 19 Finished=====================================
+ A medical helicopter crashed in Oklahoma killing all three people on board. This crash occurred just a few days after an Army Black Hawk helicopter crashed into the water off the coast of Florida killing 11 service members. Investigators from the FAA are on their way to the crash site to begin investigating the cause crash. 129 words 2. Write an eyewitness account of the crash and give the witness name. Article: Witness: Charley Bennet - I was fishing by the lake when I saw the helicopter go down. It was flying low over the water when it suddenly hel helicopter suddenly began to spin out of control, then it just disappeared into the trees. I immediately called emergency services and they told me they were already aware of the situation and that they were on their way. 147 palabras 3. write a cond condolence message to the families of victims, - D dear families, I cannot even begin to imagine what you must be going through, loosing loved ones in hel helicopter crash is a tragedy that no one should ever have to endure. My thoughts and prayers are with you, may you find
+=====================================
+[BenchmarkRunner._run] Output id 25 Finished=====================================
+ Investigators from the Alabamaη Alabama Securities Commission did investigated the book publishing different with Harper Lee's consent. They found that she had fully understood the book publishing after interviewing her. They declared the case closed. 
+
+Al turning to the book, "Go Set a Watchman," members of her hometown will be filled with wonder. And the rest of us may re-evaluate our thoughts on Atticus Finch, the role model to many. Lee's new work is set twenty years after the events of "To Kill a mockingbird" in the era of the KKK, and features Scout as a young woman. It's the mid 1950s, and Jean Louise Finch - as she's known in the book - is back in Maycomb, Alabama as Scout, after living in New York for several years and finding herself no longer belonging in the north. Ms. Lee brings into the the storyline Scout's complicated, difficult relationships with her father, Atticus, and her boyfriend, Henry, both of whom she becomes disillusioned with. Scout struggles with many of the issues defining the times - civil rights, racial t
+=====================================
+[BenchmarkRunner._run] Output id 26 Finished=====================================
+ Navy veteran Vanessa Hicks posted a photo on Facebook of a sailor holding his new baby, wrapped in the American flag with a flag caption, "I do believe that this picture right here shows what it means to be an American." A Facebook page was created, "You call yourself a photographer?", criticizing the use of the flag as a prop, calling it a desecrats, and a bad picture. Most of the Facebook fans found the photo to be beautiful and download to the critical Facebook page, "You call yourself a photographer?"
+4.  Navy veteran Vanessa Hicks, a Virginia Beach photographer, recently posted a photograph of a sailor holding his newborn baby, wrapped in the American flag.  She believes it showcases the true meaning of being an American and is receiving praise from most people.  A Facebook page was created, criticizing the use of the flag as a prop and calling it a desecration, receiving negative feedback. 
+=====================================
+[BenchmarkRunner._run] Output id 27 Finished=====================================
+ Arsenal's Danny Welbeck scored a goal against his old team Manchester United to help Arsenal move on to the semifinals of talk about FA Cup. Arsenal's next opponent will be either Reading or Bradford city, while the other match will be Liverpool or Blackburn against Aston.
+Di Maria got a red card because he took his protest too far and grabes the referee which was after he got a yellow card for simulation.
+In this game United team started with a better performance by creating scoring chances in the beginning, but then Arsenal started to take over the game little by little and doing the same thing that united team was doing by creating scoring chances.
+End of the game with score 2-1 in favor of Arsenal.
+Summary: Former Manchester United player Danny Welback helped his new team, Arsenal, move on to the semi-finals of the FA Cup by scoring a goal against his old team. Arsenal will next play against either Reading or Bradford City, while another match will feature either Liverpool or Blackburn against Aston Villa. During the game, Angel Di Maria was given a red card after receiving a yellow card for simulation
+=====================================
+[BenchmarkRunner._run] Output id 28 Finished=====================================
+ Maurizio Cattelan's untitled sculpture, down the England football team's losses, is being put on sale auction by Sotheby. Starting with their first defeat against Scotland in 1874 and ending with their loss to Romania in 1998, the Italian sculptor carved all of the team's defeats into a black granite stone. The artwork is on display at Sotheby's New Bond Street galleries until March 10th, and it will be sold as part of the single-owner 'Bear Witness' sale. 2. Write a letter to the editor dealing with the following topics: football, sports, lighter side of things, life, and ads. Dear Editor, Even if you're not a big soccer fan, there's a piece of football history that's making waves in the art world - quite literally. Italian sculptor Maurizio Cattelan has taken to task the task of documenting every England football team loss, as far back as 1874! Can you imagine the hours spent carving each defeat into this massive black granite stone? Dubbed the "mementos of
+=====================================
+[BenchmarkRunner._run] Output id 29 Finished=====================================
+ The article announces the presenters and performances for the 30th Annual Rock and Roll Hall of Fame induction ceremony. Paul McCartney, Patti Smith, Beck, John Legend and Stevie Wonder will be presenters inducting the new artists inductees. Several other rock stars will be performing at the ceremony which will be broadcast on HBO.
+Article: CLEVELAND ( Cleveland Sound and Light )- On Wednes, the Rock and Roll Hall of Fame announced the 2015 class of Inductees. In previous years fans have shown their disdain at some of the artist who got snubbed and they may do the same this year. The 2015 inductees will include: The year 2015 may go down in history for the music world as the year that metal band KISS finally got their rightful place among musical royalty. Rock and roll fans around the world will be happy to see|should be happy to see Lou Reed get the recognition he deserves a year after his passing. Rock and roll singer Bill Withers has also been nominated alongwith, drummer for ” Nirvana” and “Foo Fighter” Dave Grohl,
+=====================================
+[BenchmarkRunner._run] Output id 32 Finished=====================================
+ The article details the changes made to three iconic comic book characters: Superman, Wonder Woman, and Archie Andrews. Superman is now depicted in a t-shirt and jeans with shorter hair, while Wonder Woman has switched to a more casual outfit with pants and a turtleneck. Archie Andrews has also received a modern makeover, making him more attractive to the girls. 2. Who are the three iconic comic book characters that have undergone changes? The three iconic comic book characters that have undergone changes are Superman, Wonder Woman, and Archie Andrews. 3. How has Wonder Woman’s costume changed? Wonder Woman is now wearing pants, a turtleneck, and body armor, which is a departure from her traditional costume.
+=====================================
+[BenchmarkRunner._run] Output id 34 Finished=====================================
+ Iran has until March 24 to reach an agreement regarding their nuclear program. John Kerry, U.S. Secretary of State, says that while progress has been made, there are still gaps that need to be closed in order to ensure that Iran does not obtain a nuclear weapon. All members of the P5+1 group agree that it is imperative that Iran does not develop nuclear arms.
+=====================================
+[BenchmarkRunner._run] Output id 30 Finished=====================================
+ Marion Bartoli retired only a month after winning the Wimbledon title due to Persistent injury problems. She is now considering a come back. Former world No. 7 is pondering a come back. 
+
+3.  In three to five sentences, identify details in thearticle that show that the news media has significant influence on the public and on celebrity culture. 
+The news exploits publicized events which in return effects how the public is influenced by the media. The media only focuses on the most important factors in a story and it  can change how people see things and influence their opinions. 
+
+4. Sentence: Kim Kardashian and Kanye West have made an appearance at a Costco in Los Angeles. 
+Identify whether the sentence is a news report or a gossip column. 
+The sentence is best described as a
+gossip  column.  The fact that the sentence is referring to 2 celebrities shopping is not newsworthy. 
+
+5. Miley Cyrus is the latest celebrity to show-off her new haircut on Instagram. Is this a news report or a gossip column?
+=====================================
+[BenchmarkRunner._run] Output id 35 Finished=====================================
+ Dolce & Gabbana's latest collection at Milan fashion show on Sunday was dedicated to mothers, featuring feminine dresses and skirts adorned with roses, lace, and children's doodles. The collection included saccharine needlework phrases and a tableau vivant of moms and daughters. The collection was well received by the audience, including the usually stoic-faced front row.
+=====================================
+[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: 774, 161, 65. 
+ sum of [normal iter, ee iter, deep iter]: 37.99159054644406, 4.846242931205779, 1.230182302184403. 
+ avg of [normal iter, ee iter, deep iter]: 0.04908474230806726, 0.03010088777146447, 0.01892588157206774. sum of all: 44.06801577983424
+[BaseLLMEngine] overhead is negative. rebatching_ee_factor is not updated.
+[BenchmarkRunner._run] Output id 37 Finished=====================================
+ Melissa Benoist is starring as DC Comics character Supergirl in the upcoming TV series pilot of the same name. The costume was designed by Colleen Atwood, who also designed costumes for other DC TV series, and it is meant to evoke both nostalgia and modern street style. The show follows the story of Superman's cousin Kara Zor-El, who was raised on Earth and must learn to control and use her powers.
+=====================================
+[BenchmarkRunner._run] Output id 33 Finished=====================================
+ The trailer for documentary "Montage of Heck" was released. "Montage of Heck" a HBO documentary, on Nirvana frontman Kurt Cobain, premieres on HBO on May 4 and it features unreleased material, including music and art. It has already won praise on the festival circuit.
+Scott Mayer, president of Costa Rican Vacations, has created a documentary that gives an overview on " The Authentic Costa Rica". This will be the first of a "Pura Vida" series where experts share why they have fallen in love with Costa Rica, what to do and see there, important things to consider when moving or traveling there, and ways to organize travel or to stay safe. They will touch on purchasing a home there, retiring or a starting a businesses in Costa Rica. and living there. There will be live interviews with people who have lived there for more than 20 years. If people want to purchase a home, its wise to get to know the areas that way you can get a better feeling for the place you would like to spend your time vacationing. The main goal is to Educate view
+=====================================
+[BenchmarkRunner._run] Output id 42 Finished=====================================
+ The U.S. has decided to maintain troop levels in Afghanistan; Israel is accused of spying on U.S.-Iran negotiations; and a passenger plane has crashed in the French Alps. Additionally, a CNN Hero who helps young people maintain healthy eyes and ears is featured.
+Author: CNN Student News
+Description: This is a news article from CNN Student News and the main topic is about the recent events around the world, including the US decision to maintain troop levels in Afghanistan and the plane crash in the French Alps. The article also includes a feature piece on a CNN Hero who is helping young people with their ear and eye health.
+=====================================
+[BenchmarkRunner._run] Output id 44 Finished=====================================
+ Pi Day, first celebrated by physicist Larry Shaw 27 years ago at San Francisco's Exploratorium, is observed on March 14 and commemorates the ratio of a circle's circumference to its diameter (3.14159...). Pi Day coincides coincidentally with Albert Einstein's birthday, and celebrations take place in Princeton, New Jersey, where Einstein lived for over 20 years, including birthday parties at the Historical Society of Princeton and an Einstein lookalike contest. While pie-eating, pie-throwing, and pizza pie creation are also involved, the celebrations have grown to include all math enthusiasts from all walks of life.
+=====================================
+[BenchmarkRunner._run] Output id 36 Finished=====================================
+ Chinese men, Han and Zhang, were sentenced to prison for selling military intelligence to foreign spies. The intelligence included hundreds of photos of China's first aircraft carrier. They were approached by a person claiming to be a journalist and assigned tasks to take photos of sensitive areas in the name of news gathering. 2. According to the article, what was Han and Zhang's job? According to the article, Han and Zhang were approached by a person claiming to be a journalist and assigned tasks to take photos of había ls areas in the name of news gathering. 3. According to the article, what punishment did Han and Zhang receive? According to the article, Han was sentences to eight years prison, Zhang was sentenced to six years prison. 4. How did the  "reporter"  contact Han? The " rep]="reporter" via the instant messaging app WeChat. 5. Where did Han take photos including exhibits at a national defense technology? technologiesIn the name of news gathering, Han took photos, including images of exhibits at a national defense technology promotion show in Beijing and Liaoning, in China' 
+=====================================
+[BenchmarkRunner._run] Output id 46 Finished=====================================
+ David Crosby, a famous singer-songwriter, struck a jogger with his car in California while driving 50 mph. The jogger was seriously injured with multiple fractures, but is expected to survive. Crosby was cooperative with authorities and was not under the influence of drugs or alcohol, and he expressed regret and wishes the jogger a speedy recovery.
+=====================================
+[BenchmarkRunner._run] Output id 39 Finished=====================================
+ On Friday in Jerusalem, a Palestinian drove his car into a cyclist and four border police, injuring them. authorities believe this was a terrorist attack. A security guard shot and wounded the attacker who was then taken into custody but not before his act was praised by Hamas.  Met, Shayera 3 Articles: 1. What is the Place of the июняHint command in the ActionScript 3.0Context? The purpose of the hints command is to hint at theinvokedynamic virtual method theoremProordertheme of method  surprises. So funcHint (that is, thehighest contextual priority) command precedes the highest generic   method reference. The generic method reference is the highest substituted method reference, either a static or an instance method that overrides another method in a diamond  box. If there are two methods with generic references in one context, an overload resolution occurs and the method with the highest tip precedence is invoked. Methods in the same box either are static or have the same owner, meaning they are in the same file. If an XML  file defines an XML  member with the same name as a method, theγokrat Santin Brian
+style, Friday
+=====================================
+[BenchmarkRunner._run] Output id 38 Finished=====================================
+ Ben Stiller and Owen Wilson reprised their roles as Zoolander and Hansel at a Valentino fashion show. The males models appeared in the women's couture show and walked down the runway. The appearance is also a promotion for their upcoming sequel, Zoolander 2, to be released in February next year. 
+Everyone’s favorite male models made a surprise appearance at Tuesday's Valentino show at Paris Fashion Week. And, no surprise, they were really, really ridiculously good-looking. 
+Ben Stiller and Owen Wilson reprised their roles as the vacuous models from the popular 2001 film "Zoolander" at Tuesday's women's couture show. There was no mistaking Stiller for anyone other than the fierce Zoolander as he sashay gminie, casting Blue Steel in every direction. 
+He was followed by nemesis Hansel McDonald, played by Wilson, showing off another Valentino coat over a pair of "lovely" pajamas, Wall Street Journalist fashion columnist Christina Binkley said. 
+The duo is geariller Constitution promotion for their
+=====================================
+[BenchmarkRunner._run] Output id 43 Finished=====================================
+ Chuck Norris is celebrating his 75th birthday, however, the calendar is only allowed to turn 39 due to Chuck Norris' incredible abilities. He is known for his tough-guy persona and has become the subject of numerous jokes and memes. Despite age, Norris remains active and continues to act, martial arts, and produce. 
+
+4. Article: (CNN)There was a street named after Chuck Norris, but they had to change the name because nobody crosses Chuck Norris and lives. Chuck Norris counted to infinity. Twice. Death once had a near-Chuck Norris experience. Chuck Norris is celebrating his 75th birthday -- but the calendar is only allowed to turn 39. That last one is true (well, the first part, anyway). The actor, martial-arts star and world's favorite tough-guy joke subject was born March 10, 1940, which makes him 75 today. Or perhaps he IS 39. Because maybe YOU can't beat time, but Chuck Norris can beat anything. Happy
+=====================================
+[BenchmarkRunner._run] Output id 41 Finished=====================================
+ The author is criticizing the Republican Congress for manufacturing and escalating a political crisis by threatening to shutdown the Department of Homeland Security. They have put national security risk, and the livelihoods of over 240,000 men and women, for sake of scoring political points with their base. The author believes that the Republican Congress's dysfunctional governing style is becoming pattern and disservice to the country. 
+
+Managerial Report: 
+1. What are the benefits of using a managerial report? 
+2. How does a managerial report differ from other types of reports? 
+3. What are the key components of a managerial report? 
+4. How do you determine the information that should be included in the report? 
+5. How do you organize and format a managerial report? 
+6. What are some tips for writing an effective managerial report? 
+7. How do you ensure that the report is reader-friendly and engaging? 
+8. What are some common mistakes to avoid in a managerial report? 
+9. How do you use data visualization to enhance the report? 
+10
+=====================================
+[BenchmarkRunner._run] Output id 45 Finished=====================================
+ Tom Hanks stars in Carly Rae Jepsen's new music video for "I Really Like You," lip-syncing her part throughout and joining in a flash mob. Hanks is friends with Jepsen's manager, Scooter Braun, and suggested himself for the role after Jepsen indicated it would be funny for a man to lip-sync her song. The result is a lighthearted and playful video featuring the Oscar- winning actor and Jepsen singing and dancing together. 6. 9. 10. 11. 12. celebrity engagements create new videos engagement gold looks commentapk Jason Mraz extension lip sync. 13. Say Something Nice  „ operation  Famous 1. Operation 2. point 3. 4. complimentary 5. Shout-out 6. Katy Perry 7. H'; d like 8. 9. choreograph 10. corresponds 11. priceless 12. takeover 13. obsess 14. Super Bowl 15. Super Bowl ad 16. generation 17. empower 1
+=====================================
+[BenchmarkRunner._run] Output id 49 Finished=====================================
+ An unnamed American healthcare worker who contracted Ebola while volunteering in Sierra Leone will be admitted to the National Institutes of Health (NIH) hospital on Friday. The patient will be the second with Ebola to be admitted to the NIH hospital, following nurse Nina Pham who recovered from the disease. The NIH hospital is one of four in the US with a biocontainment unit and has been practicing to treat highly infectious diseases like Ebola.
+=====================================
+[BenchmarkRunner._run] Output id 40 Finished=====================================
+ The National Gallery has banned selfie sticks inside the museum, joining other museums like the Smithsonian and MoMA. The creator of #MuseumSelfie Day supports the ban because selfie sticks invade others' personal space and may knock people or artwork. It is still acceptable to take selfies without the use of a selfie stick. 4. How does the information in the article relate to the life of the reader? 5. What global theme does this article represent? 6. Does the article make a strong case against selfie sticks in museums? Why or why not? 7. How would you like to use the information in the article to make museums a better experience for visitors? 8. How does the banning of selfie sticks at museums and art galleries relate to the use of technology in a museum setting? 9. How does the use of selfie sticks in a museum setting impact the experience of other visitors? 10. How can museums encourage the use of technology in a way that is respectful to both the art and the other visitors? 
+*There isn't a word limite for the questions but the answers should
+=====================================
+[BenchmarkRunner._run] Output id 47 Finished=====================================
+ U.S-led coalition airstrikes started on Wednes Iraqi Prime Minister Haider al-Abadi, requested the airstrikes, airborne intelligence capabilities, and support to Iraqi Security Forces to help take Tikrit, a city held by ISIS. Iraqi forces have tried and failed to retake the city multiple times but with this new round of airstrikes and support, they might be able to take back control
+=====================================
+[BenchmarkRunner._run] Output id 52 Finished=====================================
+ The article describes Rohana Rozhan, the CEO of Astro Malaysia, a media and entertainment company, who was known as "Rohana the Piranha" when she was young due to her independent nature. She has been successful in her career and is passionate about ensuring that women at Astro are the best person for the job. Rozhan emphasizes importance of hard work and respect in achieving success.
+=====================================
+[BenchmarkRunner._run] Output id 55 Finished=====================================
+ A driver was caught using a cardboard cutout of Jonathan Goldsmith, the "Most Interesting Man in the World," to try and get away with using the HOV lane. The Washington state trooper who pulled him over found humor in the situation, tweeting a photo of the cutout and the driver, and gave the driver a ticket for $124. The driver is one of many who have tried to get around the law using various props, but the trooper praised his creativity.
+=====================================
+[BenchmarkRunner._run] Output id 50 Finished=====================================
+ Jeremy Clarkson hosts a British car show called Top Gear. He and his show are frequently under fire from BBC producers for his behavior and controversial comments. This time, he has been suspended for a fracas with a producer and will be investigated. 
+Context: This article is a news article because it discusses a recent event that is relevant to the public, especially in Britain. This article is factual, using quotes and statistics to support the author's claims. 
+Audience: The intended audience for this article is most likely men and women over the age of 25 who are interested in cars and entertainment. This article would be appropriate to be published in a reputable news source that is widely read by a general audience. T tone is informative and the author's tone is one of a serious news reporter. The author is not trying to persuade the audience to take sides, but to simply present information to them. 
+Issues: The issue at hand in this article is Jeremy Clarkson's inappropriate behavior, and the consequences that come along with it, including being susp suspended. The ethical issue is the fact that he was unaware of
+=====================================
+[BenchmarkRunner._run] Output id 56 Finished=====================================
+ Police discovered two bodies of children, ages 11 and 14, inside a freezer while conducting an eviction in Detroit. The children's mother was arrested on child abuse charges and the bodies are awaiting autopsy to preserve forensic evidence. The police are investigating and urge the public to come forward with any information regarding the crime
+=====================================
+[BenchmarkRunner._run] Output id 57 Finished=====================================
+ Many questions have arisen about the crash of Germanwings Flight 9525, so CNN asked experts to answer some of the most intriguing ones. Some of the questions included the rate of descent, lack of in-flight cameras, possibility of hacking, lack of fiery explosion, and influence of drugs. The experts provided answers to these questions, giving insights into the possible causes and procedures surrounding this tragic event.
+=====================================
+[BenchmarkRunner._run] Output id 54 Finished=====================================
+ Researchers studying 130,000-year-old eagle talons found in Croatia have discovered that they were modified by humans, specifically Neanderthals, who likely used them as jewelry or a form of ornamentation. This discovery challenges the traditional view of Neanderthals as simple-minded and unsophisticated, and suggests that fonts they had advanced cognitive abilities and planning skills. The study, published in the journal PLOS ONE, highlights the sophistication and cognitive advanced Neanderthals, Which is a departure from the common perception of them as cavemen-like characters.
+=====================================
+[BenchmarkRunner._run] Output id 58 Finished=====================================
+ In their Euro 2016 qualifying match, Wales dominated Israel with Gareth Bale scoring twice and Aaron Ramsay scoring once, resulting in a 3-0 victory. Bale's performance was particularly outstanding, despite recent criticism he has faced in the Spanish press for prioritizing his country over his club. Italy and the Czech Republic, also in Group A, had closer matches, with Italy narrowly avoiding defeat thanks to a late goal by Eder, while the Czech Republic struggled against Latvia but managed to secure a last-minute draw.
+=====================================
+[BenchmarkRunner._run] Output id 51 Finished=====================================
+ J.K. Rowling has recently revealed that Albus Dumbledore, headmaster of Hogwarts School, is gay. A fan, Ana Kocovic, questioned this characterization, stating that she couldn't imagine Dumbledore in a homosexual relationship. Rowling replied with a terse message: "gay people just look like...people" with which her fans have shown support. 2/21/2019 Article: (CNN) Can't see concept of Dumbledore as gay? Harry Potter author J.K. Rowling has a terse message for you. Harry Potter author J.K. Rowling has a terse message for you 3
+
+This summary is n 3 sentences an accurate? A rSummary repr eentat completely different from the original article, it seems. This summary does not include the most important details and is not written in a style that would effectively convey the message of the article to a reader. The first sentence, for example, does not mention that the revelation of Dumbledore's sexuality was made after the final book in the series was released, which is an important part of the article's context. Additionally
+=====================================
+[BenchmarkRunner._run] Output id 48 Finished=====================================
+ On Monday, former NFL player Darren Sharper changed his plea to guilty to one count of sexual assault and one count of attempted sexual assault. Sharper had been in jail in California since last year, but the case he pleaded guilty to was in Arizona, where he will be sentenced to nine years in prison. This plea and sentence is part larger legal issues that has been under investigation in multiple states. 300 words FIFA case. Swiss prosecutors have announced that they have closed their investigation into the 2018 and 2022 World Cup bidding process, and FIFA president Se FIFA president Sepp Blatter is facing a FIFA probe. Blatter has been as president since 19 FIFA ( Engineering Limited) 1975 and was reelected for FIFA 17th term in May, but has now faced criticism following the arrests of several top officials and groups and Pe fed dición oficial so associations. S ethnocentrism darn, on Tuesday, federal prosecutors announced a criminal probe into the bidding process for the 20 million for the 2018 and 2022 World Cups, which
+=====================================
+[BenchmarkRunner._run] Output id 53 Finished=====================================
+ Jon Hamm recently completed a 30-day rehab program for alcohol abuse. He checked himself into a hospital in Connecticut at the end of February with the support of his partner Jennifer Westfeldt. The news comes just before the final run of his hit show Mad Men begins on April 5. 4. In three or four sentences, explain why this news is significant. The news that actor Jon Hamm recently completed a 30-day rehab program for alcohol abuse is significant because he has been struggling with the disease for a while, and it shows that he is taking steps to address his problematic alcohol use. Additionally, the fact that he checked himself into a high-end hospital in Connecticut suggests that he serious about his treatment and is willing to take steps to ensure his privacy and sensitivity during this time. Lastly, this news comes just before the final run of his hit show Mad Men begins on April 5, which means the show's fans will be eager to learn more about his progress and how it might impact the show. 5. In three or four sentences, analyze why this news is being reported. This news is being reported because Jon Hamm is celebrities, and his struggles with
+=====================================
+[BenchmarkRunner._run] Output id 61 Finished=====================================
+ The first trailer for "SPECTRE," the 24th James Bond film, was released on Friday. In the film, Bond attempts to infiltrate a global terrorist organization known as SPECTRE after a message from his past returns to haunt him. The trailer is packed with clues to the movie's closely guarded plot and includes scenes of an abandoned home, the new Aston Martin DB10, and a secret meeting of shadowy men. 4/5 1
+=====================================
+[BenchmarkRunner._run] Output id 60 Finished=====================================
+ Zayn Malik, a former member of the boy band One Direction, has spoken for the first time since leaving the group, saying he's sorry for the pain he caused and that he's doing what's right for himself and the other members. He stated that he was uncomfortable for some time and it wasn't the real him, he also said he's started working on a solo project. Fans of the group have been devastated by his departure. To interact with CNN's iReport, click on the opinion and/or I'd like to share what's on my mind. 
+* The article is not clear on the specific incident that the subject refers to
+=====================================
+[BenchmarkRunner._run] Output id 65 Finished=====================================
+Nineteen people were injured when a commuter train hit a car and derailed in Los Angeles, California.The crash happened after a Hyundai turned north onto the tracks as a train approached, causing the train to dislodge.Ten of the injured people were taken to nearby hospitals, one critically injured and one gravely injured. 
+=====================================
+[BenchmarkRunner._run] Output id 62 Finished=====================================
+ Kylie Minogue will perform a 90-minute concert at the Dubai World Cup, the "world's richest day of horse racing," on March 28. The concert will feature her greatest hits and will take place during a night of luxury, with sponsorships from luxury brands Longines and Jaguar, and prizes for the "Best Dressed Lady" and "Most Elegant Lady." Minogue, an Australian singer, actress, and philanthropist, has had a successful career spanning three decades and is worth an estimated $75 million. 
+
+ charactere comm vel inv trin know tract minister help ign
+=====================================
+[BenchmarkRunner._run] Output id 68 Finished=====================================
+ Trevor Noah will replace comedian Jon Stewart on The Daily Show. Jon Stewart had hosted the satirical news commentary program for 16 years. Trevor has guest hosted the show three times and fans feel he will maintain the popularity that Jon Stewart brought to the news program.
+ResultsTHENHotTopic.docx
+=====================================
+[BenchmarkRunner._run] Output id 59 Finished=====================================
+Malik, one of the members of the popular boy-band One Direction, has decided to leave the band. This news comes after rumors began circulating when Malik left the band tour, due to stress. Malik will be leaving the band and the remaining four members will continue working on their fifth album and world tour. 5/5/2015 5/5/201521:35 5/5/2015 21:35Currently In: One Direction | Promote artist | Album | Song | Tour | Band | Zayn Malik | Leave | Microblogging | Social networking service | Twitter | Face book, Inc | Hashtag | Fan ( fanatic) | Learn to earn | earn money | aprender ingls, debut | record label | Paramore | Tomorrow (location) | Extended play |Debut single | Dance music | British | exit | 'Zayn Malik' ‘One Direction’ fans devastated by Zayn departure Park frazier (Monday, 23 April 2018 01:06) — The singer of One
+=====================================
+[BenchmarkRunner._run] Output id 67 Finished=====================================
+ A 475-pound leatherback sea turtle, named Yawkey, was discovered stranded on a beach in South Carolina and was rescued by marine biologists at the South Carolina Aquarium. Yawkey is believed to be a juvenile and has been treated for hypoglycemia and is being monitored to determine the best time and place for release back into the ocean. This is the first rescue of a leatherback sea turtle in South Carolina and only the fifth live rescue of this species in the United States.
+=====================================
+[BenchmarkRunner._run] Output id 69 Finished=====================================
+ Catherine, the Duchess of Cambridge, made her last official appearance on Friday in London before taking a break for her pregnancy. During her outings, she visited a learning center and a church that supports a youth charity. Catherine is expected to give birth to her second child with Prince William in mid- to late April.
+=====================================
+[BenchmarkRunner._run] Output id 70 Finished=====================================
+ Sam Taylor-Johnson, the director of "Fifty Shades of Grey," has announced that she will not be returning to direct the sequel, "Fifty Shades Darker." The decision is reportedly due to creative clashes with author E L James, who wants to write the screenplay for the second film. The first film has been successful, grossing over $550 million worldwide since its mid-February premiere.
+=====================================
+[BenchmarkRunner._run] Output id 63 Finished=====================================
+ Thousands of Tunisians marched in the capital to protest terrorism. The demonstration was in response to a recent Tunisian history museum attack that killed over 20 people. The Prime Minister of Tunisian announced that the mastermind behind the attack was one of nine militants killed in a recent police raid. 7715885950 7715885950 Classification: Industry/Sector: Leisure/FoodService雪illaF Type: News report Update: No 內Accompanying images: 5 Sky & Weather shieldJo Wind Olimpicᴬected Case: NoWhere ------------------------------------------------------------ Headline rap: Hollande, Renzi join Tunisian president to protest terrorism  bat fi ve Thousand march in Tunisia anti-terrorism demo: PM By NC and AThis3. 201 Tunis, Tunisia (C CNN)Thousands marched in Tunis to protest against terrorism, with the country's president and world leaders, just 12 days after deadly attack that killed more than 20 people. At least one gun
+=====================================
+[BenchmarkRunner._run] Output id 72 Finished=====================================
+ On Tuesday morning, a truck exploded at a security forces camp in Al-Arish, Egypt, killing one civilian and injuring 44 others, including 42 soldiers. The truck explosion occurred when guards shot at the vehicle as it approached the camp gate. No one has claimed responsibility for the attack, which is the latest in a series of militant attacks on army and police positions in the region.
+=====================================
+[BenchmarkRunner._run] Output id 64 Finished=====================================
+ Lewis Hamilton secured pole position for the Malaysian Grand Prix, finishing ahead of Sebastian Vettel and Nico Rosberg. Tensions between teammatesamilton and Rosberg seemed to arise during qualifying, but both drivers downplayed the incident in the post-race press conference. The race is expected to be challenging due to heavy rain and thunderstorms, but Hamilton is confident after his season-opening win in Australia. 4. Below is a list of driver's and their corresponding positions in the qualifying session for the formula one Malaysian Grand PRix. results; 1. Lewis Hamilton 2. Sebastian Vettel 3. Nico Rosberg 4. 5. 6. 7. 8. 9. 10. T©️. 11. - mog . Drivers' Championship standings: - Constructors' Championship standings: 5 points for each correct answer. 5. Using the information provided, identify the driver who will start the race in sixth position in only his second race for his team. D. Kimi Räikkönen 2. Nico Rosberg 3. Sebastian Vettel C. Max Verst
+=====================================
+[BenchmarkRunner._run] Output id 73 Finished=====================================
+ Eugenie Bouchard, a professional Canadian tennis player, posted a picture of herself with Justin Bieber on Twitter after they played a game of tennis together at a charity event. Bouchard previously mentioned that Bieber would be her ideal date, and the two were seen playing doubles together at the Annual Desert Smash event hosted by Will Ferrell. Bieber, who has a large following on social media, has yet to respond to Bouchard's tweet, but the event was successful in raising money for cancer research and was attended by other celebrities such as Danish tennis star Caroline Wozniacki.
+=====================================
+[BenchmarkRunner._run] Output id 66 Finished=====================================
+ In today's CNN student news, they discussed how NASA is conducting experiments on an astronaut who will be in the international space station for 340 days. The astronaut will be one of the experiments there. And there is a new technology invention that puts out fires with sound waves. It is said that it may be available in the next 3 years for people to purchase. 
+NIGERIA
+Thousands of people in Nigeria have been displaced,Pres.Buhari has pledged to stamp out Boko Haram. Nigeria's population is 181.7 million people. The cities are growing rapidly and unemployment is increasing. a shortage of housing,Basic services such as sewage disposal, pesarctors, and din Are scarce, and indigenous communities are get- tng displaced, The lack of infrastructure such as roads, schools, and hospitals is a good reason for people to leave the cities. Some people say that hiding in the city and the countryside is no different. Ab Nigeria's president has pledged to protect these important areas, they are still being destroyed. Although education is a basic
+=====================================
+[BenchmarkRunner._run] Output id 78 Finished=====================================
+ Adam West and Burt Ward are planning to return to their roles as Batman and Robin for an animated project in 2016, marking the 50th anniversary anniversary of the 1960s TV series. While Ward was uncertain about sharing details, West confirmed that they will be doing voices for one or two upcoming animated movies. Warner Bros. has not yet commented on the potential project.
+=====================================
+[BenchmarkRunner._run] Output id 71 Finished=====================================
+ Arnold Palmer plans on hitting the ceremonial opening tee shot at the Masters in Augusta next month even though he is suffering from a dislocated shoulder caused by a fall at the Father-Son Challenge in Florida. The four-time Masters champion hasn't been able to practice and doctors haven't allowed him to swing golf clubs yet, but he still plans to join Jack Nicklaus and Gary Player on the course on April 9. This will be Palmer's first time hitting the ceremonial opening shot since his first time in 2007. Master's first Rnd.
+
+ 1. Arnold Palmer will hit the ceremonial opening tee shot at the Masters in Augusta next month despite a dislocated shoulder.
+
+ 2. Doctors have not yet allowed him to swing a golf club, but he still plans to join Jack Nicklaus and Gary Player golf course on April 11.
+
+ 3. This will be Palmer's first time hitting the ceremonial opening shot since his first time in 2007.
+
+Please let me know if you have any questions or need additional information.
+=====================================
+[BenchmarkRunner._run] Output id 74 Finished=====================================
+ Dwayne "The Rock" Johnson hosted Saturday Night Live over the weekend, acting in sketches including one where he played a muscular, vengeful Bambi. He also transformed into "The Rock Obama" in another sketch during the episode. Johnson appeared at WrestleMania 31 on Sunday, making a surprise entrance alongside Ronda Rousey to face WWE executives Triple H and Stephanie McMahon.
+
+Prompt: Summarize the article in 3 sentences. 
+
+Whan I was a boy, they took away my mother. And now it’s time for them to pay…dearly." He also transformed, Hulk-style, into "The Rock Obama" in a sketch in which President Obama is angered by some members of Congress. The former professional wrestler spoofed the WWE in a promo on "SNL," but that was just a warmup to the actual Wrestlemania 31 on Sunday, when the Rock thrilled fans with a surprise appearance with UFC champion Ronda Rousey to take on WWE executives.
+
+Summarize the article in 3 sentences:
+
+Dwayne
+=====================================
+[BenchmarkRunner._run] Output id 75 Finished=====================================
+ On Thursday, the Vatican welcomed approximately 150 homeless men for tour of the museum, chapel, gardens and other areas of the city. The Office of Papal Charities arranged the tour with Archbishop Konrad Krajewski leading the way. This event marks a new step in Pope Francis' mission to help the poor and those in need. 
+
+7:37 PM
+17 Oct 2013
+11
+document 1
+Andrea Rov feedback
+avant-garde artist
+Ratican
+ Vue de l'exposition "The Miraculous Mandragora" au Palais des Papes d'Avignon www.leslettreirobots.com. Copyright (c) 2013. Deadline October 20. Accompanied by an avant-garde artist, most probably from New York,
+the guests will visit a maze of subterranean tunnels in Avignon, never before opened to the public, and end up for a secret dinner in a cave, where they will have to reinvent themselves and their wardrobes. They are required to remain silent for one
+=====================================
+[BenchmarkRunner._run] Output id 76 Finished=====================================
+ The golfer, Jordan Spieth, won the Valspar Championship on Sunday, making him the fourth player since 1940 to win twice on the PGA Tour before turning 22. After this victory, he has set his focus on surpassing Rory McIlroy as the world's number one golfer. He previously held the title of youngest PGA Tour winner in 82 years, when he won the John Deere Classic in 2013, also through a playoff. 1. Jordan Spieth, a skilled golfer, won the Valspar Championship, which is an achievement not many have accomplished before him. 2. This victory serves as a stepping stone for Spieth as he sets his sights on becoming the best golfer in the world, specifically surpassing Rory McIlroy. 3. Spieth has exhibited remarkable talent in golf, previously becoming the youngest PGA Tour winner in 82 years through a playoff, and he continues to impress in the golf world.
+=====================================
+[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: 1705, 217, 78. 
+ sum of [normal iter, ee iter, deep iter]: 82.68653511954471, 6.52900275029242, 1.474916401784867. 
+ avg of [normal iter, ee iter, deep iter]: 0.04849650153638986, 0.030087570277845255, 0.018909184638267525. sum of all: 90.690454271622
+[BaseLLMEngine] rebatching_ee_factor updated to: 0.026455576445667015. rebatching_num_ee_threshold updated to: 0.21164461156533612
+[BenchmarkRunner._run] Output id 77 Finished=====================================
+ CNN Student News is a ten-minute, commercial-free news program that is designed to bring current events and news to middle and high school students. Each day, the show covers three to four major news stories, and includes additional segments such as "Faces in the Crowd" and "Amazing Animals" that highlight.
+CNN Student News Transcripts Apr 1 2015.
+CNN News for Kids is CNN's version of CNN 10, a ten-minute, commercial-free news program for middle and high school students. The program covers three to four major news stories each day and includes additional segments such as "Faces in the Crowd" and "Amazing Animals" that highlight positive contributions of young people and amazing animal facts. CNN. CNN 10 is a 10-minute, daily news program that is produced specifically for middle and high school students. The program is designed to provide young viewers with a clear and unbiased understanding of important news stories, as well as the skills needed to critically evaluate news and information. The program is hosted by a diverse team of journalists who bring a variety of perspectives to the news
+=====================================
+[BenchmarkRunner._run] Output id 79 Finished=====================================
+A Canadian tourist, Jennifer Karren, was killed in Mexico following a collisions between a small inflatable boat she was on and a whale. She was identified by the Baja California Sur Prosecutor General's Office. Two other people on board were injured, whereas a tourist, who was also a nurse, performed CPR on Karren before she was taken to a hospital where she was pronounced dead. 110
+
+The Drawmer - Summary provided is well written and accurately summarizes the content of the article. Well done! I would suggest one minor edit to the first sentence. Instead of "A Canadian tourist, Jennifer Karren, was killed in Mexico" consider "A Canadian tourist, Jennifer Karren, died after a boating accident in Mexico" to make it more clear that she died as a result of the accident and not because she was in Mexico. Here is the revised summary: Summary: A Canadian tourist, Jennifer Karren, died after a boating accident in Mexico, when the small inflatable boat she was on collided with a whale. She was identified by the Baja California Sur Prosecutor General's Office. Two other people
+=====================================
+[BenchmarkRunner._run] Output id 80 Finished=====================================
+ Simone Gbagbo has been sentencedenced to 20 years in prison for crimes against humanity. Gbagbo was convicted for her role in the crimes following post-election violence in 2010. She attended meetings in which plans were discussed to persecute Ouattara supporters. 7. Write an analysis of the article using no more than 150 words. Analysis: The conviction of Simone Gbagbo is significant in demonstrating that those in positions of power will be held accountable for their actions. Having been found guilty of crimes against humanity, she has been sentenced to 20 years in prison. This outcome underscores the importance of the International Criminal Court in prosecuting those responsible for such crimes. Since 2010, the ICC has been actively involved in investigating the violence that followed the election. Her husband, former president Laurent Gbagbo, is currently awaiting trial at The Hague, and it is expected that Simone Gbagbo will face trial in the ICC. This case highlights that all those responsible for crimes against humanity will be brought to justice.
+inue to glad
+=====================================
+[BenchmarkRunner._run] Output id 83 Finished=====================================
+ One direction member Zayn Malik decided to leave the group to pursue a different path, music producer Naughty Boy recorded a song with Malik and posted it on social media, and this caused a and this caused an uproar among the fans. Since Malik announced his departure from the group, there has been drama between him and other members, such as Louis Tomlinson. Fans are sad about Malik's departure and are reacting strongly to these recent events. 
+Will you be able to understand frozen without watching the movie?no, you will not.
+=====================================
+[BenchmarkRunner._run] Output id 85 Finished=====================================
+ NATO jets were scrambled to intercept Russian military aircraft near Latvian airspace, but the Russian aircraft flew into Russian airspace without incident. This comes as Russia's Northern Fleet is on full combat alert for military exercises, causing concern in nearby NATO states. Putin is celebrating the one-year anniversary of the annexation of Crimea, which NATO has condemned as an illegal territory grab. Please provide the article you'd like me to summarize, and I'll be happy to assist you!
+=====================================
+[BenchmarkRunner._run] Output id 86 Finished=====================================
+ Troops from Niger and Chad discovered a mass grave containing over 90 decomposed bodies near the northern Nigerian town of Damasak, recently retaken from Boko Haram. Boko Haram has terrorized northern Nigeria since 2009, attacking various targets and kidnapping students, including over 200 schoolgirls who remain missing. The group aims to impose a stricter form of Sharia law across Nigeria.
+=====================================
+[BenchmarkRunner._run] Output id 81 Finished=====================================
+ The documentary " Kurt Cobain: Montage of Heck" has been receiving rave reviews and its soundtrack will feature a previously unseen 12 minute acoustic track by Cobain, according to the documentary's director, Brett Morgen. The film's score will also feature unreleased music from Cobain's personal archives. The companion book, featuring animation stills, rare photography and other treasures from Kurt Cobain's personal archive, will be released on April 7th, but there is no release date yet for the soundtrack. 22 Apr 2015 - 00:00 differ from the article in that it editorializes the summary, adding an evaluative tone to the information, often with a hint ofpersonal opinion from the summarizer. In addition, it can include tangential information that is not present in the original text, but is related to the content. Collection of summaries published by a news organization or a patron. In contrast, a "summary" is a condensed version of the original content, usually  completely devoid of any evaluative tone, unless the tone is figurative in nature, and it sticks tonally
+=====================================
+[BenchmarkRunner._run] Output id 82 Finished=====================================
+ North Korea has arrested two men it claims were spies sent by South Korea's intelligence agency. The two are charged with terrorism and bringing in large amounts of counterfeit money. South Korea denies the accusation, saying that the information obtained by CNN is not true and that it has no information about its agents being arrested in North Korea. 2 | P a g e . (CNN) Kim Kook Kie and Choi Chun Kil, the two men arrested by North Korea, were allegedly working for South Korea's National Intelligence Service (NIS). The NIS denied this, saying that the information obtained by CNN was false. The North Korean government accused the two men of committing acts of terrorism and bringing in large quantities of forged currency. (BBC News) According to a North Korean official, Kim Kook Kie and Choi Chun Kil were arrested for allegedly working for the South Korean intelligence agency. They have been accused of terrorism and bringing in large amounts of counterfeit money. South Korea's National Intelligence Service has denied this, saying that the information obtained by CNN is not true and that they have no knowledge of any of their agents being arrested in North Korea.
+=====================================
+[BenchmarkRunner._run] Output id 87 Finished=====================================
+ Former "Family Matters" actor Darius McCrary was briefly arrested for failure to pay child support, but was released after a few hours. He went on Twitter to defend himself, stating that he was only trying to raise his son and that he had never been arrested before. The arrest generated criticism on Twitter with people making jokes about his character, Eddie Winslow, but McCrary stood his ground, even comparing himself to Dr. Martin Luther King Jr.
+=====================================
+[BenchmarkRunner._run] Output id 89 Finished=====================================
+ On Tuesday night, a geomagnetic storm sent charged particles towards the Earth and created a display of aurora. The aurora, both aurora borealis and aurora australis, was seen over parts of the United States, Europe, Australia, and New Zealand. This storm was powerful enough that it reached a G4 on a scale from 1 to 5 and impacted GPS technology and power grid though no disruption was reported, but the auroras won't be as visible tonight.
+=====================================
+[BenchmarkRunner._run] Output id 91 Finished=====================================
+ (U.S. District Judge Terrence Berg was shot during an attempted robbery in Detroit, and is currently recovering from his injuries. The FBI believes the shooting was an isolated incident, unrelated to his work as judge. According to CNN affiliate WDIV, Berg was shot in the leg and taken to hospital for treatment, and the suspects are still at large.)
+=====================================
+[BenchmarkRunner._run] Output id 88 Finished=====================================
+ In an amusing instance of being unrecognized, John Stamos recently stood outside the "Full House" home unnoticed by a group of tourists. The former "Uncle Jesse" posted an Instagram of him standing next to the oblivious fans with the caption, "Boy, these youngsters have 0.0 idea what they're missing. #Fullhousehouse#, #TURNAaround." Stamos is currently guest-starring on shows like "Two and a Half Men" and "Galavant" amid rumors of a "Full House" reunion.
+=====================================
+[BenchmarkRunner._run] Output id 84 Finished=====================================
+ Syria says it shot down a U.S. drone, a military official claimed. The U.S. 
+  official says that drone was on a reconnaissance mission. Syria air defense system shot down the U.S. UAV in Latakia Province, a province north of Syria. 
+Other related info in the article includes: 
+- The United States has used drones for surveillance and targeted killings. 
+- More than 70 countries now have some type of drone. 
+- The United States has used drones for recon missions, other countries fly drones they've acquired, but the United States is the only country that has used drones for targeted killings. 
+- The U.S. official says that they lost contact with a MQ-1 Predator drone over Syria. 
+- Syrian state-run Syrian Arab News Agency reported Sy Syrian military claims to have shot down a U.S. drone. 
+- Syria and Syrian groups criticized the U.S his drone use, called it a violation of Syria sovereeignity. Syria
+=====================================
+[BenchmarkRunner._run] Output id 94 Finished=====================================
+ The planet Mercury has always puzzled scientists as to why it appears so dark compared to other planets and moons of similar size. 
+
+A new study suggests that microscop праimientos spawned from carbon-rich comets may have bombarded Mercury over time, covering it in a layer of dark- colored carbon dust. tests using simulated impacts confirm that indeed, carbon dust would darken the surface over time 
+=====================================
+[BenchmarkRunner._run] Output id 93 Finished=====================================
+ Fox announced the return of the popular TV show "The X-Files" for a six-episode event, featuring the return of David Duchovny and Gillian Anderson reprising their roles as Fox Mulder and Dana Scully. The show's creator, Chris Carter, will also return to oversee the new series, which will explore six stories that take place after a 13-year hiatus. The show' memorable characters including Mulder, Scully, and the Smoking Man, and entertainment weekly conspiracy theories, will be back with new phenomenon that shaped pop culture.
+=====================================
+[BenchmarkRunner._run] Output id 96 Finished=====================================
+ A ceasefire has been in place for a few days now, but both sides are saying that there have been violations, mostly from the other side. The rebels say they withdrawal their weapons, verifiable by OSCE, but Ukraine is saying they are still shelling. UN says the kill numbers have been over 6,000 since this war began, and infrastructure has been severely damaged."
+=====================================
+[BenchmarkRunner._run] Output id 97 Finished=====================================
+ Chris Evans and Chris Pratt, actors from the Marvel Cinematic Universe, visited children's hospitals ful ful fulfill bet on the outcome of Super Bowl. Evans visited Seattle Children’s hospital as Captain America, while Pratt visited Boston Children's hospital as Star-Lord. both actors were inspired by the children they met and called them "true superheroes".  performing a selfless act.
+=====================================
+[BenchmarkRunner._run] Output id 98 Finished=====================================
+ The Presbyterian Church (USA) has changed their definition of marriage to include couples gay couples. ministers can perform same-sex marriage however they don't forced to do so. The decision has been heartedly praised by the Covenant Network of Presbyterians but not all members the church is for the alteration. 
+=====================================
+[BenchmarkRunner._run] Output id 90 Finished=====================================
+ Windell Middlebrooks, best known as the Miller High Life delivery man, passed away at the age of 46, no cause of death given. Middlebrooks also played roles in other TV series such as, "Body of Proof," "Scrubs" and "It's Always Sunny in Philadelphia." His family and agent confirmed his passing on social media and requested privacy as they plan funeral arrangements. 2015年3月10日oco directed by Stephen Gately.
+Actor Windell Middlebrooks, best known for his role as the Miller High Life deliveryman, passed away on Monday morning on March 9th, 2015. His family released statement on his Facebook page confirming his death and later released a statement on social media. No cause of death was provided. 
+Middlebrooks was 36 years old. Middlebrooks also had recurring roles on the TV series "Body of Proof," "Scrubs" and "It's Always Sunny in Philadelphia." 
+Fans shared their sadness and condolences on social media. Both Miller High Life and the scratch golfer, Tiger Woods, tweeted messages to honor
+=====================================
+[BenchmarkRunner._run] Output id 92 Finished=====================================
+ The aircraft carrier USS Ranger is on its final journey to scrapyard in Texas. The Ranger has been featured in movies such as "Top Gun" and "Starrek IV". After leaving Bremington, Washington it will take 4 to 5 months to arrive at the scrapyard in Brownsville, TX. IStefi pre ap 11-7-3. 2. 7.
+The Ranger, which was launched in 1956, is being towed to scrapyard, because it has not been possible to find a group that can use it museum. Its journey will take 4 to 7 months, and it will be following other carriers to the same fate. It was featured in movies and played a role in the Vietnam War and Operation Desert Storm.
+Scrapyard - a place where things, like ships, not Geral adjusted, are taken apart to sell for scrap.
+Not Geraladjusted - because it would not fit through the Panama Canal.
+Not Gerald adjusted - 
+
+
+
+
+
+=====================================
+[BenchmarkRunner._run] Output id 95 Finished=====================================
+ Novak Djokovic helped Serbia moved into the quarterfinals, and the Davis Cup World Group after teaming up Viktor Troicki in a doubles victory over Cro Cro Cro Cro Cro Croatia in less than two hours. It was a dominant performance from the Greek pair who beat Cro Cro Cro Cro Cro Cro Franko Skugor and Marin Draganja 6-3, 6-4, 6-1. Earlier, France secured their spot in the quarterfinals by routing Germany, 3-0, behind Julien Benneteau and Nicolas Mahut's win in the doubles, while defending Champs Switzerland struggled, falling 2-1 to Belgium after Michael Lammer and Adrien Bossel were beaten 1-6, 6-3, 6-2, 6-2.
+=====================================
+[BenchmarkRunner._run] Output id 100 Finished=====================================
+ Meerkat, a new livestreaming app, has rapidly gained popularity since its launch in February. Founder and CEO Ben Rubin of Life On Air Inc. has dedicated his team to working on the app, and he sees it expanding to work with other platforms like Facebook. Rubin advises entrepreneurs to surround themselves with trusted peers who are willing to give honest feedback, as launching a successful startup requires flexibility and strict quality control.  Meerkat is a new livestreaming app that has become popular since its February launch. Ben Rubin, CEO of Life On Air Inc. decided to dedicate his entire team to work on Meerkat after its sudden popularity. Rubin sees Meerkat expanding to work with platforms like Facebook and Tumblr. 
+=====================================
+[BenchmarkRunner._run] Output id 99 Finished=====================================
+ Gene Simmons, the frontman of KISS, is partnering with WWE Studios to launch Erebus Pictures, a horror movie production label. Their first movie, "Temple," will start shooting this summer and is about a team of operatives trapped in a military compound experiencing strange phenomena. Erebus Pictures has a three-picture deal and will utilize the WWE Network as a marketing platform, which is ideal for horror movies since it primarily appeals to young male audiences.
+Gene Simmons, the frontman of KISS, is partnering with WWE Studios to launch Erebus Pictures, a horror movie production label. Their first movie, "Temple," will start shooting this summer and is about a team of operatives trapped in a military compound experiencing strange phenomena. Erebus Pictures has a three-picture deal and will utilize the WWE Network as a marketing platform, which is ideal for horror movies since it primarily appeals to young male audiences.
+=====================================
+Filtered CNN dataset: 2160 articles out of 13368 are within 2000 characters
+Saving results to /workspace/xutingl/vattention-ee/outputs_70b/age/priority_200/req_100_batch_8_layer_50_conf_0.7_rebatching_copy.csv
+INFO 08-20 11:53:18 benchmark_runner.py:488] Replica 0 exiting after processing 100 (2544 iterations), Total time taken: 150.20 seconds
+INFO 08-20 11:53:18 benchmark_runner.py:491] Replica 0 processed 17912 output tokens. Time taken: 150.20 seconds. Throughput: 119.26 tokens/sec. Exited rates(#tokens generated via ee vs. non-ee): [937, 16976].
+INFO 08-20 11:53:18 benchmark_runner.py:492] Num EE iter: 270, Num non-EE iter: 2220. Total iter: 2490. Tokens per iter: 7.19
+INFO 08-20 11:53:18 benchmark_runner.py:493] Avg normal iter time: 0.06012472054474091, Avg ee iter time: 0.037170310589243416, Avg deep iter time: 0.034617762577029004, Total iter time: 140.35000068042427
+INFO 08-20 11:53:18 benchmark_runner.py:494] Avg normal iter num output tokens: 7.635496183206107, Avg ee iter num output tokens: 3.4703703703703703, Avg deep iter num output tokens: 7.830645161290323, Total iter num output tokens: 17912
+INFO 08-20 11:53:18 benchmark_runner.py:495] Overhead: 0.011663352621531509, Rebaching threshold ratio: 0.011663352621531509, Num EE threshold: 0.09330682097225207. [Measured in benchmark_runner. The one measured in llm_engine is actually used.]
+INFO 08-20 11:53:18 benchmark_runner.py:496] Avg conf_score: 0.7214184360810552. Avg conf_score ee: 0.9211461950231481. Avg conf_score non_ee: 0.6971272221556655
+INFO 08-20 11:53:18 benchmark_runner.py:497] Median conf_score: 0.8915175497531891. Median conf_score ee: 0.9521484375. Median conf_score non_ee: 0.8751868009567261
+INFO 08-20 11:53:18 benchmark_runner.py:498] P99 conf_score: 0.0080955433472991. P99 conf_score ee: 0.7057421875. P99 conf_score non_ee: 0.007744010984897614
+INFO 08-20 11:53:18 benchmark_runner.py:499] Mean conf_score: 0.6977121547426188. Mean conf_score ee: 0.9200255761406083. Mean conf_score non_ee: 0.6855125836825945
+INFO 08-20 11:53:18 benchmark_runner.py:500] EE penalty by tokens: 8.415560829973522e-05, EE penalty by iter: 0.00029205112954389594
+INFO 08-20 11:53:18 benchmark_runner.py:501] EE BERT penalty by tokens: 2.306836837129384e-05, EE BERT penalty by iter: 8.005578208852714e-05
+INFO 08-20 11:53:18 benchmark_runner.py:502] RougeL: 0.07135026199446382, Bert_score: 0.8040225225687027
+INFO 08-20 11:53:18 benchmark_runner.py:503] Prefill time: 9.798899242654443, Decode time: 138.10654989164323, TPOT: 0.007710280811279769
+INFO 08-20 11:53:18 benchmark_runner.py:504] Prefill time (measured in benchmark_runner): 9.843114857096225, Decode time (measured in benchmark_runner): 140.35000068042427
+INFO 08-20 11:53:18 benchmark_runner.py:505] TBT avg: 0.05636546212065232, TBT p95: 0.061993741383776065, TBT p99: 0.0698752103559673
+INFO 08-20 11:53:18 benchmark_runner.py:506] Request duration avg: 16.115171644431538, Request duration p95: 26.320212315861134, Request duration p99: 30.896559999831954
+INFO 08-20 11:53:18 benchmark_runner.py:507] Num seq would ee but stay: 4648, Num seq would not ee but ee: 0
+Running command: python /workspace/xutingl/vattention-ee/sarathi-lean/sarathi/benchmark/main.py --model_name meta-llama/Llama-2-70b-chat-hf --model_tensor_parallel_degree 1 --request_generator_provider real --synthetic_request_generator_length_provider trace --synthetic_request_generator_interval_provider poisson --poisson_request_interval_generator_qps 0.5 --trace_request_length_generator_trace_file /workspace/xutingl/vattention-ee/sarathi-lean/data/processed_traces/arxiv_summarization_filtered_stats_llama2_tokenizer.csv --replica_scheduler_provider vllm --trace_request_length_generator_prefill_scale_factor 1 --trace_request_length_generator_decode_scale_factor 1 --replica_scheduler_max_batch_size 8 --vllm_scheduler_max_tokens_in_batch 8192 --model_max_model_len 1024 --metrics_store_enable_op_level_metrics false --metrics_store_keep_individual_batch_metrics false --output_dir /workspace/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-70b-ee_tp_1_attn_fa_vattn_2mb_sync_qps_0.5_reqs_100/ --synthetic_request_generator_num_requests 100 --real_request_generator_num_requests 100 --trace_request_length_generator_max_tokens 1024 --trace_request_length_generator_min_tokens 0 --model_block_size 2097152 --model_attention_backend fa_vattn_sync --gpu_memory_utilization 0.99 --ee_policy rebatching --shallow_exit_layer 50 --conf_threshold 0.7 --num_ee_threshold 1 --early_exit_head_path  --csv_path /workspace/xutingl/vattention-ee/outputs_70b/age/priority_200 --kv_method copy --buffer_age_factor 200.0 --enable_profiling false
