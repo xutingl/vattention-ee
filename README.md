@@ -192,6 +192,201 @@ vAttention exports a set of simple APIs that a serving system can use for KV-cac
 
 And that is most of it.
 
+# Installation Guide for RTX 5060 Ti / Blackwell GPUs (sm_120)
+
+This guide documents the working installation steps for RTX 5060 Ti and other Blackwell architecture GPUs (compute capability 12.0).
+
+## Prerequisites
+
+- GPU: RTX 5060 Ti or other Blackwell GPU (sm_120)
+- CUDA Toolkit: 12.8+ (nvcc 12.9+ recommended)
+- Python: 3.10
+- OS: Linux
+
+## Step-by-Step Installation
+
+### 1. Create Conda Environment
+
+```sh
+conda create -n vattn python=3.10
+conda activate vattn
+```
+
+### 2. Install PyTorch 2.7.0 with CUDA 12.8
+
+```sh
+pip install torch==2.7.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+```
+
+Verify installation:
+```sh
+python -c "import torch; print(f'PyTorch: {torch.__version__}'); print(f'CUDA: {torch.version.cuda}'); print(f'GPU: {torch.cuda.get_device_name(0)}'); print(f'Compute capability: {torch.cuda.get_device_capability(0)}')"
+```
+
+Expected output should show `Compute capability: (12, 0)`.
+
+### 3. Download libtorch (for vattention)
+
+```sh
+wget https://download.pytorch.org/libtorch/cu128/libtorch-shared-with-deps-2.7.0%2Bcu128.zip
+unzip libtorch-shared-with-deps-2.7.0+cu128.zip -d libtorch_270
+export LIBTORCH_PATH=$(pwd)/libtorch_270/libtorch
+```
+
+### 4. Install flash-attn 2.8.3
+
+flash-attn 2.8.3 supports sm_120. Earlier versions (e.g., 2.5.9) do not.
+
+```sh
+pip uninstall flash-attn -y
+export TORCH_CUDA_ARCH_LIST="12.0"
+pip install flash-attn==2.8.3 --no-build-isolation --no-deps
+```
+
+Verify:
+```sh
+python -c "from flash_attn import flash_attn_with_kvcache; print('flash-attn installed successfully')"
+```
+
+### 5. Install flashinfer
+
+```sh
+pip install flashinfer-python --no-deps --no-build-isolation --index-url https://flashinfer.ai/whl/cu128/torch2.7/
+```
+
+### 6. Build sarathi with sm_120 support
+
+**Important:** sarathi's `setup.py` needs modification to support sm_120:
+
+1. Edit `sarathi-lean/setup.py`:
+   - Line 44: Change `valid_caps = {70, 75, 80, 86, 89, 90}` to `valid_caps = {70, 75, 80, 86, 89, 90, 120}`
+   - After line 73, add:
+     ```python
+     if 120 in compute_capabilities and nvcc_cuda_version < Version("12.8"):
+         raise RuntimeError(
+             f"CUDA 12.8 or higher is required for GPUs with compute capability 12.0 (Blackwell). "
+             f"Found CUDA {nvcc_cuda_version}."
+         )
+     ```
+   - Replace the NVCC version detection section (around line 54) to use system nvcc:
+     ```python
+     # Validate the NVCC CUDA version.
+     # Try system nvcc first (might be newer than CUDA_HOME)
+     nvcc_cuda_version = None
+     import shutil
+     system_nvcc = shutil.which("nvcc")
+     if system_nvcc:
+         try:
+             nvcc_output = subprocess.check_output([system_nvcc, "-V"], universal_newlines=True)
+             output = nvcc_output.split()
+             release_idx = output.index("release") + 1
+             nvcc_cuda_version = parse(output[release_idx].split(",")[0])
+             print(f"Using system nvcc version {nvcc_cuda_version}")
+         except:
+             pass
+     
+     # Fallback to CUDA_HOME nvcc
+     if nvcc_cuda_version is None:
+         nvcc_cuda_version = get_nvcc_cuda_version(CUDA_HOME)
+     ```
+
+2. Build sarathi:
+```sh
+cd sarathi-lean/
+export CUDA_HOME=$(dirname $(dirname $(which nvcc)))  # Use conda's CUDA toolkit
+rm -f sarathi/*.so  # Remove old compiled extensions
+pip install -e . --no-build-isolation
+cd ../
+```
+
+Verify sarathi was compiled for sm_120:
+```sh
+python -c "import sarathi; print('sarathi installed successfully')"
+```
+
+### 7. Build vattention (optional, if using vattention backends)
+
+If you plan to use `fa_vattn_*` or `fi_vattn_*` attention backends:
+
+1. Edit `vattention/setup.py`:
+   - Update `LIBTORCH_PATH` to point to your libtorch directory (or use environment variable)
+
+2. Build vattention:
+```sh
+cd vattention/
+export TORCH_CUDA_ARCH_LIST="12.0"  # or "9.0" if your CUDA toolkit < 12.8
+python setup.py install
+cd ../
+```
+
+**Note:** If your system CUDA toolkit is < 12.8, you may need to compile for sm_90 as a fallback:
+```sh
+export TORCH_CUDA_ARCH_LIST="9.0"
+```
+
+## Configuration Adjustments
+
+### GPU Memory Settings
+
+For RTX 5060 Ti (16GB), adjust these settings in `scripts/run_ee.py`:
+
+```python
+gpu_mem_util = 0.85  # Lowered from 0.99 to leave room for KV cache
+max_tokens = 512     # Lowered from 1024 to fit in available GPU blocks
+```
+
+### Running the Benchmark
+
+```sh
+cd ~/vattention-ee
+HF_HUB_OFFLINE=1 CUDA_HOME=$(dirname $(dirname $(which nvcc))) \
+python scripts/run_ee.py \
+  --ee_policy=rebatching \
+  --max_batch_size=1 \
+  --num_requests=20 \
+  --shallow_exit_layer=32 \
+  --conf_threshold=0.6
+```
+
+## Troubleshooting
+
+### "FlashAttention only supports Ampere GPUs or newer"
+- Ensure flash-attn 2.8.3 is installed (not 2.5.9)
+- Restart Ray workers to pick up new flash-attn installation
+
+### "no kernel image is available for execution on the device"
+- Verify sarathi was rebuilt: `ls -lh sarathi-lean/sarathi/*.so` should show recent timestamps
+- Check that `setup.py` includes `120` in `valid_caps`
+- Ensure `CUDA_HOME` points to conda's CUDA toolkit (with nvcc 12.9+)
+
+### "Not enough available memory"
+- Lower `gpu_memory_utilization` to 0.75-0.85
+- Reduce `max_model_len` to 512 or lower
+- Use `max_batch_size=1`
+
+### "CUDA 12.8 or higher is required"
+- Check nvcc version: `nvcc --version` (should be 12.8+)
+- Set `CUDA_HOME` to conda's CUDA: `export CUDA_HOME=$(dirname $(dirname $(which nvcc)))`
+
+## Verified Working Versions
+
+- PyTorch: 2.7.0+cu128
+- flash-attn: 2.8.3
+- flashinfer-python: 0.5.3
+- sarathi: 0.1.7 (editable install from sarathi-lean/)
+- CUDA Toolkit: 12.9 (via conda)
+- Python: 3.10
+
+## Summary
+
+The key differences from the standard installation:
+1. **PyTorch 2.7.0+cu128** (instead of 2.3.0+cu121) for sm_120 support
+2. **flash-attn 2.8.3** (instead of 2.5.9) for sm_120 support
+3. **Modified sarathi setup.py** to include sm_120 in valid compute capabilities
+4. **Lower GPU memory utilization** (0.85 instead of 0.99)
+5. **Reduced max_model_len** (512 instead of 1024) for 16GB GPUs
+
+
 ## Citation
 
 If you use our work, please consider citing our paper:
@@ -215,3 +410,5 @@ This repository originally started as a fork of [Sarathi-Serve](https://github.c
 ```shell
 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=20 --shallow_exit_layer=32 --conf_threshold=0.6 > outputs_13b/req_20_batch_4/rebatching.txt
 ```
+
+
