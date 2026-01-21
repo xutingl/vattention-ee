@@ -24,7 +24,7 @@ def main():
 
     # models, attention_backends = {'llama-3-8b-1'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-2-13b'}, ['fa_vattn_2mb_sync']
-    models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
+    # models, attention_backends = {'llama-2-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-3-70b'}, ['fa_vattn_2mb_sync']
     # models, attention_backends = {'llama-2-7b'}, ['fa_vattn_2mb_sync']
 
@@ -40,6 +40,7 @@ def main():
     kv_method = utils.args.kv_method
     enable_profiling = utils.args.enable_profiling
     buffer_age_factor = utils.args.buffer_age_factor
+    dataset_name = utils.args.dataset_name
 
     for model in models:
         for qps in qps_values:
@@ -47,7 +48,7 @@ def main():
                 model_logentry = utils.models[model]['logentry']
                 tp_dim = utils.models[model]['tp']
                 max_tokens = utils.get_max_context_length(backend, utils.MAX_CONTEXT_LENGTH_DYNAMIC_TRACES)
-                max_tokens = 1024
+                max_tokens = 512
                 kv_block_size = utils.get_block_or_page_size(backend)
                 attn_backend_arg = utils.get_backend(backend)
                 command = [
@@ -72,6 +73,7 @@ def main():
                         '--output_dir', f'{experiment_dir}/dataset_{utils.dataset_name}_model_{model_logentry}_tp_{tp_dim}_attn_{backend}_qps_{qps}_reqs_{num_requests}/',
                         '--synthetic_request_generator_num_requests', str(num_requests),
                         '--real_request_generator_num_requests', str(num_requests),
+                        '--real_request_generator_dataset_name', dataset_name,
                         '--trace_request_length_generator_max_tokens', str(max_tokens),
                         '--trace_request_length_generator_min_tokens', str(0),
                         '--model_block_size', f'{kv_block_size}',
