@@ -246,9 +246,10 @@ class BaseWorker:
                 self.scheduled_seq_metadata_map[scheduled_seq_metadata.seq_id] = scheduled_seq_metadata
             
             scheduled_seq_metadata_list_for_rebatching = []
-            for seq_id in output_seq_ids:
-                seq_metadata = self.scheduled_seq_metadata_map[int(seq_id)]
-                scheduled_seq_metadata_list_for_rebatching.append(seq_metadata)
+            if output_seq_ids is not None:
+                for seq_id in output_seq_ids:
+                    seq_metadata = self.scheduled_seq_metadata_map[int(seq_id)]
+                    scheduled_seq_metadata_list_for_rebatching.append(seq_metadata)
 
             scheduler_outputs.scheduled_seq_metadata_list = scheduled_seq_metadata_list_for_rebatching
         
