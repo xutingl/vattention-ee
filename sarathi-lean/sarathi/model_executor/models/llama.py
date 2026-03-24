@@ -276,7 +276,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -460,13 +460,14 @@ class LlamaModel(nn.Module):
 
         need_skip = num_ee > num_ee_threshold
 
-        if need_skip and ee_policy == "rebatching":
-            for seq_id in priority_reqs:
-                for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
-                    if seq_id_in_batch == seq_id:
-                        if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
-                            need_skip = False 
-                            break
+        # Priority mode
+        # if need_skip and ee_policy == "rebatching":
+        #     for seq_id in priority_reqs:
+        #         for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
+        #             if seq_id_in_batch == seq_id:
+        #                 if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
+        #                     need_skip = False 
+        #                     break
 
 
         if not (ee_policy == "rebatching" or ee_policy == "latency-only"):
