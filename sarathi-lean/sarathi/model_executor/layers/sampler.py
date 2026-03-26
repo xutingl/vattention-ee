@@ -47,6 +47,12 @@ class Sampler(nn.Module):
         conf: Optional[torch.Tensor] = None,
         conf_lst: Optional[List[float]] = None,
     ) -> SamplerOutputs:
+        # empty/none input guards
+        if hidden_states is None and lm_logits is None:
+            return [], conf, conf_lst if conf_lst is not None else []
+        if not seq_metadata_list:
+            return [], conf, conf_lst if conf_lst is not None else []
+        
         if lm_logits is not None:
             logits = lm_logits
         else:

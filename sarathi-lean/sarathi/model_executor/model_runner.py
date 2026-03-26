@@ -282,7 +282,8 @@ class ModelRunner:
             if self.rebatching:
                 for matadata in seq_metadata_list:
                     self.seq_metadata_map[matadata.seq.seq_id] = matadata
-                seq_metadata_list = [self.seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
+                if output_seq_ids is not None:
+                    seq_metadata_list = [self.seq_metadata_map[int(seq_id)] for seq_id in output_seq_ids]
 
         # print(f"[ModelRunner] output length: {len(output)}")
         with self._sampler_e2e_timer:

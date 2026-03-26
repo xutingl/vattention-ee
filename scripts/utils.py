@@ -14,11 +14,12 @@ parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Con
 parser.add_argument('--num_ee_threshold', type=int, default=-1, help='Minimum number of requests that must want to EE before partial early exit is triggered (for rebatching).')
 parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
 parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='Early exit head path')
-parser.add_argument('--csv_path', type=str, default="/workspace/xutingl/vattention-ee/outputs_13b/req_100_batch_4_csv/", help='Path to save CSV results')
+parser.add_argument('--csv_path', type=str, default="/home/alexdan/vattention-ee/outputs_7b_gray/", help='Path to save CSV results')
 parser.add_argument('--kv_method', type=str, default='copy', help='Technique to fill missing kv cache')
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
+parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum'], help='Dataset name for real request generator (cnn or xsum)')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))
