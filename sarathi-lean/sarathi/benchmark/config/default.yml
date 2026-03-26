@@ -33,6 +33,7 @@ synthetic_request_generator:
 
 real_request_generator:
   num_requests: 500
+  dataset_name: cnn
 
 trace_request_generator:
   trace_file: ./data/processed_traces/sydney_enterprise.csv
