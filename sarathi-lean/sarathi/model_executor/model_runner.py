@@ -59,7 +59,8 @@ class ModelRunner:
                 self.model.lm_head.weight, self.model.config.vocab_size
             )
         
-        self.model.set_sampler(self.sampler)
+        if hasattr(self.model, 'set_sampler'):
+            self.model.set_sampler(self.sampler)
 
         self._prepare_inputs_e2e_timer = CpuTimer(
             CpuOperationMetrics.PREPARE_INPUTS_E2E, rank=self.rank

@@ -460,14 +460,13 @@ class LlamaModel(nn.Module):
 
         need_skip = num_ee > num_ee_threshold
 
-        # Priority mode
-        # if need_skip and ee_policy == "rebatching":
-        #     for seq_id in priority_reqs:
-        #         for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
-        #             if seq_id_in_batch == seq_id:
-        #                 if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
-        #                     need_skip = False 
-        #                     break
+        if need_skip and ee_policy == "rebatching":
+            for seq_id in priority_reqs:
+                for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
+                    if seq_id_in_batch == seq_id:
+                        if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
+                            need_skip = False
+                            break
 
 
         if not (ee_policy == "rebatching" or ee_policy == "latency-only"):

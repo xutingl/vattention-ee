@@ -18,6 +18,7 @@ parser.add_argument('--csv_path', type=str, default="/workspace/xutingl/vattenti
 parser.add_argument('--kv_method', type=str, default='copy', help='Technique to fill missing kv cache')
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
+parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))
@@ -47,6 +48,9 @@ models = {
     'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'},
     
     'llama-2-7b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama2-7b-ee'},
+    'qwen-3-8b': {'tp': 1, 'hfrecord': 'Qwen/Qwen3-8B', 'logentry': 'qwen-3-8b-ee'},
+    'qwen-7b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-7B-Chat', 'logentry': 'qwen-7b-chat-ee'},
+    'qwen-14b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-14B-Chat', 'logentry': 'qwen-14b-chat-ee'},
 }
 
 # vattention allocates memory in power of two while fa_paged/fi_paged

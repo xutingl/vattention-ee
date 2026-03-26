@@ -49,9 +49,11 @@ class VLLMScheduler(BaseScheduler):
         now = time.monotonic()
 
         priority_reqs = []
-        for seq_id in self.request_age_map:
-            if self.request_age_map[seq_id] > self.request_age_threshold:
-                priority_reqs.append(seq_id)
+
+        # Disable request age-based priority
+        # for seq_id in self.request_age_map:
+        #     if self.request_age_map[seq_id] > self.request_age_threshold:
+        #         priority_reqs.append(seq_id)
 
         ignored_seq_ids: List[int] = []
         preempted_seq_ids: List[int] = []
