@@ -102,16 +102,27 @@ def plot_line_graph(
     plt.show()
 
 
+llama_ee_configs = [
+    "layer_20_conf_0.025",
+    "layer_20_conf_0.05",
+    "layer_20_conf_0.1",
+    "layer_20_conf_0.25",
+    "layer_20_conf_0.5",
+]
+
+qwen_ee_configs = [
+    "layer_20_conf_0.01",
+    "layer_20_conf_0.02",
+    "layer_20_conf_0.05",
+    "layer_20_conf_0.1",
+    "layer_20_conf_0.25",
+    "layer_20_conf_0.5",
+]
+
+
 if __name__ == "__main__":
     # Example usage
-    ee_configs = [
-        "layer_20_conf_0.025",
-        "layer_20_conf_0.05",
-        "layer_20_conf_0.1",
-        "layer_20_conf_0.25",
-        "layer_20_conf_0.5",
-        "layer_20_conf_0.75",
-    ]
+    ee_configs = qwen_ee_configs
     policies = ["eager", "lazy", "median", "rebatching", "latency-only"]
 
     llama13b = "llama-2-13b"

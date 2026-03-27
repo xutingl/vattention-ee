@@ -297,6 +297,6 @@ class ModelRunner:
 
         get_attention_wrapper().end_forward()
 
-        is_ee = lm_logits is not None
+        is_ee = lm_logits is not None or latency_only_ee_iter_time is not None
 
         return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, conf_lst, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee

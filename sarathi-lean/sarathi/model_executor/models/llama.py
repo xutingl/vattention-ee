@@ -687,6 +687,7 @@ class LlamaModel(nn.Module):
         check_for_ee = cache_engine is not None and self.ee_policy != "off" and self.shallow_exit_layer is not None and hidden_states.size(0) <= self.max_batch_size and len(recompute_dict) == 0
 
         conf = None
+        exited_conf_lst = None
 
         has_ee = False
         latency_only_ee_iter_time = None
@@ -762,7 +763,7 @@ class LlamaModel(nn.Module):
 
         if has_ee:
             return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf, exited_conf_lst, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, None, None, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
     
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
