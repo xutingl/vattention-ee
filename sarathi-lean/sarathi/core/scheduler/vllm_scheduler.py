@@ -39,6 +39,11 @@ class VLLMScheduler(BaseScheduler):
 
         self.buffer_age_factor = 0
 
+        # Minimum buffer occupancy before triggering a dedicated flush iteration.
+        # Prevents wasting a full iteration to process just 1-2 buffered sequences.
+        self.min_flush_size = max(self.scheduler_config.max_num_seqs // 2, 1)
+        self.min_flush_size = 8
+
         self.request_age_threshold = scheduler_config.buffer_age_factor
 
     def get_block_space_manager_class(self):
@@ -77,8 +82,14 @@ class VLLMScheduler(BaseScheduler):
 
         age_adjusted_buffer_size = len(self.rebatching_buffer) * (1 + self.buffer_age * self.buffer_age_factor)
 
-        # Need to run requests in the rebatching buffer first
-        if age_adjusted_buffer_size >= self.scheduler_config.max_num_seqs or (len(self.rebatching_buffer) >= len(self.waiting) and len(self.rebatching_buffer) > 0) or self.buffer_age >= self.buffer_age_threshold:
+        # Need to run requests in the rebatching buffer first.
+        # Only trigger a dedicated flush when the buffer is large enough to
+        # form an efficient deep batch, or when it has waited too long
+        # (starvation prevention).  Small buffers are drained inline by the
+        # model (see qwen.py / llama.py deep_buffer piggyback path).
+        if (age_adjusted_buffer_size >= self.scheduler_config.max_num_seqs
+            or len(self.rebatching_buffer) >= self.min_flush_size
+            or self.buffer_age >= self.buffer_age_threshold):
             # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
             self.buffer_age = 0
             return SchedulerOutputs(id=self._iteration_id,

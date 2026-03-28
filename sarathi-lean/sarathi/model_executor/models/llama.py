@@ -460,13 +460,15 @@ class LlamaModel(nn.Module):
 
         need_skip = num_ee > num_ee_threshold
 
-        if need_skip and ee_policy == "rebatching":
-            for seq_id in priority_reqs:
-                for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
-                    if seq_id_in_batch == seq_id:
-                        if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
-                            need_skip = False
-                            break
+        # This is only needed for priority experiments
+        # if need_skip and ee_policy == "rebatching":
+        #     for seq_id in priority_reqs:
+        #         for idx, seq_id_in_batch in enumerate(seq_ids_in_batch):
+        #             if seq_id_in_batch == seq_id:
+        #                 if not mask[idx]: # If priority request doesn't want to EE, the batch does not EE
+        #                     need_skip = False
+        #                     break
+
 
 
         if not (ee_policy == "rebatching" or ee_policy == "latency-only"):
@@ -980,8 +982,8 @@ class LlamaModel(nn.Module):
                     self.exited_rates[1] += len(seq_ids_in_batch)
 
                     # If there are enough requests in the `deep_buffer`, we will add them to the current deep iteration i.e. concate them to current hidden_states.
-                    if len(self.deep_buffer) >= max(self.max_batch_size//2, self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)):
-                    # if len(self.deep_buffer) >= 6:
+                    # if len(self.deep_buffer) >= max(self.max_batch_size//2, self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)):
+                    if len(self.deep_buffer) >= 6:
                         # Take hidden states from `deep_buffer`
                         deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer.take_hidden_states()
 

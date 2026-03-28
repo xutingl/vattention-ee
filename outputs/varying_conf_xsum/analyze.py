@@ -1,3 +1,4 @@
+import glob
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,17 +19,17 @@ POLICY_COLORS = {
 
 def load_csv(model: str, batch_size: int, ee_config: str, policy: str) -> pd.DataFrame:
     """Load a single experiment CSV file."""
-    filename = f"req_100_batch_{batch_size}_{ee_config}_{policy}_copy.csv"
-    path = os.path.join(BASE_DIR, model, f"batch_{batch_size}", policy, filename)
-    if not os.path.exists(path):
-        print(f"Warning: file not found: {path}")
+    pattern = os.path.join(BASE_DIR, model, f"batch_{batch_size}", policy, f"req_*_batch_{batch_size}_{ee_config}_{policy}_copy.csv")
+    matches = sorted(glob.glob(pattern))
+    if not matches:
+        print(f"Warning: no file matching: {pattern}")
         return None
-    return pd.read_csv(path)
+    return pd.read_csv(matches[0])
 
 
 # Derived columns: name -> lambda(df) computing the value from existing columns
 DERIVED_COLUMNS = {
-    "decode_throughput": lambda df: (df["num_ee_tokens"] + df["num_no_ee_tokens"]) / df["decode_time"],
+    "decode_throughput": lambda df: df["num_output_tokens"] / df["decode_time"],
 }
 
 
@@ -62,6 +63,17 @@ def plot_line_graph(
         save: Whether to save the plot to a file.
     """
     fig, ax = plt.subplots(figsize=(10, 6))
+
+    # Draw Non-EE baseline if "off" directory exists
+    off_dir = os.path.join(BASE_DIR, model, f"batch_{batch_size}", "off")
+    if os.path.isdir(off_dir):
+        off_files = sorted(os.listdir(off_dir))
+        if off_files:
+            off_df = pd.read_csv(os.path.join(off_dir, off_files[0]))
+            off_df.columns = off_df.columns.str.strip()
+            off_throughput = get_column_value(off_df, y)
+            if off_throughput is not None:
+                ax.axhline(y=off_throughput, color="black", linestyle="--", linewidth=1.5, label="Non-EE")
 
     for policy in policies:
         x_vals = []
@@ -119,10 +131,27 @@ llama_ee_configs = [
     "layer_20_conf_0.75",
 ]
 
+llama_ee_configs = [
+    "layer_20_conf_0.01",
+    "layer_20_conf_0.02",
+    "layer_20_conf_0.03",
+    "layer_20_conf_0.05",
+    "layer_20_conf_0.1",
+    "layer_20_conf_0.2",
+]
+
+llama_ee_configs = [
+
+    "layer_20_conf_0.03",
+    "layer_20_conf_0.05",
+    "layer_20_conf_0.1",
+    "layer_20_conf_0.2",
+    "layer_20_conf_0.5",
+]
+
 
 if __name__ == "__main__":
     # Example usage
-    ee_configs = qwen_ee_configs
     policies = ["eager", "lazy", "median", "rebatching", "latency-only"]
 
     llama13b = "llama-2-13b"
@@ -131,8 +160,8 @@ if __name__ == "__main__":
     plot_line_graph(
         y="decode_throughput",
         x="avg_conf_score_ee",
-        ee_configs=ee_configs,
+        ee_configs=llama_ee_configs,
         batch_size=8,
         policies=policies,
-        model=qwen,
+        model=llama13b,
     )

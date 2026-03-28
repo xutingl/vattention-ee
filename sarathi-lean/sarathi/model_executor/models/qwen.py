@@ -615,7 +615,8 @@ class QWenModel(nn.Module):
                 else:
                     self.exited_rates[1] += len(seq_ids_in_batch)
 
-                    if len(self.deep_buffer) >= max(self.max_batch_size//2, get_adaptive_rebatching_threshold(self.num_ee_threshold, self.max_batch_size, rebatching_ee_factor)):
+                    # if len(self.deep_buffer) >= max(self.max_batch_size//2, get_adaptive_rebatching_threshold(self.num_ee_threshold, self.max_batch_size, rebatching_ee_factor)):
+                    if len(self.deep_buffer) >= 2:
                         deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer.take_hidden_states()
 
                         hidden_states = torch.cat([hidden_states, deep_buffer_hidden_states], dim=0)

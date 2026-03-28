@@ -8,21 +8,31 @@ SHALLOW_EXIT_LAYER=${4:-20}
 KV_METHOD="copy"
 
 # POLICIES=("eager" "lazy" "median" "rebatching" "latency-only")
-# POLICIES=("rebatching")
+POLICIES=("rebatching")
 
-POLICIES=("eager" "lazy" "median" "latency-only")
+# POLICIES=("eager" "lazy" "median" "latency-only" "rebatching")
 
-CONF_THRESHOLDS_LLAMA=(0.0 0.025 0.05 0.1 0.25 0.5)
-CONF_THRESHOLDS_QWEN=(0.0 0.01 0.02 0.05 0.1 0.25)
+# CONF_THRESHOLDS_LLAMA=(0.0 0.025 0.05 0.1 0.25 0.5)
+# CONF_THRESHOLDS_QWEN=(0.0 0.01 0.02 0.05 0.1 0.25)
 
-CONF_THRESHOLDS=(0.0 0.01 0.02 0.025 0.05 0.1 0.25 0.5)
+# CONF_THRESHOLDS=(0.0 0.01 0.02 0.025 0.05 0.1 0.25 0.5)
+
+# CONF_THRESHOLDS=(0.015 0.025 0.03 0.04 0.05 0.1 0.2 0.3)
+
+# CONF_THRESHOLDS=(0.01 0.02 0.025 0.03 0.04 0.05 0.1 0.2 0.25 0.3 0.5)
+
+CONF_THRESHOLDS=(0.01 0.02 0.05 0.1 0.25 0.5)
+
+
+
+
 
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-MODELS=("llama-2-13b" "qwen-14b-chat")
+# MODELS=("llama-2-13b" "qwen-14b-chat")
 # MODELS=("llama-2-13b")
-# MODELS=("qwen-14b-chat")
+MODELS=("qwen-14b-chat")
 
 for MODEL in "${MODELS[@]}"; do
     for POLICY in "${POLICIES[@]}"; do
