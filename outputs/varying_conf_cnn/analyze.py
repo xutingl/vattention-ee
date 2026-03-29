@@ -123,14 +123,6 @@ qwen_ee_configs = [
 ]
 
 llama_ee_configs = [
-    "layer_20_conf_0.025",
-    "layer_20_conf_0.05",
-    "layer_20_conf_0.1",
-    "layer_20_conf_0.25",
-    "layer_20_conf_0.5",
-]
-
-llama_ee_configs = [
 
     "layer_20_conf_0.03",
     "layer_20_conf_0.05",
@@ -141,8 +133,7 @@ llama_ee_configs = [
 
 
 if __name__ == "__main__":
-    # Example usage
-    ee_configs = qwen_ee_configs
+
     policies = ["eager", "lazy", "median", "rebatching", "latency-only"]
 
     llama13b = "llama-2-13b"
@@ -155,4 +146,13 @@ if __name__ == "__main__":
         batch_size=8,
         policies=policies,
         model=qwen,
+    )
+
+    plot_line_graph(
+        y="decode_throughput",
+        x="avg_conf_score_ee",
+        ee_configs=llama_ee_configs,
+        batch_size=8,
+        policies=policies,
+        model=llama13b,
     )
