@@ -131,6 +131,15 @@ llama_ee_configs = [
     "layer_20_conf_0.5",
 ]
 
+llama_70b_configs = [
+    "layer_40_conf_0.005",
+    "layer_40_conf_0.01",
+    "layer_40_conf_0.02",
+    "layer_40_conf_0.03",
+    "layer_40_conf_0.04",
+    "layer_40_conf_0.05",
+]
+
 
 if __name__ == "__main__":
 
@@ -139,20 +148,29 @@ if __name__ == "__main__":
     llama13b = "llama-2-13b"
     qwen = "qwen-14b-chat"
 
-    plot_line_graph(
-        y="decode_throughput",
-        x="avg_conf_score_ee",
-        ee_configs=qwen_ee_configs,
-        batch_size=8,
-        policies=policies,
-        model=qwen,
-    )
+    # plot_line_graph(
+    #     y="decode_throughput",
+    #     x="avg_conf_score_ee",
+    #     ee_configs=qwen_ee_configs,
+    #     batch_size=8,
+    #     policies=policies,
+    #     model=qwen,
+    # )
+
+    # plot_line_graph(
+    #     y="decode_throughput",
+    #     x="avg_conf_score_ee",
+    #     ee_configs=llama_ee_configs,
+    #     batch_size=8,
+    #     policies=policies,
+    #     model=llama13b,
+    # )
 
     plot_line_graph(
         y="decode_throughput",
         x="avg_conf_score_ee",
-        ee_configs=llama_ee_configs,
+        ee_configs=llama_70b_configs,
         batch_size=8,
         policies=policies,
-        model=llama13b,
+        model="llama-2-70b",
     )
