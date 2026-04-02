@@ -79,7 +79,7 @@ class BenchmarkRunner:
             chunk_size = self._config.simple_chunking_scheduler_chunk_size
         
         self._config.model_load_format = "auto"
-        self._config.download_dir = "/workspace/downloaded_models/"
+        self._config.download_dir = "/home/alexdan/downloaded_models/"
 
         self._llm_engine = LLMEngine.from_engine_args(
             # replica config
@@ -180,9 +180,11 @@ class BenchmarkRunner:
         }
 
     def warmup(self) -> None:
-        # warmup the engine
+        # Use the shortest request for warmup so we don't crash with a long
+        # SQuAD/MMLU prompt before length validation has a chance to run cleanly.
+        warmup_request = min(self._requests, key=lambda r: len(r.prompt))
         self._llm_engine.add_request(
-            **self._get_input_params(self._requests[0], time.monotonic())
+            **self._get_input_params(warmup_request, time.monotonic())
         )
 
         is_completed = False
@@ -313,26 +315,65 @@ class BenchmarkRunner:
 
 
 
-        # Get reference summaries for each request index
+        # Get references and compute downstream task metrics
         self._config.num_requests = len(self._requests)
         reference_generator = RealRequestGenerator(self._config)
-        reference_summaries = reference_generator.get_cnn_summaries()
+        dataset_name = getattr(self._config, 'real_request_generator_dataset_name', 'cnn').lower()
+        references = reference_generator.get_references()
 
-        # Compute rougeL and bert_score for each request
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
         rougeL_scores = []
         bert_scores = []
-        for idx, output in enumerate(finished_output):
-            reference = reference_summaries[idx]
-            # Compute rougeL fmeasure
-            rougeL = scorer.score(reference, output)['rougeL'].fmeasure
-            rougeL_scores.append(rougeL)
+        accuracy_scores = []
+        squad_em_scores = []
+        squad_f1_scores = []
 
+        if dataset_name in ("cnn", "xsum"):
+            # Summarization: ROUGE-L + BERTScore
+            scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+            for idx, output in enumerate(finished_output):
+                reference = references[idx]
+                rougeL = scorer.score(reference, output)['rougeL'].fmeasure
+                rougeL_scores.append(rougeL)
+            P, R, F1 = bert_score.score(finished_output, references, lang='en')
+            bert_scores.extend(F1.tolist())
 
-        # Compute bert_score F1
+        elif dataset_name == "mmlu":
+            # Classification: accuracy — check if output starts with the correct letter
+            for idx, output in enumerate(finished_output):
+                predicted = output.strip()[:1].upper()
+                correct = references[idx]
+                accuracy_scores.append(1.0 if predicted == correct else 0.0)
 
-        P, R, F1 = bert_score.score(finished_output, reference_summaries, lang='en')
-        bert_scores.extend(F1.tolist())
+        elif dataset_name == "squad":
+            # QA: SQuAD-style exact match and token-level F1
+            import re
+            import string
+
+            def _normalize(text):
+                text = text.lower()
+                text = re.sub(r'\b(a|an|the)\b', ' ', text)
+                text = ''.join(ch for ch in text if ch not in string.punctuation)
+                return ' '.join(text.split())
+
+            def _token_f1(pred, gold):
+                pred_tokens = _normalize(pred).split()
+                gold_tokens = _normalize(gold).split()
+                common = set(pred_tokens) & set(gold_tokens)
+                if not common:
+                    return 0.0
+                prec = len(common) / len(pred_tokens)
+                rec = len(common) / len(gold_tokens)
+                return 2 * prec * rec / (prec + rec)
+
+            for idx, output in enumerate(finished_output):
+                gold_answers = references[idx]  # List[str]
+                em = max(
+                    1.0 if _normalize(output) == _normalize(g) else 0.0
+                    for g in gold_answers
+                )
+                f1 = max(_token_f1(output, g) for g in gold_answers)
+                squad_em_scores.append(em)
+                squad_f1_scores.append(f1)
 
         output_throughput = num_output_tokens / (end_time - start_time)
 
@@ -375,9 +416,13 @@ class BenchmarkRunner:
 
         # baseline_bert_score = 0.8330790978670121 # For llama2-13b
         baseline_bert_score = 0.825637583732605 # For llama2-70b
-        avg_bert_score = sum(bert_scores) / len(bert_scores)
+        avg_bert_score = sum(bert_scores) / len(bert_scores) if bert_scores else 0.0
         ee_bert_penalty_by_tokens = (baseline_bert_score - avg_bert_score) / max(1, sum(self.ee_iter_num_output_tokens))
         ee_bert_penalty_by_iter = (baseline_bert_score - avg_bert_score) / max(1, ee_iter_count)
+
+        avg_accuracy = sum(accuracy_scores) / len(accuracy_scores) if accuracy_scores else None
+        avg_squad_em = sum(squad_em_scores) / len(squad_em_scores) if squad_em_scores else None
+        avg_squad_f1 = sum(squad_f1_scores) / len(squad_f1_scores) if squad_f1_scores else None
 
         # Calculate overhead c and num_ee_threshold. This is not used in the model, jsut to check num_ee_threshold here is the same as what we get in llm_engine.
         overhead = 0
@@ -426,8 +471,11 @@ class BenchmarkRunner:
             "num_output_tokens": num_output_tokens,
             "time": end_time - start_time,
             "throughput": output_throughput,
-            "rougeL": rougeL_scores,
-            "bert_score": bert_scores,
+            "rougeL": rougeL_scores if rougeL_scores else [None] * len(finished_seq_id_lst),
+            "bert_score": bert_scores if bert_scores else [None] * len(finished_seq_id_lst),
+            "accuracy": accuracy_scores if accuracy_scores else [None] * len(finished_seq_id_lst),
+            "squad_exact_match": squad_em_scores if squad_em_scores else [None] * len(finished_seq_id_lst),
+            "squad_f1": squad_f1_scores if squad_f1_scores else [None] * len(finished_seq_id_lst),
             "prefill_time": prefill_time,
             "decode_time": decode_time,
             "tpot": tpot,
@@ -499,7 +547,12 @@ class BenchmarkRunner:
         logger.info(f"Mean conf_score: {mean_conf_score}. Mean conf_score ee: {mean_conf_score_ee}. Mean conf_score non_ee: {mean_conf_score_non_ee}")
         logger.info(f"EE penalty by tokens: {ee_penalty_by_tokens}, EE penalty by iter: {ee_penalty_by_iter}")
         logger.info(f"EE BERT penalty by tokens: {ee_bert_penalty_by_tokens}, EE BERT penalty by iter: {ee_bert_penalty_by_iter}")
-        logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores)}, Bert_score: {sum(bert_scores) / len(bert_scores)}")
+        if dataset_name in ("cnn", "xsum"):
+            logger.info(f"RougeL: {sum(rougeL_scores) / len(rougeL_scores):.4f}, Bert_score: {avg_bert_score:.4f}")
+        elif dataset_name == "mmlu":
+            logger.info(f"Accuracy: {avg_accuracy:.4f}")
+        elif dataset_name == "squad":
+            logger.info(f"SQuAD Exact Match: {avg_squad_em:.4f}, SQuAD F1: {avg_squad_f1:.4f}")
         logger.info(f"Prefill time: {prefill_time}, Decode time: {decode_time}, TPOT: {tpot}")
         logger.info(f"Prefill time (measured in benchmark_runner): {sum(self.prefill_times)}, Decode time (measured in benchmark_runner): {sum(self.decode_times)}")
         logger.info(f"TBT avg: {tbt_avg}, TBT p95: {tbt_p95}, TBT p99: {tbt_p99}")
@@ -581,8 +634,15 @@ class BenchmarkRunnerLauncher:
         runner_ip = f"node:{get_ip()}"
         # runner_ip = "node:158.130.4.64" # For Phastform machine
 
-        ip_addresses.remove(runner_ip)
-        ip_addresses.insert(0, runner_ip)
+        if runner_ip in ip_addresses:
+            ip_addresses.remove(runner_ip)
+            ip_addresses.insert(0, runner_ip)
+        else:
+            logger.warning(
+                f"Runner IP {runner_ip} not found in Ray node list {ip_addresses}. "
+                "This may happen if Ray resolves the node IP differently than socket.gethostbyname. "
+                "Proceeding without reordering nodes."
+            )
 
         num_nodes = len(ip_addresses)
         assert num_nodes > 0, "No nodes found in the cluster"
