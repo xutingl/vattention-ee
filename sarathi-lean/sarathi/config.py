@@ -204,7 +204,11 @@ class ModelConfig:
 
     def get_num_layers(self, parallel_config: "ParallelConfig") -> int:
         total_num_hidden_layers = self.hf_config.num_hidden_layers
-        return total_num_hidden_layers // parallel_config.pipeline_parallel_size
+        layers_per_stage = total_num_hidden_layers // parallel_config.pipeline_parallel_size
+        exit_layer_indices = getattr(self.hf_config, "exit_layer_indices", None)
+        if exit_layer_indices and getattr(self.hf_config, "exit_decoder_layer", False):
+            layers_per_stage += len(exit_layer_indices)
+        return layers_per_stage
 
     def get_total_num_layers(self) -> int:
         return self.hf_config.num_hidden_layers

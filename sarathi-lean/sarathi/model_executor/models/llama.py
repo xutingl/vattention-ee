@@ -128,7 +128,7 @@ class LlamaAttention(nn.Module):
         num_kv_heads: int,
         rope_theta: float = 10000,
         rope_scaling: Optional[Dict[str, Any]] = None,
-        max_position_embeddings: int = 8192,
+        max_position_embeddings: int = 5120,
         layer_id: Optional[int] = None,
     ) -> None:
         super().__init__()
@@ -219,7 +219,7 @@ class LlamaDecoderLayer(nn.Module):
         # Requires transformers > 4.32.0
         rope_theta = getattr(config, "rope_theta", 10000)
         rope_scaling = getattr(config, "rope_scaling", None)
-        max_position_embeddings = getattr(config, "max_position_embeddings", 8192)
+        max_position_embeddings = getattr(config, "max_position_embeddings", 5120)
         self.self_attn = LlamaAttention(
             hidden_size=self.hidden_size,
             num_heads=config.num_attention_heads,
@@ -276,7 +276,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device

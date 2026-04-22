@@ -44,6 +44,21 @@ def get_tokenizer(
             raise RuntimeError(err_msg) from e
         else:
             raise e
+    except Exception as e:
+        # Some models ship a tokenizer.json that the fast tokenizer backend
+        # cannot parse (e.g. Balcony checkpoints). Fall back to the slow
+        # tokenizer before giving up.
+        if kwargs.get("use_fast", True):
+            logger.warning(
+                f"Fast tokenizer failed for {tokenizer_name} ({e}); "
+                "retrying with use_fast=False."
+            )
+            kwargs["use_fast"] = False
+            tokenizer = AutoTokenizer.from_pretrained(
+                tokenizer_name, *args, trust_remote_code=trust_remote_code, **kwargs
+            )
+        else:
+            raise
 
     if not isinstance(tokenizer, PreTrainedTokenizerFast):
         logger.warning(

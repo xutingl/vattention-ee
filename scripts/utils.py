@@ -19,7 +19,7 @@ parser.add_argument('--kv_method', type=str, default='copy', help='Technique to 
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
-parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum'], help='Dataset name for real request generator (cnn or xsum)')
+parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum', 'mmlu'], help='Dataset name for real request generator (cnn, xsum, or mmlu)')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))
@@ -49,6 +49,8 @@ models = {
     'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'},
     
     'llama-2-7b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-7b-chat-hf', 'logentry': 'llama2-7b-ee'},
+    'balcony-llama-2-7b': {'tp': 1, 'hfrecord': 'parsakaveh/Balcony-LLaMA2-7B', 'logentry': 'balcony-llama2-7b-ee'},
+    'balcony-llm-1b': {'tp': 1, 'hfrecord': 'parsakaveh/Balcony-LLM-1B', 'logentry': 'balcony-llm-1b-ee'},
     'qwen-3-8b': {'tp': 1, 'hfrecord': 'Qwen/Qwen3-8B', 'logentry': 'qwen-3-8b-ee'},
     'qwen-7b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-7B-Chat', 'logentry': 'qwen-7b-chat-ee'},
     'qwen-14b-chat': {'tp': 1, 'hfrecord': 'Qwen/Qwen-14B-Chat', 'logentry': 'qwen-14b-chat-ee'},

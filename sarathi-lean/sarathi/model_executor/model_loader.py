@@ -17,10 +17,17 @@ _MODEL_REGISTRY = {
     "LlamaForCausalLM": LlamaForCausalLM,
     # "LlamaForCausalLM": AutoModelForCausalLM, # This uses transformers' AutoModelForCausalLM, so it doesn't use the modified EE llama
     "LLaMAForCausalLM": LlamaForCausalLM,  # For decapoda-research/llama-*
+    "NestedLlamaForCausalLM": NestedLlamaForCausalLM,  # Balcony / multi-exit LLaMA
     "InternLMForCausalLM": InternLMForCausalLM,
     "MistralForCausalLM": MistralForCausalLM,
     "QWenLMHeadModel": QWenLMHeadModel,
     "YiForCausalLM": YiForCausalLM,
+}
+
+# Models whose HF config reports "LlamaForCausalLM" but require a different class.
+_MODEL_NAME_OVERRIDES = {
+    "parsakaveh/Balcony-LLaMA2-7B": (NestedLlamaForCausalLM, [15, 18, 21]),
+    "parsakaveh/Balcony-LLM-1B": (NestedLlamaForCausalLM, [4, 8, 12]),
 }
 
 
@@ -45,7 +52,14 @@ def _get_model_architecture(config: PretrainedConfig) -> Type[nn.Module]:
 
 
 def get_model(model_config: ModelConfig) -> nn.Module:
-    model_class = _get_model_architecture(model_config.hf_config)
+    if model_config.model in _MODEL_NAME_OVERRIDES:
+        model_class, exit_layer_indices = _MODEL_NAME_OVERRIDES[model_config.model]
+        model_config.hf_config.exit_layer_indices = exit_layer_indices
+        model_config.hf_config.output_exit_layers = exit_layer_indices
+        model_config.hf_config.tie_exit_lm_head = True
+        model_config.hf_config.exit_decoder_layer = True
+    else:
+        model_class = _get_model_architecture(model_config.hf_config)
     if model_config.model == '01-ai/Yi-34B':
         model_config.hf_config.hidden_size = 8192
         model_config.hf_config.num_attention_heads = 64

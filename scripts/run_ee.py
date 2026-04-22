@@ -52,6 +52,7 @@ def main():
                 command = [
                     'python', main,
                         '--model_name', utils.models[model]['hfrecord'],
+                        '--model_load_format', 'auto',
                         '--model_tensor_parallel_degree', f'{tp_dim}',
                         '--request_generator_provider', 'real',
                         '--synthetic_request_generator_length_provider', 'trace',

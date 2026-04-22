@@ -34,6 +34,22 @@ class RealRequestGenerator(BaseRequestGenerator):
                 f"{len(self.filtered_indices)} articles out of {len(self.dataset)} "
                 f"are within {self.max_article_length} characters"
             )
+        elif self.dataset_name == "mmlu":
+            # MMLU multiple choice. Use the test split of the "all" config.
+            self.dataset = load_dataset("cais/mmlu", "all", split="test")
+            print(f"Loaded MMLU dataset: {len(self.dataset)} samples")
+
+            # Filter by combined prompt length (question + choices, characters)
+            self.filtered_indices = [
+                i for i in range(len(self.dataset))
+                if len(self.dataset[i]["question"]) + sum(len(c) for c in self.dataset[i]["choices"]) <= self.max_article_length
+            ]
+
+            print(
+                f"Filtered MMLU dataset: "
+                f"{len(self.filtered_indices)} questions out of {len(self.dataset)} "
+                f"are within {self.max_article_length} characters"
+            )
         else:
             # Default to CNN/DailyMail
             self.dataset_name = "cnn"
@@ -53,15 +69,30 @@ class RealRequestGenerator(BaseRequestGenerator):
         original_idx = self.filtered_indices[idx]
         if self.dataset_name == "xsum":
             return self.dataset[original_idx]["summary"]
+        elif self.dataset_name == "mmlu":
+            return "ABCD"[self.dataset[original_idx]["answer"]]
         else:
             return self.dataset[original_idx]["highlights"]
-    
+
     def _get_prompt(self, idx: int) -> str:
         """Get the prompt for the given index."""
         original_idx = self.filtered_indices[idx]
         if self.dataset_name == "xsum":
             # XSUM prompt format
             return "Article: " + self.dataset[original_idx]["document"] + ". Summarize the article in one sentence. Summary:"
+        elif self.dataset_name == "mmlu":
+            sample = self.dataset[original_idx]
+            subject = sample["subject"].replace("_", " ")
+            choices = sample["choices"]
+            return (
+                f"The following is a multiple choice question about {subject}.\n\n"
+                f"Question: {sample['question']}\n"
+                f"A. {choices[0]}\n"
+                f"B. {choices[1]}\n"
+                f"C. {choices[2]}\n"
+                f"D. {choices[3]}\n"
+                f"Answer:"
+            )
         else:
             # CNN/DailyMail prompt format
             # https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00632/119276/Benchmarking-Large-Language-Models-for-News

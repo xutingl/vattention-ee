@@ -161,13 +161,14 @@ class BenchmarkRunner:
         self, request: Request, first_request_time: float
     ) -> SamplingParams:
         sampling_params = SamplingParams(
-            ignore_eos=False, #[TODO] How does True affect throughput and bert score?
-            # max_tokens=request.num_decode_tokens,
-            # max_tokens=self._config.model_max_model_len // max(2, self._config.replica_scheduler_max_batch_size),
-            max_tokens=self._config.model_max_model_len // 4,
-            # temperature=0.8,
-            # top_p=0.9,
-            #top_k=-1,
+            ignore_eos=False,
+            max_tokens=80,  # match native Balcony run_native_balcony.py --max_new_tokens
+            temperature=0.0,  # greedy — matches native Balcony argmax decoding
+            # NOTE: do NOT set `stop=[...]` here — worker_sequence_manager's
+            # _on_append_token is a no-op, so seq.output_text is never populated
+            # on the worker side. Stop strings would match on the engine but not
+            # the worker, leaking vATTN batch slots (AssertionError: Failed to
+            # allocate new batch idx). EOS + max_tokens match works on both sides.
         )
         # prompt_token_ids = [1] * request.num_prefill_tokens
 
@@ -318,21 +319,31 @@ class BenchmarkRunner:
         reference_generator = RealRequestGenerator(self._config)
         reference_summaries = reference_generator.get_cnn_summaries()
 
-        # Compute rougeL and bert_score for each request
-        scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+        # Compute rougeL and bert_score for each request.
+        # For MMLU we substitute exact-match on the first output letter, since
+        # ROUGE/BERT against a single gold letter isn't meaningful. The EM value
+        # is written into both rougeL_scores and bert_scores so downstream
+        # aggregations and CSV columns keep working.
         rougeL_scores = []
         bert_scores = []
-        for idx, output in enumerate(finished_output):
-            reference = reference_summaries[idx]
-            # Compute rougeL fmeasure
-            rougeL = scorer.score(reference, output)['rougeL'].fmeasure
-            rougeL_scores.append(rougeL)
+        dataset_name = getattr(self._config, 'real_request_generator_dataset_name', 'cnn').lower()
+        if dataset_name == "mmlu":
+            for idx, output in enumerate(finished_output):
+                reference = reference_summaries[idx]
+                stripped = output.strip()
+                pred = stripped[0].upper() if stripped else ""
+                em = 1.0 if pred == reference else 0.0
+                rougeL_scores.append(em)
+                bert_scores.append(em)
+        else:
+            scorer = rouge_scorer.RougeScorer(['rougeL'], use_stemmer=True)
+            for idx, output in enumerate(finished_output):
+                reference = reference_summaries[idx]
+                rougeL = scorer.score(reference, output)['rougeL'].fmeasure
+                rougeL_scores.append(rougeL)
 
-
-        # Compute bert_score F1
-
-        P, R, F1 = bert_score.score(finished_output, reference_summaries, lang='en')
-        bert_scores.extend(F1.tolist())
+            P, R, F1 = bert_score.score(finished_output, reference_summaries, lang='en')
+            bert_scores.extend(F1.tolist())
 
         output_throughput = num_output_tokens / (end_time - start_time)
 
