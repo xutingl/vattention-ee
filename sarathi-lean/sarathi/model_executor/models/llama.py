@@ -128,7 +128,7 @@ class LlamaAttention(nn.Module):
         num_kv_heads: int,
         rope_theta: float = 10000,
         rope_scaling: Optional[Dict[str, Any]] = None,
-        max_position_embeddings: int = 5120,
+        max_position_embeddings: int = 4096,
         layer_id: Optional[int] = None,
     ) -> None:
         super().__init__()
@@ -219,7 +219,7 @@ class LlamaDecoderLayer(nn.Module):
         # Requires transformers > 4.32.0
         rope_theta = getattr(config, "rope_theta", 10000)
         rope_scaling = getattr(config, "rope_scaling", None)
-        max_position_embeddings = getattr(config, "max_position_embeddings", 5120)
+        max_position_embeddings = getattr(config, "max_position_embeddings", 4096)
         self.self_attn = LlamaAttention(
             hidden_size=self.hidden_size,
             num_heads=config.num_attention_heads,
@@ -276,7 +276,7 @@ class HiddenStatesBuffer():
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=4096): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
         # [WARNING!] hard code device
@@ -411,6 +411,7 @@ class LlamaModel(nn.Module):
         self.num_ee_threshold = getattr(config, 'num_ee_threshold', -1)
 
         self.kv_method = config.kv_method # "postfill" or "copy"
+        self.router_meta_map = {}  # seq_id -> {"conf": float, "pred_cost": float, "is_shallow": bool}
         self.recompute_seq_id_to_hidden_states = defaultdict(list) # seq_id -> a list of hidden states. This hidden states is the output of EE'ed layer and will be used for recomputing kv cache.
         self.recompute_seq_id_to_positions = defaultdict(list) # seq_id -> a list of positions. This positions is the output of EE'ed layer and will be used for recomputing kv cache.
         self.recompute_seq_id_to_input_hidden_states = dict() # seq_id -> this request's input hidden states.
@@ -489,9 +490,19 @@ class LlamaModel(nn.Module):
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
         else:
-            exited_conf = torch.masked_select(conf, mask)
+            per_req_conf = conf  # per-request tensor; preserve before collapsing
+            exited_conf = torch.masked_select(per_req_conf, mask)
             exited_conf_lst = exited_conf.tolist()
-            conf = exited_conf.mean().item()
+            batch_conf = exited_conf.mean().item() if exited_conf.numel() > 0 else 0.0
+            conf = batch_conf  # scalar mean of exited requests (backward compat)
+            for idx, seq_id in enumerate(seq_ids_in_batch):
+                req_conf = per_req_conf[idx].item() if per_req_conf.dim() > 0 else float(per_req_conf)
+                req_is_shallow = bool(mask[idx].item()) if mask.dim() > 0 else bool(mask.item())
+                self.router_meta_map[seq_id] = {
+                    "conf": req_conf,
+                    "pred_cost": 1.0 - req_conf,
+                    "is_shallow": req_is_shallow,
+                }
 
         batch_size = hidden_states.size(0)
         if need_skip:
@@ -764,9 +775,9 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward_without_rebatching] returning seq_ids_in_batch: {seq_ids_in_batch}\n")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf, exited_conf_lst, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
-    
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf, exited_conf_lst, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, self.router_meta_map
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, self.router_meta_map
+
     """
     When seq_ids_in_batch is provided, rebatching based on early exit status is enabled:
     - We check `deep_buffer` first to see if there are enough hidden states to form a batch. If there are, we will process and return them. The incoming hidden states are added to `start_buffer`. Return.
@@ -852,11 +863,11 @@ class LlamaModel(nn.Module):
                     hidden_states = self.norm(hidden_states)
                 # print(f"[LlamaModel.forward] returning flush_buffer 1: deep_buffer. seq_ids_in_batch: {seq_ids_in_batch}")
                 #print(f"[LlamaModel.forward] ee_rates: {self.exited_rates}={(self.exited_rates[0]/sum(self.exited_rates)):.2f}. Avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}")
-                return hidden_states, seq_ids_in_batch, self.exited_rates, None, True, {}, None, None, None, 0, 0
-            
+                return hidden_states, seq_ids_in_batch, self.exited_rates, None, True, {}, None, None, None, 0, 0, {}
+
             else:
                 #print(f"[LlamaModel.forward] flush_buffer: no buffer. seq_ids_in_batch: {seq_ids_in_batch}")
-                return None, None, self.exited_rates, None, False, {}, None, None, None, 0, 0
+                return None, None, self.exited_rates, None, False, {}, None, None, None, 0, 0, {}
 
         # 1. Process normal requests.
         if self.kv_method == "postfill":
@@ -1015,8 +1026,8 @@ class LlamaModel(nn.Module):
         # print(f"[LlamaModel.forward] hidden states buffer spent time (adding, taking): deep buffer spent time (adding, taking): ({self.deep_buffer.time_spent_adding:.2f}, {self.deep_buffer.time_spent_taking:.2f}). update kvcache spent time: {self.update_kvcache_time_cnt:.2f}. rebatching spent time: {self.rebatching_time:.2f}. avg batch size: {sum(self.batch_size_lst)/len(self.batch_size_lst)}. \n number of batchsize=1,2,3,4: {self.batch_size_lst.count(1)}, {self.batch_size_lst.count(2)}, {self.batch_size_lst.count(3)}, {self.batch_size_lst.count(4)}")
 
         if has_ee:
-            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf, exited_conf_lst, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
-        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, None, None, None,num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
+            return hidden_states, seq_ids_in_batch, self.exited_rates, lm_logits, False, recompute_dict, conf, exited_conf_lst, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, self.router_meta_map
+        return hidden_states, seq_ids_in_batch, self.exited_rates, None, False, recompute_dict, None, None, None, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, self.router_meta_map
 
 
 class LlamaForCausalLM(nn.Module):
@@ -1064,12 +1075,12 @@ class LlamaForCausalLM(nn.Module):
             )
             hidden_states = recv(hidden_states)
 
-        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, rebatching_ee_factor=rebatching_ee_factor, priority_reqs=priority_reqs)
+        hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, router_meta_map = self.model(hidden_states, positions, kv_caches, self.lm_head, cache_engine=cache_engine, seq_ids_in_batch=seq_ids_in_batch, seq_metadata_list=seq_metadata_list, rebatching_ee_factor=rebatching_ee_factor, priority_reqs=priority_reqs)
 
         if not self.is_pipeline_last_stage:
             send(hidden_states)
 
-        return hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
+        return hidden_states, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, exited_conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, router_meta_map
 
     _column_parallel_layers = []
     _row_parallel_layers = ["o_proj", "down_proj"]

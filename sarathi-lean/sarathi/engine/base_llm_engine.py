@@ -445,7 +445,7 @@ class BaseLLMEngine:
         # print(f"[BaseLLMEngine] input seq_metadata_list: {seq_metadata_list}")
         # print(f"[BaseLLMEngine] input scheduler_outputs: {scheduler_outputs}")
         # print(f"[BaseLLMEngine] seq_ids_in_batch: {seq_ids_in_batch}")
-        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, conf_lst, is_ee, is_flush, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self._run_workers(
+        sampler_outputs, output_seq_ids, output_seq_metadata_list, updated_scheduler_outputs, exited_rates, conf, conf_lst, is_ee, is_flush, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, router_meta_map = self._run_workers(
             "execute_model",
             scheduler_outputs=scheduler_outputs,
             preempted_seq=preemption_queue,
@@ -455,6 +455,7 @@ class BaseLLMEngine:
         )
        
         if self.rebatching:
+            self.scheduler.update_router_meta(router_meta_map)
             if output_seq_ids is None:
                 output_seq_ids = []
             output_seqs = [self.seq_manager.seq_map[seq_id] for seq_id in output_seq_ids]

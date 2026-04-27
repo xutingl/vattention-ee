@@ -46,6 +46,25 @@ class VLLMScheduler(BaseScheduler):
 
         self.request_age_threshold = scheduler_config.buffer_age_factor
 
+        self.router_meta_map = {}  # seq_id -> {"conf": float, "pred_cost": float, "is_shallow": bool}
+
+        # cost_flush_threshold: total predicted compute that must accumulate in the
+        # rebatching buffer before a dedicated flush is triggered.
+        #
+        # At pred_cost = 1.0 (no router signal / worst case), this equals min_flush_size,
+        # so behaviour is identical to the old count-based scheduler.
+        #
+        # At typical confidence values (conf ≈ 0.45, pred_cost ≈ 0.55), a full buffer
+        # of 8 requests sums to ~4.4, well below min_flush_size=8 — so cost flush would
+        # never trigger.  We therefore set the threshold to half of min_flush_size, which
+        # corresponds to flushing when the buffer holds the compute equivalent of
+        # min_flush_size/2 worst-case (pred_cost=1.0) requests, or ~min_flush_size
+        # typical requests.  Tune this for your workload.
+        self.cost_flush_threshold = self.min_flush_size * 0.5
+
+        # Ablation knob: set to False to revert to count-only flush logic (for comparison).
+        self.use_router_aware = True
+
     def get_block_space_manager_class(self):
         return vAttentionBlockSpaceManager if is_vattention_backend() else VLLMBlockSpaceManager 
 
@@ -82,15 +101,35 @@ class VLLMScheduler(BaseScheduler):
 
         age_adjusted_buffer_size = len(self.rebatching_buffer) * (1 + self.buffer_age * self.buffer_age_factor)
 
-        # Need to run requests in the rebatching buffer first.
-        # Only trigger a dedicated flush when the buffer is large enough to
-        # form an efficient deep batch, or when it has waited too long
-        # (starvation prevention).  Small buffers are drained inline by the
-        # model (see qwen.py / llama.py deep_buffer piggyback path).
-        if (age_adjusted_buffer_size >= self.scheduler_config.max_num_seqs
-            or len(self.rebatching_buffer) >= self.min_flush_size
-            or self.buffer_age >= self.buffer_age_threshold):
-            # print(f"[VLLMScheduler._schedule] rebatching buffer is full: {self.rebatching_buffer}. returning empty scheduler outputs.")
+        flush_due_to_full = age_adjusted_buffer_size >= self.scheduler_config.max_num_seqs
+        flush_due_to_age  = self.buffer_age >= self.buffer_age_threshold
+
+        if self.use_router_aware:
+            # Router-aware flush: accumulate predicted compute cost instead of raw
+            # count, so low-confidence (expensive) requests trigger a flush sooner.
+            # When router metadata is absent, pred_cost=1.0 per request, so this
+            # degrades gracefully to the original count-based behaviour.
+            buffer_pred_cost   = self._buffer_pred_cost_sum()
+            cost_adjusted_buffer = buffer_pred_cost * (1 + self.buffer_age * self.buffer_age_factor)
+            flush_due_to_cost  = cost_adjusted_buffer >= self.cost_flush_threshold
+        else:
+            # Baseline: original count-only flush (used for ablation / comparison).
+            buffer_pred_cost     = float(len(self.rebatching_buffer))
+            cost_adjusted_buffer = buffer_pred_cost
+            flush_due_to_cost    = len(self.rebatching_buffer) >= self.min_flush_size
+
+        if len(self.rebatching_buffer) > 0:
+            print(f"[RouterAware] buffer_cost={buffer_pred_cost:.2f}, "
+                  f"cost_adj={cost_adjusted_buffer:.2f}, "
+                  f"len={len(self.rebatching_buffer)}, "
+                  f"age={self.buffer_age}, "
+                  f"router_aware={self.use_router_aware}")
+
+        if flush_due_to_full or flush_due_to_cost or flush_due_to_age:
+            print(f"[RouterAware] flush triggered — "
+                  f"cost={flush_due_to_cost}(sum={buffer_pred_cost:.2f} >= thr={self.cost_flush_threshold}), "
+                  f"full={flush_due_to_full}, "
+                  f"age={flush_due_to_age}(age={self.buffer_age})")
             self.buffer_age = 0
             return SchedulerOutputs(id=self._iteration_id,
                                     ignored_seq_ids=[],
@@ -208,6 +247,27 @@ class VLLMScheduler(BaseScheduler):
             scheduled_seq_metadata_list=scheduled_seq_metadata_list,
         ), priority_reqs
     
+
+    def update_router_meta(self, router_meta_map: dict):
+        self.router_meta_map.update(router_meta_map)
+
+    def _buffer_pred_cost_sum(self) -> float:
+        total = 0.0
+        for seq_id in self.rebatching_buffer:
+            meta = self.router_meta_map.get(seq_id)
+            if meta is not None:
+                pred_cost = meta["pred_cost"]
+            else:
+                # No router signal yet — assume worst-case cost so the system
+                # degrades gracefully to count-based scheduling.
+                pred_cost = 1.0
+            total += pred_cost
+        return total
+
+    def _buffer_avg_pred_cost(self) -> float:
+        if not self.rebatching_buffer:
+            return 0.0
+        return self._buffer_pred_cost_sum() / len(self.rebatching_buffer)
 
     def on_rebatching(self, scheduled_seq_metadata_list: List[SequenceMetadata], output_seqs: List[Sequence], is_ee: bool, is_flush: bool):
         # 1. Handle the case where requests come out from the rebatching buffer.

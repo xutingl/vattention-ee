@@ -260,7 +260,7 @@ class ModelRunner:
         with self._model_execution_e2e_timer:
             # Execute the model.
             try:
-                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = self.model(
+                _model_output = self.model(
                     hidden_states=input_tokens,
                     positions=input_positions,
                     kv_caches=gpu_cache,
@@ -270,6 +270,8 @@ class ModelRunner:
                     rebatching_ee_factor=rebatching_ee_factor,
                     priority_reqs=priority_reqs
                 )
+                output, output_seq_ids, exited_rates, lm_logits, is_flush, recompute_dict, conf, conf_lst, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee = _model_output[:11]
+                router_meta_map = _model_output[11] if len(_model_output) > 11 else {}
             except RuntimeError as e:
                 logger.error(
                     f"RuntimeError: {e} for seq_metadata_list: {seq_metadata_list}"
@@ -299,4 +301,4 @@ class ModelRunner:
 
         is_ee = lm_logits is not None or latency_only_ee_iter_time is not None
 
-        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, conf_lst, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
+        return output, output_seq_ids, seq_metadata_list, exited_rates, conf_score, conf_lst, is_ee, is_flush, recompute_dict, latency_only_ee_iter_time, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee, router_meta_map
