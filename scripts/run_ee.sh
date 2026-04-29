@@ -1,95 +1,99 @@
-# python run_ee.py --ee_policy=rebatching --max_batch_size=4  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/rebatching.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=4  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/eager.txt
-# python run_ee.py --ee_policy=average --max_batch_size=4  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/average.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=4  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/lazy.txt
-# python run_ee.py --ee_policy=off --max_batch_size=4  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/off.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=1  --num_requests=500 --shallow_exit_layer=60 --conf_threshold=0.9 > ../outputs_70b_llama3/req_500_batch_4_conf_09/ee_batch1.txt
+#!/bin/bash
+# Sweep: qwen-14b-chat, 200 requests, shallow_exit_layer=20
+# Policies: off, rebatching
+# conf_thresholds: 0.01 0.02 0.05 0.1 0.25 0.5
+# Modes: baseline (use_router_aware=false) and router-aware (use_router_aware=true)
+# Skips any run whose output CSV already exists.
 
-# nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/rebatching_copy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" --dataset_name="xsum" >outputs_13b/req_4_batch_2_conf_06_layer_24_rebatching_copy.txt
+set -e
 
-# nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/rebatching_nocopy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" --dataset_name="xsum" >outputs_13b/req_4_batch_2_conf_06_layer_24_rebatching_nocopy.txt
+MODEL="qwen-14b-chat"
+NUM_REQUESTS=200
+SHALLOW_LAYER=20
+MAX_BATCH=8
+QPS=1.0
+KV_METHOD="copy"
+DATASET="xsum"
+COST_FLUSH_THRESHOLD="4.0"
+OUTPUT_BASE="/workspace/vattention-ee/outputs_qwen_apr_28"
 
-# nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/average_nocopy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=average --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" --dataset_name="xsum" >outputs_13b/req_4_batch_2_conf_06_layer_24_average_nocopy.txt
+mkdir -p "$OUTPUT_BASE"
 
-# nsys profile -w true -t cuda,osrt -s cpu --cudabacktrace=true -x true -o nsight_profiles/off_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=off --max_batch_size=2  --num_requests=4 --shallow_exit_layer=24 --conf_threshold=0.6 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b/" --kv_method="copy" --dataset_name="xsum" >outputs_13b/req_4_batch_2_off.txt
+CONF_THRESHOLDS=("0.01" "0.02" "0.05" "0.1" "0.25" "0.5")
+EE_POLICIES=("rebatching")
+ROUTER_MODES=("false" "true")
 
-# nsys profile -t cuda -o nsight_profiles/rebatching_copy_nsight --python-sampling=true --python-sampling-frequency=2 python scripts/run_ee.py --ee_policy=rebatching --max_batch_size=2  --num_requests=4 --shallow_exit_layer=30 --conf_threshold=0.8 --csv_path="/workspace/xutingl/vattention-ee/outputs_13b_prof/" --kv_method="copy" --dataset_name="xsum" >outputs_13b_prof/req_4_batch_2_layer_30_conf_08_rebatching.txt
+# CSV filename mirrors benchmark_runner.py naming:
+# req_{N}_batch_{B}_layer_{L}_conf_{C}_{policy}_{kv}_{router_tag}[_thresh{T}].csv
+csv_name() {
+    local conf=$1 policy=$2 router_aware=$3
+    local router_tag thresh_tag
+    if [ "$router_aware" = "true" ]; then
+        router_tag="router_aware"
+        thresh_tag="_thresh${COST_FLUSH_THRESHOLD}"
+    else
+        router_tag="baseline"
+        thresh_tag=""
+    fi
+    echo "${OUTPUT_BASE}/req_${NUM_REQUESTS}_batch_${MAX_BATCH}_layer_${SHALLOW_LAYER}_conf_${conf}_${policy}_${KV_METHOD}_${router_tag}${thresh_tag}.csv"
+}
 
-# python run_ee.py --ee_policy=off --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.8 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_08_layer_25_off_copy.txt
+# --- off baseline (no EE) ---
+off_csv=$(csv_name "0.5" "off" "false")
+if [ -f "$off_csv" ]; then
+    echo "[run_ee.sh] skipping policy=off (CSV exists: $(basename $off_csv))"
+else
+    outfile="${OUTPUT_BASE}/req_${NUM_REQUESTS}_batch_${MAX_BATCH}_layer_${SHALLOW_LAYER}_off.txt"
+    echo "[run_ee.sh] policy=off"
+    python run_ee.py \
+      --model "$MODEL" \
+      --ee_policy off \
+      --max_batch_size $MAX_BATCH \
+      --num_requests $NUM_REQUESTS \
+      --shallow_exit_layer $SHALLOW_LAYER \
+      --conf_threshold "0.5" \
+      --qps $QPS \
+      --kv_method "$KV_METHOD" \
+      --dataset_name "$DATASET" \
+      --use_router_aware "false" \
+      --csv_path "$OUTPUT_BASE/" \
+      > "$outfile"
+fi
 
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_eager_copy.txt
+# --- EE policies: sweep conf_threshold × router_aware mode ---
+for router_aware in "${ROUTER_MODES[@]}"; do
+    if [ "$router_aware" = "true" ]; then
+        mode_str="router_aware"
+    else
+        mode_str="baseline"
+    fi
 
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_lazy_copy.txt
+    for policy in "${EE_POLICIES[@]}"; do
+        for conf in "${CONF_THRESHOLDS[@]}"; do
+            expected_csv=$(csv_name "$conf" "$policy" "$router_aware")
+            if [ -f "$expected_csv" ]; then
+                echo "[run_ee.sh] skipping policy=${policy} conf=${conf} mode=${mode_str} (CSV exists)"
+                continue
+            fi
+            conf_str="${conf/0./}"
+            outfile="${OUTPUT_BASE}/req_${NUM_REQUESTS}_batch_${MAX_BATCH}_conf_${conf_str}_layer_${SHALLOW_LAYER}_${policy}_${mode_str}.txt"
+            echo "[run_ee.sh] policy=${policy} conf=${conf} mode=${mode_str}"
+            python run_ee.py \
+              --model "$MODEL" \
+              --ee_policy "$policy" \
+              --max_batch_size $MAX_BATCH \
+              --num_requests $NUM_REQUESTS \
+              --shallow_exit_layer $SHALLOW_LAYER \
+              --conf_threshold "$conf" \
+              --qps $QPS \
+              --kv_method "$KV_METHOD" \
+              --dataset_name "$DATASET" \
+              --use_router_aware "$router_aware" \
+              --cost_flush_threshold "$COST_FLUSH_THRESHOLD" \
+              --csv_path "$OUTPUT_BASE/" \
+              > "$outfile"
+        done
+    done
+done
 
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_median_copy.txt
-
-# python run_ee.py --ee_policy=off --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_28_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_28_nee_1/req_500_batch_8_conf_001_layer_40_off_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_001_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_002_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_005_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_01_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_025_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=rebatching --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --num_ee_threshold=2  --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_05_layer_40_rebatching_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_001_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_002_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_005_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_01_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_025_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_05_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_001_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_002_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_005_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_01_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_025_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=latency-only --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_05_layer_40_latency-only_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_001_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_002_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_005_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_01_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=off --max_batch_size=8  --num_requests=100 --shallow_exit_layer=15 --conf_threshold=0.25 --model balcony-llama-2-7b --csv_path="/workspace/vattention-ee/outputs_balcony/" --kv_method="copy" --dataset_name="xsum" >../outputs_balcony/req_500_batch_8_conf_021_layer_15_off_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_conf_05_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=off --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_30_nee_2/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_30_nee_2/req_500_batch_8_layer_40_off_copy.txt
-
-# nee 2
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_eager_copy.txt
-# python run_ee.py --ee_policy=eager --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_eager_copy.txt
-
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_lazy_copy.txt
-# python run_ee.py --ee_policy=lazy --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_lazy_copy.txt
-
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.01 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_001_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.02 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_002_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.05 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_005_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.1 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_01_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.25 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_025_layer_40_median_copy.txt
-# python run_ee.py --ee_policy=median --max_batch_size=8  --num_requests=500 --shallow_exit_layer=40 --conf_threshold=0.5 --model="llama-2-70b" --csv_path="/workspace/vattention-ee/outputs_llama-2-70b_mar_27_nee_1/" --kv_method="copy" --dataset_name="xsum" >../outputs_llama-2-70b_mar_27_nee_1/req_500_batch_8_conf_05_layer_40_median_copy.txt
-
-
-python run_ee.py --model balcony-llama-2-7b \
-  --ee_policy rebatching --max_batch_size 4 --num_requests 100 \
-  --shallow_exit_layer 18 --conf_threshold 0.5 \
-  --qps 10 --kv_method copy --dataset_name xsum \
-  --csv_path /workspace/vattention-ee/outputs_balcony/ > /workspace/vattention-ee/outputs_balcony/test_batch_4.txt
+echo "[run_ee.sh] All done. Results in $OUTPUT_BASE"

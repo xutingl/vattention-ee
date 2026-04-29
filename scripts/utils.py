@@ -20,6 +20,8 @@ parser.add_argument('--enable_profiling', action='store_true', help='Enable prof
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
 parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum', 'mmlu'], help='Dataset name for real request generator (cnn, xsum, or mmlu)')
+parser.add_argument('--use_router_aware', type=str, default='true', choices=['true', 'false'], help='Enable router-aware flush scheduling in VLLMScheduler')
+parser.add_argument('--cost_flush_threshold', type=float, default=4.0, help='Cost-sum threshold for router-aware buffer flush in VLLMScheduler')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))

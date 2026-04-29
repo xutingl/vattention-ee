@@ -136,6 +136,8 @@ class BenchmarkRunner:
 
             # Scheduler config for rebatching
             buffer_age_factor=self._config.buffer_age_factor,
+            use_router_aware=self._config.vllm_scheduler_use_router_aware,
+            cost_flush_threshold=self._config.vllm_scheduler_cost_flush_threshold,
         )
 
         self.ee_iter_count = [0, 0] # [# EE-iter, # non-EE-iter]
@@ -491,8 +493,11 @@ class BenchmarkRunner:
         csv_path = Path(self._config.csv_path)
         csv_path.mkdir(parents=True, exist_ok=True)
 
-        # numrequests_batchsize_layer_conf_policy_kvmethod.csv
-        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}.csv"
+        # numrequests_batchsize_layer_conf_policy_kvmethod_routermode[_threshN].csv
+        router_tag = "router_aware" if getattr(self._config, 'vllm_scheduler_use_router_aware', True) else "baseline"
+        cost_thresh = getattr(self._config, 'vllm_scheduler_cost_flush_threshold', 4.0)
+        thresh_tag = f"_thresh{cost_thresh}" if getattr(self._config, 'vllm_scheduler_use_router_aware', True) else ""
+        csv_file = f"{csv_path}/req_{len(self._requests)}_batch_{self._config.replica_scheduler_max_batch_size}_layer_{self._config.shallow_exit_layer}_conf_{self._config.conf_threshold}_{self._config.ee_policy}_{self._config.kv_method}_{router_tag}{thresh_tag}.csv"
         print(f"Saving results to {csv_file}")
         df.to_csv(csv_file, index=False, escapechar='\\')
 

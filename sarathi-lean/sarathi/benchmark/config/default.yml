@@ -97,6 +97,8 @@ sarathi_scheduler:
 
 vllm_scheduler:
   max_tokens_in_batch: null
+  use_router_aware: true
+  cost_flush_threshold: 4.0
 
 simple_chunking_scheduler:
   chunk_size: 512

@@ -327,8 +327,12 @@ class VLLMSchedulerConfig(BaseSchedulerConfig):
         num_pipeline_stages: int,
         max_num_batched_tokens: int,
         buffer_age_factor: float=0.0,
+        use_router_aware: bool=True,
+        cost_flush_threshold: float=4.0,
     ) -> None:
         super().__init__(max_num_seqs, max_model_len, num_pipeline_stages, buffer_age_factor)
+        self.use_router_aware = use_router_aware
+        self.cost_flush_threshold = cost_flush_threshold
         self._max_num_batched_tokens = (
             max_num_batched_tokens if max_num_batched_tokens else max_model_len
         )

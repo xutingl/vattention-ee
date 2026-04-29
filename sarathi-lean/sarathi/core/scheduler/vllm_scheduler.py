@@ -48,22 +48,10 @@ class VLLMScheduler(BaseScheduler):
 
         self.router_meta_map = {}  # seq_id -> {"conf": float, "pred_cost": float, "is_shallow": bool}
 
-        # cost_flush_threshold: total predicted compute that must accumulate in the
-        # rebatching buffer before a dedicated flush is triggered.
-        #
-        # At pred_cost = 1.0 (no router signal / worst case), this equals min_flush_size,
-        # so behaviour is identical to the old count-based scheduler.
-        #
-        # At typical confidence values (conf ≈ 0.45, pred_cost ≈ 0.55), a full buffer
-        # of 8 requests sums to ~4.4, well below min_flush_size=8 — so cost flush would
-        # never trigger.  We therefore set the threshold to half of min_flush_size, which
-        # corresponds to flushing when the buffer holds the compute equivalent of
-        # min_flush_size/2 worst-case (pred_cost=1.0) requests, or ~min_flush_size
-        # typical requests.  Tune this for your workload.
-        self.cost_flush_threshold = self.min_flush_size * 0.5
+        self.cost_flush_threshold = scheduler_config.cost_flush_threshold
 
         # Ablation knob: set to False to revert to count-only flush logic (for comparison).
-        self.use_router_aware = True
+        self.use_router_aware = scheduler_config.use_router_aware
 
     def get_block_space_manager_class(self):
         return vAttentionBlockSpaceManager if is_vattention_backend() else VLLMBlockSpaceManager 

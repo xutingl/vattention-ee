@@ -76,6 +76,8 @@ class EngineArgs:
     num_ee_threshold: Optional[int] = None
     kv_method: str = "copy"
     buffer_age_factor: float = 0.0
+    use_router_aware: bool = True
+    cost_flush_threshold: float = 4.0
 
     def __post_init__(self):
         if self.tokenizer is None:
@@ -86,7 +88,7 @@ class EngineArgs:
                 yaml.dump(asdict(self), f, default_flow_style=False, sort_keys=False)
 
     def _get_scheduler_config(
-        self, model_config: ModelConfig, num_pipeline_stages: int, buffer_age_factor: float=0.0,
+        self, model_config: ModelConfig, num_pipeline_stages: int, buffer_age_factor: float=0.0, use_router_aware: bool=True, cost_flush_threshold: float=4.0,
     ) -> BaseSchedulerConfig:
         if self.scheduler_type == SchedulerType.VLLM.name.lower():
             scheduler_config = VLLMSchedulerConfig(
@@ -95,6 +97,8 @@ class EngineArgs:
                 num_pipeline_stages,
                 self.max_num_batched_tokens,
                 buffer_age_factor,
+                use_router_aware,
+                cost_flush_threshold,
             )
         elif self.scheduler_type == SchedulerType.ORCA.name.lower():
             scheduler_config = OrcaSchedulerConfig(
@@ -186,7 +190,7 @@ class EngineArgs:
             replica_resource_mapping=self.replica_resource_mapping,
         )
         scheduler_config = self._get_scheduler_config(
-            model_config=model_config, num_pipeline_stages=self.pipeline_parallel_size, buffer_age_factor=self.buffer_age_factor
+            model_config=model_config, num_pipeline_stages=self.pipeline_parallel_size, buffer_age_factor=self.buffer_age_factor, use_router_aware=self.use_router_aware, cost_flush_threshold=self.cost_flush_threshold,
         )
         metrics_config = MetricsConfig(
             replica_id=self.replica_id,

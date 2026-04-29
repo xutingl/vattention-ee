@@ -39,6 +39,8 @@ def main():
     enable_profiling = utils.args.enable_profiling
     buffer_age_factor = utils.args.buffer_age_factor
     dataset_name = utils.args.dataset_name
+    use_router_aware = utils.args.use_router_aware
+    cost_flush_threshold = utils.args.cost_flush_threshold
 
     for model in models:
         for qps in qps_values:
@@ -87,6 +89,8 @@ def main():
                         '--csv_path', f'{csv_path}',
                         '--kv_method', f'{kv_method}',
                         '--buffer_age_factor', f'{buffer_age_factor}',
+                        '--vllm_scheduler_use_router_aware', use_router_aware,
+                        '--vllm_scheduler_cost_flush_threshold', str(cost_flush_threshold),
                         # Pytorch profiler
                         '--enable_profiling', 'true' if enable_profiling else 'false',
                     ]
