@@ -18,7 +18,9 @@ jupyterlab
 pillow
 tiktoken
 grpcio
-flash-attn == 2.5.9.post1
+# flash-attn 2.5.9.post1 predates Blackwell (sm_100) and will not build/run on a B200.
+# DREX installs a Blackwell-compatible flash-attn wheel via scripts/install_drex.sh.
+# flash-attn == 2.5.9.post1
 fastapi
 uvicorn
 openai

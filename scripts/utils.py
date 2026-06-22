@@ -4,6 +4,10 @@ import argparse
 KB = 1024
 MB = 1024 * KB
 
+# Repository root (.../vattention-ee), derived from this file's location so paths
+# stay portable across machines instead of being hard-coded to /workspace.
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 parser = argparse.ArgumentParser(description='Run e2e dynamic trace experiments')
 parser.add_argument('--test', action='store_true', help='Run a test experiment')
 parser.add_argument('--num_requests', '-n', type=int, default=1000, help='Number of requests')
@@ -14,7 +18,7 @@ parser.add_argument('--conf_threshold', '-c', type=float, default=0.6, help='Con
 parser.add_argument('--num_ee_threshold', type=int, default=-1, help='Minimum number of requests that must want to EE before partial early exit is triggered (for rebatching).')
 parser.add_argument('--ee_policy', '-e', type=str, default='off', help='EE policy')
 parser.add_argument('--early_exit_head_path', '-p', type=str, default="", help='Early exit head path')
-parser.add_argument('--csv_path', type=str, default="/workspace/vattention-ee/outputs/", help='Path to save CSV results')
+parser.add_argument('--csv_path', type=str, default=os.path.join(_REPO_ROOT, "outputs", ""), help='Path to save CSV results')
 parser.add_argument('--kv_method', type=str, default='copy', help='Technique to fill missing kv cache')
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
@@ -42,7 +46,7 @@ models = {
     'llama-3-8b-1': {'tp': 1, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b-ee-eager'},
     'llama-3-8b-2': {'tp': 2, 'hfrecord': 'meta-llama/Meta-Llama-3-8B' , 'logentry': 'llama-3-8b'},
     'yi-34b-2': {'tp': 2, 'hfrecord': '01-ai/Yi-34B-200k', 'logentry': 'yi-34b'},
-    'llama-2-13b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-13b-chat-hf', 'logentry': 'llama2-13b-ee'},
+    'llama-2-13b': {'tp': 1, 'hfrecord': '/vast/projects/liuv/pennnetworks/hf_models/Llama-2-13b-chat-hf', 'logentry': 'llama2-13b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'TheBloke/Llama-2-70B-GPTQ', 'logentry': 'llama2-70b-ee'}, # 4 bit quant
     'llama-2-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'caisarl76/llama2-70B-8bit', 'logentry': 'llama2-70b-ee'}, # 8 bit quant

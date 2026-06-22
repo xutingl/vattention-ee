@@ -26,6 +26,19 @@ from sarathi.benchmark.request_generator.real_request_generator import RealReque
 logger = logging.getLogger(__name__)
 
 
+def _wait_for_ray_gpu_resources(min_gpus: int = 1, timeout: float = 120.0, interval: float = 0.5):
+    """Ray registers GPU resources asynchronously after ``ray.init()``; querying
+    ``available_resources()`` immediately can race the raylet and miss the ``GPU``
+    key entirely. Poll until at least ``min_gpus`` GPUs are visible (or the timeout
+    elapses) and return the resources dict."""
+    deadline = time.monotonic() + timeout
+    resources = ray.available_resources()
+    while resources.get("GPU", 0) < min_gpus and time.monotonic() < deadline:
+        time.sleep(interval)
+        resources = ray.available_resources()
+    return resources
+
+
 class BenchmarkRunner:
 
     def __init__(
@@ -536,7 +549,12 @@ class BenchmarkRunnerLauncher:
         self._config = config
         self._is_multi_replica = self._config.cluster_num_replicas > 1
 
-        ray.init(ignore_reinit_error=True)
+        # Importing the serving stack (torch / vAttention / flashinfer) initializes
+        # CUDA before ray.init(), which breaks Ray's GPU autodetection (it registers
+        # 0 GPUs). Pass the device count explicitly so the "GPU" resource is present.
+        import torch
+        _num_gpus = torch.cuda.device_count()
+        ray.init(ignore_reinit_error=True, num_gpus=_num_gpus or None)
 
         if self._is_multi_replica:
             self._validate_cluster_resources()
@@ -558,7 +576,7 @@ class BenchmarkRunnerLauncher:
         pp_degree = self._config.model_pipeline_parallel_degree
         num_gpus_required = num_replicas * tp_degree * pp_degree
 
-        available_resources = ray.available_resources()
+        available_resources = _wait_for_ray_gpu_resources(num_gpus_required)
 
         assert (
             available_resources["GPU"] >= num_gpus_required
@@ -570,8 +588,9 @@ class BenchmarkRunnerLauncher:
             logger.info(f"Replica resource mapping: {replica_resource_mapping}")
             return replica_resource_mapping
 
-        cluster_resources_keys = list(ray.available_resources().keys())
-        num_gpus = ray.available_resources()["GPU"]
+        available_resources = _wait_for_ray_gpu_resources()
+        cluster_resources_keys = list(available_resources.keys())
+        num_gpus = available_resources["GPU"]
         ip_addresses = [
             x
             for x in cluster_resources_keys

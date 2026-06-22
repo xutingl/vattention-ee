@@ -4,93 +4,132 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-vAttention-EE extends the vAttention memory manager (CUDA virtual memory-based KV-cache) with **Early Exit (EE)** support for LLM serving. It integrates with Sarathi-Serve, an LLM inference scheduler. The core idea: use CUDA virtual memory APIs to decouple virtual/physical memory allocation for KV-cache, enabling contiguous virtual memory with on-demand physical pages — no attention kernel modifications needed.
+**DREX: Dynamic Rebatching for Efficient Early-Exit LLM Inference.** DREX serves
+LLMs with **early exit (EE)** — a sequence can stop after a shallow transformer
+layer once a confidence threshold is met — combined with a **rebatching scheduler**
+that regroups the surviving (non-exited) sequences so the deep layers keep running
+on dense batches. The goal is to recover the GPU efficiency that naive early exit
+loses when deep-layer batches become small.
 
-The EE extension adds a rebatching scheduler that allows sequences to exit early (at a shallow layer) based on confidence thresholds, with KV-cache management for partially-processed batches.
+It is built on two components:
+- **vAttention** (`vattention/`) — CUDA virtual-memory KV-cache manager: contiguous
+  virtual KV-cache with on-demand physical pages, so no attention-kernel changes are
+  needed. Paper: https://arxiv.org/abs/2405.04437
+- **Sarathi-Serve** (`sarathi-lean/`) — chunked-prefill LLM scheduler, forked and
+  extended with the EE + rebatching logic.
 
-Paper: https://arxiv.org/abs/2512.15705 (EE), https://arxiv.org/abs/2405.04437 (vAttention)
+This checkout is the **Blackwell (B200) port** of `vattention-ee`. See
+[README.md](README.md) for the full setup story and [README_old.md](README_old.md)
+for the original upstream docs.
 
 ## Environment
 
-- **Conda env**: `vattn` (always activate before any commands)
-- **GPU**: A100 80GB
-- **Eval models on this machine**: Llama-2-13B (`meta-llama/Llama-2-13b-chat-hf`), Qwen-14B
-- **Requirements**: PyTorch 2.3.0, CUDA 12.1, Python 3.10
+- **GPU**: NVIDIA **B200** (Blackwell, **sm_100**) on shared `dgx-b200` Slurm nodes. Use one free GPU (`CUDA_VISIBLE_DEVICES`); the node is shared.
+- **Python env**: a **uv venv** at `.venv/` (NOT conda). Python 3.12.
+- **Stack**: torch 2.8.0+cu128, flash-attn 2.8.3.post1, flashinfer 0.6.12, a local CUDA 12.8 toolkit at `cuda-12.8/` (there is no system CUDA), transformers 4.49, ray 2.55.
+- **Always load the env first**: `source scripts/drex_env.sh` (sets the venv on PATH, `CUDA_HOME`, `LIBTORCH_PATH`, `LD_LIBRARY_PATH`, `UV_CACHE_DIR`, `TORCH_CUDA_ARCH_LIST=10.0`).
+- Everything lives on `/vast` and survives node restarts; after a restart you only re-source `drex_env.sh` (see README "Compute-node restarts").
 
-## Build Commands
+## Build / install commands
+
+Full reinstall on a fresh node: `bash scripts/install_drex.sh`. Individual pieces:
 
 ```bash
-conda activate vattn
+source scripts/drex_env.sh
 
-# Build vAttention CUDA extension (requires LIBTORCH_PATH env var)
-cd vattention && pip install -e . && cd ..
+# Python deps go through uv (cache is on /vast via UV_CACHE_DIR). Home quota is small.
+uv pip install --python .venv/bin/python <pkg>
 
-# Build Sarathi-Lean (compiles CUDA kernels for pos_encoding, layernorm, activation, cache ops)
-cd sarathi-lean && pip install -e . && cd ..
+# Rebuild sarathi-lean CUDA kernels (pos_encoding/layernorm/activation/cache).
+# --no-build-isolation so the build sees the venv torch; --no-deps to skip the
+# stale requirements.txt pins (flash-attn 2.5.9 / torch 2.3 are NOT Blackwell-safe).
+uv pip install --python .venv/bin/python --no-build-isolation --no-deps -e ./sarathi-lean
+
+# Rebuild the vAttention extension. Install NON-editable: an editable install is
+# shadowed by the bare ./vattention namespace dir, so import vattention would load
+# an empty namespace instead of the compiled .so.
+uv pip install --python .venv/bin/python --no-build-isolation --no-deps ./vattention
 ```
 
-## Running Experiments
+CUDA extensions are built for sm_100 only (`TORCH_CUDA_ARCH_LIST=10.0`). nvcc comes
+from the local `cuda-12.8/` toolkit via `CUDA_HOME`.
 
-The benchmark entry point is `sarathi-lean/sarathi/benchmark/main.py`. Experiment runner scripts in `scripts/` wrap this with appropriate configs.
+## Running experiments
+
+Entry point: `sarathi-lean/sarathi/benchmark/main.py`, wrapped by `scripts/run_ee.py`.
 
 ```bash
-# Early exit experiment (main workflow)
+source scripts/drex_env.sh
+export CUDA_VISIBLE_DEVICES=0 RAY_ADDRESS=local
+ray stop --force            # clear stale /tmp/ray sessions before each run
+
+# Validated early-exit rebatching example (fa_vattn backend, Llama-2-13B-chat):
 python scripts/run_ee.py \
-  --ee_policy rebatching \
-  --max_batch_size 4 \
-  --num_requests 20 \
-  --shallow_exit_layer 32 \
-  --conf_threshold 0.6 \
-  --kv_method copy \
-  --csv_path /path/to/output/
-
-# Static trace benchmark (fixed context lengths)
-python scripts/benchmark_e2e_static_trace.py [--test]
-
-# Dynamic trace benchmark (Poisson arrivals, arXiv dataset)
-python scripts/benchmark_e2e_dynamic_trace.py [--test]
+  --ee_policy rebatching --max_batch_size 4 --num_requests 20 \
+  --shallow_exit_layer 32 --conf_threshold 0.6 --kv_method copy
 ```
 
-Key `run_ee.py` flags: `--ee_policy` (off/rebatching), `--shallow_exit_layer`, `--conf_threshold`, `--num_ee_threshold`, `--kv_method` (copy), `--buffer_age_factor`, `--qps`, `--enable_profiling`.
+Key `run_ee.py` flags: `--ee_policy` (off/rebatching), `--shallow_exit_layer`,
+`--conf_threshold`, `--num_ee_threshold`, `--kv_method` (copy), `--buffer_age_factor`,
+`--qps`, `--model`, `--enable_profiling`. Results: CSV summary under `outputs/`,
+full metrics/traces under `experiments/e2e_dynamic_eval/`.
 
-Results go to `experiments/e2e_dynamic_eval/` or `experiments/e2e_static_eval/` and include CSV metrics, Chrome traces, and JSON request logs.
+`run_ee.py` forces the `fa_vattn_2mb` backend (→ `fa_vattn_megacache`). It also
+swallows subprocess failures (`try/except: continue`), so its exit code is not a
+reliable pass/fail signal — read the `main.py` traceback / the "Replica 0 exiting"
+line instead.
 
 ## Architecture
 
-### Two main components:
+### Two main components
 
-1. **`vattention/`** — C++/CUDA extension (`vattention.cu`). Implements `vAttentionCachingAllocator` for virtual-physical memory mapping. Python APIs via pybind11: `init_kvcache()`, `step()`/`step_async()`, `alloc_new_batch_idx()`, `free_batch_idx()`, `reserve_physical_pages()`, `num_free_kvblocks()`.
+1. **`vattention/`** — C++/CUDA extension (`vattention.cu`). `vAttentionCachingAllocator`
+   for virtual↔physical KV-cache mapping. Python APIs (pybind11): `init_kvcache()`,
+   `step()`/`step_async()`, `alloc_new_batch_idx()`, `free_batch_idx()`,
+   `reserve_physical_pages()`, `num_free_kvblocks()`. Built into site-packages as
+   `vattention.cpython-312-*.so`.
 
-2. **`sarathi-lean/sarathi/`** — Modified Sarathi-Serve LLM serving system:
-   - **`engine/base_llm_engine.py`** — Main orchestrator. Manages sequence lifecycle, scheduling, and EE logic (ee_policy, shallow_exit_layer, conf_threshold).
-   - **`core/scheduler/`** — Scheduling strategies. `rebatching_scheduler.py` is the EE-aware scheduler that handles partial batch exits and rebatching buffers. Also: `vllm_scheduler.py`, `sarathi_scheduler.py`, `orca_scheduler.py`.
-   - **`worker/cache_engine/`** — `vATTN_cache_engine.py` manages vAttention KV-cache allocations, maps sequence IDs to batch indices, handles async/sync memory allocation. `vLLM_cache_engine.py` for paged approach.
-   - **`model_executor/models/llama.py`** — Primary model implementation (~58KB). Contains early exit logic: configurable shallow exit layer, confidence-based exit decisions, KV cache copying for exited requests. Also: `qwen.py`, `mistral.py`, `falcon.py`, `yi.py`.
-   - **`model_executor/attention/`** — Pluggable attention backends. Registry in `__init__.py`. Key backends: `FA_VATTN`/`FI_VATTN` (async), `FA_VATTN_SYNC`/`FI_VATTN_SYNC` (sync), `FA_PAGED`/`FI_PAGED` (PagedAttention), `FA3_VATTN` (FlashAttention-3), `FA_VATTN_MEGACACHE` (per-layer KV storage).
-   - **`benchmark/`** — Benchmarking suite. `main.py` is the entry point. Config in `config/default.yml`.
-   - **`config.py`** — All configuration dataclasses (ModelConfig, CacheConfig, SchedulerConfig, etc.).
+2. **`sarathi-lean/sarathi/`** — the serving engine:
+   - **`engine/base_llm_engine.py`** — orchestrator: sequence lifecycle, scheduling, EE logic (`ee_policy`, `shallow_exit_layer`, `conf_threshold`).
+   - **`core/scheduler/`** — `rebatching_scheduler.py` is the DREX EE-aware scheduler (partial exits, rebatching buffers). Also `vllm_scheduler.py`, `sarathi_scheduler.py`, `orca_scheduler.py`.
+   - **`worker/cache_engine/`** — `vATTN_cache_engine.py` (vAttention KV allocations, seq→batch-idx mapping, async/sync alloc; `megacache` = per-tensor multi-layer KV). `vLLM_cache_engine.py` for the paged path.
+   - **`model_executor/models/llama.py`** — primary EE model (~58 KB). Configurable shallow exit layer, confidence-based exit, `HiddenStatesBuffer` (the rebatching buffer; width must equal `config.hidden_size`), KV copy for exited requests. Also `qwen.py`, `mistral.py`, `falcon.py`, `yi.py`.
+   - **`model_executor/attention/`** — pluggable backends, registry in `__init__.py`. The validated one is `FA_VATTN_MEGACACHE` (FlashAttention + vAttention). `FA*` use flash-attn; `FI*` use flashinfer; `FA_POD*` need the unbuilt `pod_attn` module (expect an import warning).
+   - **`benchmark/`** — `main.py` entry point, `config/default.yml` defaults.
+   - **`config.py`** — all config dataclasses.
 
-### Supporting components:
+### Supporting
 
-- **`nvidia-vattn-uvm-driver/`** — Custom NVIDIA UVM driver for sub-2MB page sizes (64KB, 128KB, 256KB).
-- **`scripts/utils.py`** — Model registry (HF record, TP degree, log names), path helpers, block/page size extraction from backend names.
-- **`sarathi-lean/data/processed_traces/`** — Request trace datasets (arXiv summarization, ShareGPT).
+- **`nvidia-vattn-uvm-driver/`** — custom UVM driver for sub-2MB pages (64/128/256 KB). Not needed for the 2 MB page path used here.
+- **`scripts/utils.py`** — model registry (HF record / TP degree / log name), path + block/page-size helpers. `llama-2-13b` points at the local weights.
 
-### EE data flow:
-1. Requests enter via `base_llm_engine.py` and are scheduled by `rebatching_scheduler.py`
-2. During inference in `llama.py`, sequences may exit early at `shallow_exit_layer` if confidence exceeds `conf_threshold`
-3. Early-exited sequences go to a rebatching buffer; remaining sequences continue through deep layers
-4. KV cache for exited sequences is managed via `vATTN_cache_engine.py` (copy method fills missing KV entries)
+### EE data flow
+1. Requests enter via `base_llm_engine.py`, scheduled by `rebatching_scheduler.py`.
+2. In `llama.py`, sequences may exit at `shallow_exit_layer` if confidence ≥ `conf_threshold`.
+3. Exited sequences go to the rebatching buffer (`deep_buffer`); the rest continue through deep layers. The scheduler flushes the buffer (empty schedule) when it fills or starves.
+4. KV for exited sequences is filled via `vATTN_cache_engine.py` (`kv_method=copy`).
 
 ## Configuration
 
-All benchmark params are defined in `sarathi-lean/sarathi/benchmark/config/default.yml`. CLI flags override YAML values via flattened naming: `--model_name`, `--model_attention_backend`, `--replica_scheduler_provider`, `--ee_policy`, etc.
+Benchmark params live in `sarathi-lean/sarathi/benchmark/config/default.yml`; CLI
+flags override via flattened names (`--model_name`, `--model_attention_backend`,
+`--replica_scheduler_provider`, `--ee_policy`, …). Attention backend strings encode
+backend + page size: `fa_vattn_2mb`, `fa_vattn_256kb`, `fi_paged_16`, `fa_paged_256`.
 
-Attention backend strings encode both the backend and page size: `fa_vattn_2mb`, `fa_vattn_256kb`, `fi_paged_16`, `fa_paged_256`.
+Default `load_format` is `dummy` (in-process weight init — a throughput/plumbing
+run, no checkpoint read). Set `--model_load_format auto` for real weights.
 
-## Key Conventions
+## Key conventions
 
-- vAttention backends use `_sync` suffix for synchronous memory allocation (e.g., `fa_vattn_2mb_sync`); without suffix means async.
-- Block sizes: vAttention uses large pages (64KB–2MB); PagedAttention uses token-count block sizes (e.g., 16, 256).
-- Model load format is `dummy` by default in benchmarks (no real weights loaded for throughput testing). Set `--model_load_format auto` for real inference.
-- The `kv_method` parameter controls how missing KV entries are filled after early exit; currently `copy` is the primary method.
+- vAttention backends use a `_sync` suffix for synchronous allocation; without it, async.
+- vAttention uses large pages (64 KB–2 MB); PagedAttention uses token-count block sizes (16, 256).
+- `kv_method` controls how post-exit missing KV is filled (currently `copy`).
+- Per-run, set `CUDA_VISIBLE_DEVICES` to one free GPU and `RAY_ADDRESS=local` + `ray stop --force` (shared node + stale-Ray hygiene).
+
+## Gotchas (B200 port)
+
+- **Ray GPU detection**: importing the serving stack initializes CUDA before `ray.init`, which makes Ray autodetect 0 GPUs. `benchmark_runner.py` passes `num_gpus` explicitly; keep that.
+- **vattention must be installed non-editable** (namespace-dir shadowing, above).
+- **Don't `pip install -r sarathi-lean/requirements.txt`** — its flash-attn/torch pins are pre-Blackwell. Use `install_drex.sh`.
+- **`fi_vattn` backend is currently broken** at KV-cache allocation (vAttention page-alignment), independent of the flashinfer port. Use `fa_vattn`.
+- `run_ee.py` hides subprocess errors; judge success from `main.py` output, not its exit code.

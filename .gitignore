@@ -10,3 +10,9 @@ vattention/*egg-info
 sarathi-lean/*egg-info
 
 sarathi-lean/build/*
+
+# DREX local environment (not committed; lives on /vast, see README)
+.uv_cache/
+.venv/
+cuda-12.8/
+*.run
