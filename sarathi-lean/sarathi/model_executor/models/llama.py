@@ -26,6 +26,7 @@ The input of the model is flattened to a 1D tensor of tokens.
 """
 from typing import Any, Dict, List, Optional, Tuple
 
+import os
 import torch
 from torch import nn
 from transformers import LlamaConfig
@@ -271,22 +272,31 @@ class LlamaDecoderLayer(nn.Module):
         hidden_states = residual + hidden_states
         return hidden_states
 
+# Launch-time toggles (set via env var, NOT by editing source). run_ee.py sets
+# these from its --collect_conf / --ee_profile CLI flags; you can also export them.
+#   DREX_EE_PROFILE=1   -> record per-step timing instrumentation (default off)
+#   DREX_COLLECT_CONF=0 -> drop per-step confidence host syncs for throughput (default on)
+EE_PROFILE = os.environ.get("DREX_EE_PROFILE", "0") == "1"
+COLLECT_CONF = os.environ.get("DREX_COLLECT_CONF", "1") != "0"
+
+
 class HiddenStatesBuffer():
     """
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=8192, dtype: torch.dtype=torch.float16, device: str='cuda:0'): # 4096 for llama-3-8b, 5120 for llama-2-13b, 8192 for llama-2-70b
         self.batch_size = batch_size
         self.capacity = capacity
-        # [WARNING!] hard code device
-        self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
-        self.hidden_states = self.hidden_states.to(torch.float16) # bfloat16 for llama3
-        self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
-        self.positions = self.positions.to(torch.int64)
+        # Storage dtype/width MUST match the model's activations (config.dtype /
+        # config.hidden_size). A hard-coded fp16/8192 buffer silently downcasts (and
+        # then dtype-mismatch-crashes at the torch.cat merge) bf16 models such as
+        # Llama-3 / Qwen, and mis-sizes any model whose hidden size != 8192.
+        self.dtype = dtype
+        self.hidden_states = torch.zeros(self.capacity, hidden_state_length, dtype=dtype, device=device) # [capacity, hidden_state_length]
+        self.positions = torch.zeros(self.capacity, dtype=torch.int64, device=device) # [capacity]
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
-        self.dtype = torch.bfloat16
         self.time_spent_adding = []
         self.time_spent_taking = []
     
@@ -302,7 +312,8 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        self.time_spent_adding.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.time_spent_adding.append(time.perf_counter() - start_time)
 
         
             
@@ -335,7 +346,8 @@ class HiddenStatesBuffer():
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
 
-        self.time_spent_taking.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.time_spent_taking.append(time.perf_counter() - start_time)
         return output_hidden_states, output_req_ids, output_positions
 
     def __len__(self):
@@ -387,7 +399,7 @@ class LlamaModel(nn.Module):
         self.max_batch_size = config.max_num_seqs
         # self.start_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 3 + 1) # Buffers the hidden states of the token arrived at first layer
         self.start_buffer = [] # Start buffer will no loger be used. Scheduler will send flush request (an empty schedule) to flush deep buffer. So no request will be moved to start buffer.
-        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, hidden_state_length=config.hidden_size) # Buffers the hidden states that EE'ed
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, hidden_state_length=config.hidden_size, dtype=config.dtype) # Buffers the hidden states that EE'ed
         self.seq_metadata_map: Dict[int, SequenceMetadata] = {} # keys: seq_ids, values: SequenceMetadata. Used to update kv cache with updated sequences in the current batch.
 
         self.batch_size_lst = [0]
@@ -473,7 +485,7 @@ class LlamaModel(nn.Module):
 
         if not (ee_policy == "rebatching" or ee_policy == "latency-only"):
 
-            exited_conf_lst = conf.tolist()
+            exited_conf_lst = conf.tolist() if COLLECT_CONF else []
 
             conf_median = torch.median(conf)
             conf = torch.mean(conf).item()
@@ -489,9 +501,16 @@ class LlamaModel(nn.Module):
             else:
                 raise ValueError("Invalid EE policy: {}".format(ee_policy))
         else:
-            exited_conf = torch.masked_select(conf, mask)
-            exited_conf_lst = exited_conf.tolist()
-            conf = exited_conf.mean().item()
+            # rebatching / latency-only: need_skip is already decided above from
+            # num_ee; conf/exited_conf are only used for logging, so when confidence
+            # collection is off we skip the masked_select + host syncs entirely.
+            if COLLECT_CONF:
+                exited_conf = torch.masked_select(conf, mask)
+                exited_conf_lst = exited_conf.tolist()
+                conf = exited_conf.mean().item()
+            else:
+                exited_conf_lst = []
+                conf = None
 
         batch_size = hidden_states.size(0)
         if need_skip:
@@ -514,6 +533,8 @@ class LlamaModel(nn.Module):
             return mask, conf, exited_conf_lst, need_skip, num_seq_would_ee_but_stay, num_seq_would_not_ee_but_ee
     
     def measure_batch_size(self, hidden_states: torch.Tensor, seq_ids_in_batch: List[int]=[]):
+        if not EE_PROFILE:
+            return
         if len(seq_ids_in_batch) > 0:
             #print(f"[LlamaModel.measure_batch_size] executing batch of size {len(seq_ids_in_batch)}")
             self.batch_size_lst.append(len(seq_ids_in_batch))
@@ -617,7 +638,8 @@ class LlamaModel(nn.Module):
         cache_engine.step(updated_seq_metadata_list) # Originally in base_worker
         get_attention_wrapper().begin_forward(updated_seq_metadata_list) # Originally in model_runner
 
-        self.update_kvcache_time_lst.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.update_kvcache_time_lst.append(time.perf_counter() - start_time)
     
     def fill_missing_kvcache_with_copy(self, exited_layer: int, cache_engine: vATTNCacheEngine, token_indices: torch.Tensor, exited_req_indices: Optional[torch.Tensor] = None, seq_ids_to_copy: Optional[List[int]] = None):
         start_time = time.perf_counter()
@@ -633,7 +655,8 @@ class LlamaModel(nn.Module):
         # Copy method 3
         # cache_engine.copy_kv_cache(exited_layer, seq_ids_to_copy, token_indices)
 
-        self.fill_kvcache_time_lst.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.fill_kvcache_time_lst.append(time.perf_counter() - start_time)
 
 
 
@@ -890,7 +913,8 @@ class LlamaModel(nn.Module):
                     seq_ids_in_batch=seq_ids_in_batch,
                     priority_reqs=priority_reqs
                 )
-                self.ee_overhead_time_lst.append(time.perf_counter() - ee_check_start_time)
+                if EE_PROFILE:
+                    self.ee_overhead_time_lst.append(time.perf_counter() - ee_check_start_time)
 
                 if need_skip:
                     # print(f"Exiting with confidence {conf}. exited rates: {self.exited_rates}", flush=True)

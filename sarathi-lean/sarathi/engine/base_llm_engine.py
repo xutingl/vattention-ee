@@ -147,9 +147,16 @@ class BaseLLMEngine:
         self.decode_spent_time = 0
         self.rebatching_spent_time = 0
 
-        self.normal_iter_times = []
-        self.deep_iter_times = []
-        self.ee_iter_times = []
+        # Running sums + counts instead of unbounded per-iteration lists: the
+        # averages are only consumed once every 1000 steps (auto-tuning), so
+        # keeping lists and re-summing them every step was O(n) per step / O(n^2)
+        # over a run and leaked memory. Running aggregates give identical averages.
+        self.normal_iter_time_sum = 0.0
+        self.ee_iter_time_sum = 0.0
+        self.deep_iter_time_sum = 0.0
+        self.normal_iter_count = 0
+        self.ee_iter_count = 0
+        self.deep_iter_count = 0
 
         self.rebatching_ee_factor = 0 # Initialize to 0 (means turned off). rebatching_ee_factor = b' / batch_size >= c / t_d. c is the overhead (t_s + t_d - t_n), t_s is shallow exit time, t_d is deep exit time, t_n is normal exit time.
 
@@ -475,21 +482,26 @@ class BaseLLMEngine:
 
         # if not is_prefill: # We don't measure prefill time and only focus on decode time?? But seems to decrease performance.
         if is_flush:
-            self.deep_iter_times.append(iteration_time)
+            self.deep_iter_time_sum += iteration_time
+            self.deep_iter_count += 1
         else:
             if is_ee:
-                self.ee_iter_times.append(iteration_time)
+                self.ee_iter_time_sum += iteration_time
+                self.ee_iter_count += 1
             else:
-                self.normal_iter_times.append(iteration_time)
-        
+                self.normal_iter_time_sum += iteration_time
+                self.normal_iter_count += 1
+
         request_outputs: List[RequestOutput] = self._on_step_completed(scheduler_outputs, ignored_seqs,seq_metadata_list, sampler_outputs, start_time)
 
-        avg_normal_iter_time = sum(self.normal_iter_times) / max(1,len(self.normal_iter_times))
-        avg_ee_iter_time = sum(self.ee_iter_times) / max(1,len(self.ee_iter_times))
-        avg_deep_iter_time = sum(self.deep_iter_times) / max(1,len(self.deep_iter_times))
-
         if self.step_count % 1000 == 0:
-            print(f"[BaseLLMEngine] length of [normal iter, ee iter, deep iter]: {len(self.normal_iter_times)}, {len(self.ee_iter_times)}, {len(self.deep_iter_times)}. \n sum of [normal iter, ee iter, deep iter]: {sum(self.normal_iter_times)}, {sum(self.ee_iter_times)}, {sum(self.deep_iter_times)}. \n avg of [normal iter, ee iter, deep iter]: {avg_normal_iter_time}, {avg_ee_iter_time}, {avg_deep_iter_time}. sum of all: {sum(self.normal_iter_times) + sum(self.ee_iter_times) + sum(self.deep_iter_times)}")
+            # Averages are only needed here (periodic auto-tuning), so compute them
+            # from the running aggregates rather than re-summing every step.
+            avg_normal_iter_time = self.normal_iter_time_sum / max(1, self.normal_iter_count)
+            avg_ee_iter_time = self.ee_iter_time_sum / max(1, self.ee_iter_count)
+            avg_deep_iter_time = self.deep_iter_time_sum / max(1, self.deep_iter_count)
+
+            print(f"[BaseLLMEngine] count of [normal iter, ee iter, deep iter]: {self.normal_iter_count}, {self.ee_iter_count}, {self.deep_iter_count}. \n sum of [normal iter, ee iter, deep iter]: {self.normal_iter_time_sum}, {self.ee_iter_time_sum}, {self.deep_iter_time_sum}. \n avg of [normal iter, ee iter, deep iter]: {avg_normal_iter_time}, {avg_ee_iter_time}, {avg_deep_iter_time}. sum of all: {self.normal_iter_time_sum + self.ee_iter_time_sum + self.deep_iter_time_sum}")
 
             overhead = avg_ee_iter_time + avg_deep_iter_time - avg_normal_iter_time
             if overhead > 0:

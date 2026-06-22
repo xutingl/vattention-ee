@@ -24,6 +24,8 @@ parser.add_argument('--enable_profiling', action='store_true', help='Enable prof
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
 parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum'], help='Dataset name for real request generator (cnn or xsum)')
+parser.add_argument('--collect_conf', type=str, default='true', choices=['true', 'false'], help="Collect/log per-step confidence scores. Set 'false' on throughput runs to drop the per-step .tolist()/.item() host syncs (sets DREX_COLLECT_CONF).")
+parser.add_argument('--ee_profile', action='store_true', help='Record per-step EE timing instrumentation (buffer/copy/kvcache timings; sets DREX_EE_PROFILE). Off by default.')
 args = parser.parse_args()
 
 src = os.path.dirname(os.path.abspath(__file__))

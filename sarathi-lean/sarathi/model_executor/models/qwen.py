@@ -276,7 +276,9 @@ class QWenModel(nn.Module):
         self.exited_rates = [0, 1]  # [0]: early-exited, [1]: not early-exited
 
         self.max_batch_size = getattr(config, 'max_num_seqs', 32)
-        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1)
+        # Width/dtype from config so bf16 Qwen checkpoints aren't silently downcast
+        # to fp16 (which also dtype-mismatch-crashes the rebatching torch.cat merge).
+        self.deep_buffer = HiddenStatesBuffer(self.max_batch_size, self.max_batch_size * 2 + 1, hidden_state_length=config.hidden_size, dtype=config.dtype)
         self.seq_metadata_map: Dict[int, SequenceMetadata] = {}
 
         self.batch_size_lst = [0]

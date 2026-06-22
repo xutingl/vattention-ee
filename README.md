@@ -1,21 +1,46 @@
-# DREX: Dynamic Rebatching for Efficient Early-Exit LLM Inference
+# DREX / FLExit: Efficient Early-Exit LLM Inference with Dynamic Rebatching
 
-DREX is an LLM serving system that combines **early exit (EE)** — letting a
-sequence stop after a shallow transformer layer once the model is confident — with
-a **dynamic rebatching** scheduler that regroups the surviving (non-exited)
-sequences so the deep layers always run on full batches. It is built on top of
-[vAttention](https://arxiv.org/abs/2405.04437) (CUDA virtual-memory KV-cache
-management) and [Sarathi-Serve](https://github.com/microsoft/sarathi-serve)
-(the chunked-prefill scheduler), here forked as `sarathi-lean`.
+> **DREX** and **FLExit** are the same system — the codebase uses the name `DREX`;
+> the paper names it `FLExit`.
 
-The core question DREX targets: when many requests early-exit at a shallow layer,
-the deep-layer batches become small and GPU-inefficient. DREX buffers early-exited
-work and **rebatches** so deep-layer compute stays dense, trading a small accuracy
-penalty for higher throughput.
+DREX is an LLM serving system that makes **early-exit (EE)** inference compatible
+with the batching and KV-cache optimizations production serving depends on.
+
+With EE, an "easy" token skips the deeper transformer layers once a shallow **exit
+ramp** is confident enough. In a batched server, requests rarely want to exit at
+the same point, so existing systems force a **batch-wide** decision — either making
+confident tokens stay (*involuntary stays* → wasted compute) or forcing unconfident
+tokens out (*involuntary exits* → corrupted output). DREX instead lets **each
+request decide independently** and resolves the resulting batch fragmentation with
+**Dynamic Rebatching**: exited requests leave the pipeline immediately, while the
+non-exited ones are held in a per-model buffer and regrouped into a dense batch for
+the deep layers. Two mechanisms keep this profitable:
+
+- **Adaptive Rebatching Threshold (ART)** — only early-exit a split batch when the
+  predicted savings exceed the rebatching overhead (`b' > (c/t_d)·b`), re-profiled
+  periodically from measured iteration times.
+- **SLA-aware forced flushing** — flush the buffer early as a buffered request's
+  deadline approaches, so rebatching never starves latency-sensitive requests.
+
+The KV-cache reorganization is **copy-free**: which cache entry belongs to which
+request is selected/reordered through virtual tensor indexing (FlashAttention's
+`cache_batch_idx` + [vAttention](https://arxiv.org/abs/2405.04437) virtual memory)
+instead of moving data; the buffer only holds each left-behind request's
+exit-layer hidden state. When buffered requests finally traverse the deep layers,
+DREX fills the **missing KV cache** for their skipped layers (`kv_method`: `copy` =
+state-copy from the last computed layer, `postfill` = recompute). It is built on
+[Sarathi-Serve](https://github.com/microsoft/sarathi-serve) (chunked-prefill
+scheduler), forked here as `sarathi-lean`.
+
+**Paper:** *Efficient Early-Exit Inference with Dynamic Rebatching* (SOSP
+submission) — LaTeX sources and PDF in
+[`../EarlyExit_SOSP_git/`](../EarlyExit_SOSP_git/)
+([`main.pdf`](../EarlyExit_SOSP_git/main.pdf)). Reported result: eliminates
+involuntary exits entirely while improving throughput by up to **34%** over EE
+baselines.
 
 > This repository is the Blackwell (B200) port of the `vattention-ee` codebase.
-> If you are looking for the original upstream documentation, see
-> [`README_old.md`](README_old.md).
+> For the original upstream documentation, see [`README_old.md`](README_old.md).
 
 ---
 
@@ -205,6 +230,23 @@ validation run up):
   module is not built here and the `FA_POD*` backends are unused by the validation.
 
 ---
+
+## DREX/FLExit implementation map
+
+The EE + Dynamic Rebatching logic that *defines* DREX (i.e. what was added on top
+of stock Sarathi-Serve / vAttention) lives in these files. All paths are under
+`sarathi-lean/sarathi/` unless noted.
+
+| File | DREX/FLExit role (paper section) |
+|---|---|
+| `model_executor/models/ee_utils.py` | Shared EE utilities (~the paper's "early-exit utilities"): `HiddenStatesBuffer` (the left-behind rebatching buffer), `softmax_confidence`, `get_skip_mask` (per-request EE decision → `EEMask`), `get_adaptive_rebatching_threshold` (ART, §To-EE-or-Not), and the missing-KV-fill helper. |
+| `model_executor/models/llama.py`, `qwen.py` | The EE models (Llama-EE / Qwen-EE, Apparate-style ramps). EE forward path: exit-ramp logits, all-exit vs. split handling, buffer add/take, deep-layer rebatch merge, and `kv_method` dispatch. |
+| `core/scheduler/vllm_scheduler.py` | EE-aware scheduler: vLLM continuous batching + the `rebatching_buffer`; `on_rebatching()` moves sequences between running/buffer; buffer-flush conditions by size / age / SLA (the `α` term = `--buffer_age_factor`, §Flushing the Buffer). |
+| `engine/base_llm_engine.py` | Engine step loop: drives EE iterations, reconciles (re-batched) outputs via `on_rebatching`, and re-profiles the ART (`rebatching_ee_factor`) periodically from measured full/shallow/deep iteration times. |
+| `worker/cache_engine/vATTN_cache_engine.py` | vAttention KV management: seq→batch-idx mapping (`cache_batch_idx` — the copy-free reorder), `step()`, and `copy_kv_cache_starting_at_layer` (missing-KV state-copy for skipped layers, §Filling In the Missing State). |
+| `worker/base_worker.py`, `model_executor/model_runner.py` | Wire `execute_model` to the EE forward and reconcile the possibly reordered/rebatched output sequences back with the scheduler. |
+| `model_executor/layers/sampler.py` | Samples from the exit-ramp logits on EE steps; computes the softmax confidence score reported as a quality metric. |
+| `benchmark/benchmark_runner.py`, `benchmark/main.py`, `scripts/run_ee.py` | Benchmark driver + metrics (throughput, RCT, BERT score, EE proportion, involuntary stays/exits) and the `run_ee.py` launcher. |
 
 ## Repository layout
 

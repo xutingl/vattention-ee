@@ -106,7 +106,12 @@ class BenchmarkRunner:
             pipeline_parallel_size=self._config.model_pipeline_parallel_degree,
             attention_backend=self._config.model_attention_backend,
             seed=42,
-            dtype="float16", # "bfloat16" for llama3
+            # NOTE: every model is pinned to fp16 here. The HiddenStatesBuffer now
+            # follows config.dtype, so bf16 models (Llama-3, Qwen) no longer crash if
+            # you switch this. Use "auto" to run each model in its native dtype
+            # (recommended for bf16 checkpoints to avoid fp16 overflow/quality loss);
+            # left at "float16" to keep existing result baselines comparable.
+            dtype="float16",
             load_format=self._config.model_load_format,
             gpu_memory_utilization=self._config.gpu_memory_utilization,
             max_model_len=self._config.model_max_model_len,
@@ -285,12 +290,14 @@ class BenchmarkRunner:
                     self.decode_times.append(latency_only_ee_iter_time)
 
 
+                # Confidence scores are optional (DREX_COLLECT_CONF=0): only the conf
+                # lists are gated on conf_score. The EE/non-EE iteration counter must
+                # increment regardless, so throughput metrics (tokens_per_iter) stay
+                # well-defined when confidence collection is disabled.
                 if conf_score is not None:
                     if is_ee:
-                        self.ee_iter_count[0] += 1
                         avg_conf_score_ee_lst.append(conf_score)
                     else:
-                        self.ee_iter_count[1] += 1
                         avg_conf_score_non_ee_lst.append(conf_score)
 
                 if is_flush:
@@ -298,9 +305,11 @@ class BenchmarkRunner:
                     self.deep_iter_num_output_tokens.append(len(step_outputs))
                 else:
                     if is_ee:
+                        self.ee_iter_count[0] += 1
                         self.ee_iter_times.append(iteration_time)
                         self.ee_iter_num_output_tokens.append(len(step_outputs))
                     else:
+                        self.ee_iter_count[1] += 1
                         self.normal_iter_times.append(iteration_time)
                         self.normal_iter_num_output_tokens.append(len(step_outputs))
         end_time = time.monotonic()
@@ -357,7 +366,7 @@ class BenchmarkRunner:
             avg_conf_score_ee = 0
 
         avg_conf_score_non_ee = sum(avg_conf_score_non_ee_lst) / max(1, len(avg_conf_score_non_ee_lst))
-        avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / (len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
+        avg_conf_score = (sum(avg_conf_score_ee_lst) + sum(avg_conf_score_non_ee_lst)) / max(1, len(avg_conf_score_ee_lst) + len(avg_conf_score_non_ee_lst))
 
         # Iteration time stats
         normal_iter_count = len(self.normal_iter_times)
@@ -401,6 +410,14 @@ class BenchmarkRunner:
             rebatching_threshold_ratio = overhead / max(1, avg_deep_iter_time)
             num_ee_threshold = self._config.replica_scheduler_max_batch_size * rebatching_threshold_ratio
 
+        # If confidence collection is disabled (COLLECT_CONF=False) or a run
+        # produced no decode iterations of a given kind, these lists are empty and
+        # the np.median / np.percentile summaries below would error on empty input.
+        # Seed a single 0.0 so the summary stays well-defined (values unused then).
+        if len(self.ee_conf_lst) == 0:
+            self.ee_conf_lst = [0.0]
+        if len(self.non_ee_conf_lst) == 0:
+            self.non_ee_conf_lst = [0.0]
         all_conf_lst = self.ee_conf_lst + self.non_ee_conf_lst
 
         median_conf_score_ee = np.median(self.ee_conf_lst)

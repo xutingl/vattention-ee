@@ -1,3 +1,4 @@
+import os
 import torch
 import time
 from typing import List, Tuple, Dict, Optional
@@ -5,22 +6,31 @@ from sarathi.worker.cache_engine.vATTN_cache_engine import vATTNCacheEngine
 from sarathi.core.datatypes.sequence import SequenceMetadata
 from sarathi.model_executor.attention import get_attention_wrapper
 
+# Launch-time toggles (set via env var, NOT by editing source). run_ee.py sets
+# these from its --collect_conf / --ee_profile CLI flags; you can also export them.
+#   DREX_EE_PROFILE=1   -> record per-step buffer/copy/kvcache timing (default off)
+#   DREX_COLLECT_CONF=0 -> drop per-step confidence host syncs for throughput (default on)
+EE_PROFILE = os.environ.get("DREX_EE_PROFILE", "0") == "1"
+COLLECT_CONF = os.environ.get("DREX_COLLECT_CONF", "1") != "0"
+
+
 class HiddenStatesBuffer():
     """
     A buffer that stores hidden states
     """
 
-    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120): # 4096 for llama-3-8b, 5120 for llama-2-13b and qwen-14b, 8192 for llama-2-70b
+    def __init__(self, batch_size: int, capacity: int, hidden_state_length: int=5120, dtype: torch.dtype=torch.float16, device: str='cuda:0'):
         self.batch_size = batch_size
         self.capacity = capacity
-        # [WARNING!] hard code device
-        self.hidden_states = torch.zeros(self.capacity, hidden_state_length, device='cuda:0') # [capacity, hidden_state_length]
-        self.hidden_states = self.hidden_states.to(torch.float16) # bfloat16 for llama3
-        self.positions = torch.zeros(self.capacity, device='cuda:0') # [capacity]
-        self.positions = self.positions.to(torch.int64)
+        # Storage dtype/width MUST match the model's activations (config.dtype /
+        # config.hidden_size). A hard-coded fp16/5120 buffer silently downcasts (and
+        # then dtype-mismatch-crashes at the torch.cat merge) bf16 models such as
+        # Llama-3 / Qwen, and mis-sizes any model whose hidden size != 5120.
+        self.dtype = dtype
+        self.hidden_states = torch.zeros(self.capacity, hidden_state_length, dtype=dtype, device=device) # [capacity, hidden_state_length]
+        self.positions = torch.zeros(self.capacity, dtype=torch.int64, device=device) # [capacity]
         self.available_slots = set(range(self.capacity))
         self.hidden_states_map = dict() # keys: req_ids, values: indices in hidden_states.
-        self.dtype = torch.bfloat16
         self.time_spent_adding = []
         self.time_spent_taking = []
     
@@ -36,7 +46,8 @@ class HiddenStatesBuffer():
         self.hidden_states[slots] = hidden_states
         self.positions[slots] = positions
 
-        self.time_spent_adding.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.time_spent_adding.append(time.perf_counter() - start_time)
 
         
             
@@ -69,7 +80,8 @@ class HiddenStatesBuffer():
         output_hidden_states = self.hidden_states[slots]
         output_positions = self.positions[slots]
 
-        self.time_spent_taking.append(time.perf_counter() - start_time)
+        if EE_PROFILE:
+            self.time_spent_taking.append(time.perf_counter() - start_time)
         return output_hidden_states, output_req_ids, output_positions
 
     def __len__(self):
@@ -130,7 +142,7 @@ def get_skip_mask(
 
     if not (ee_policy == "rebatching" or ee_policy == "latency-only"):
 
-        exited_conf_lst = conf.tolist()
+        exited_conf_lst = conf.tolist() if COLLECT_CONF else []
 
         conf_median = torch.median(conf)
         conf = torch.mean(conf).item()
@@ -146,9 +158,16 @@ def get_skip_mask(
         else:
             raise ValueError("Invalid EE policy: {}".format(ee_policy))
     else:
-        exited_conf = torch.masked_select(conf, mask)
-        exited_conf_lst = exited_conf.tolist()
-        conf = exited_conf.mean().item()
+        # rebatching / latency-only: need_skip is already decided above from
+        # num_ee; conf/exited_conf are only used for logging, so when confidence
+        # collection is off we skip the masked_select + host syncs entirely.
+        if COLLECT_CONF:
+            exited_conf = torch.masked_select(conf, mask)
+            exited_conf_lst = exited_conf.tolist()
+            conf = exited_conf.mean().item()
+        else:
+            exited_conf_lst = []
+            conf = None
 
     batch_size = hidden_states.size(0)
     if need_skip:

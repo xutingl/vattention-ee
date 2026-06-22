@@ -56,6 +56,14 @@ from the local `cuda-12.8/` toolkit via `CUDA_HOME`.
 
 ## Running experiments
 
+**Two ways to run, depending on where your shell is:**
+- **Directly on a compute node (current setup).** When your shell is already on a
+  `dgx-b200` node with a GPU (e.g. an interactive Slurm allocation / the current
+  session), run `python scripts/run_ee.py ...` directly — no `sbatch` needed.
+- **From a login node → must use `sbatch`.** Login nodes have no GPU and kill
+  heavy/model-loading jobs. Submit the run as a batch job (`sbatch`) so it lands on
+  a compute node; do not run model loads or benchmarks directly on the login node.
+
 Entry point: `sarathi-lean/sarathi/benchmark/main.py`, wrapped by `scripts/run_ee.py`.
 
 ```bash
@@ -73,6 +81,18 @@ Key `run_ee.py` flags: `--ee_policy` (off/rebatching), `--shallow_exit_layer`,
 `--conf_threshold`, `--num_ee_threshold`, `--kv_method` (copy), `--buffer_age_factor`,
 `--qps`, `--model`, `--enable_profiling`. Results: CSV summary under `outputs/`,
 full metrics/traces under `experiments/e2e_dynamic_eval/`.
+
+Performance/logging toggles (set per-run at launch — no source edits; `run_ee.py`
+forwards them to the benchmark + Ray workers as env vars):
+- `--collect_conf true|false` (default `true`). Per-step confidence scores are
+  computed every decode step and copied to the host (`.tolist()`/`.item()`) only to
+  log the "varying conf" experiments. Pass `--collect_conf false` on pure
+  **throughput** runs to drop those host syncs (sets `DREX_COLLECT_CONF=0`). The
+  conf-summary columns are then meaningless (seeded to 0), which is expected.
+- `--ee_profile` (default off). Records per-step buffer/copy/kvcache timing into
+  in-memory lists (sets `DREX_EE_PROFILE=1`); leave off for real runs — the lists
+  are unbounded and only feed debug prints. Env vars also work directly, e.g.
+  `DREX_COLLECT_CONF=0 python scripts/run_ee.py ...`.
 
 `run_ee.py` forces the `fa_vattn_2mb` backend (→ `fa_vattn_megacache`). It also
 swallows subprocess failures (`try/except: continue`), so its exit code is not a

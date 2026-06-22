@@ -12,7 +12,13 @@ from sarathi.worker.cache_engine.base_cache_engine import BaseCacheEngine
 import vattention
 from sarathi.model_executor.attention import get_attention_wrapper
 logger = init_logger(__name__)
+import os
 import time
+
+# Per-step timing instrumentation is appended to unbounded lists that are only
+# read by (currently commented-out) debug prints. Off by default; enable at launch
+# (no source edit) with DREX_EE_PROFILE=1 / run_ee.py --ee_profile.
+EE_PROFILE = os.environ.get("DREX_EE_PROFILE", "0") == "1"
 
 KVCache = Union[Tuple[torch.Tensor, torch.Tensor], torch.Tensor]
 
@@ -40,6 +46,12 @@ class vATTNCacheEngine(BaseCacheEngine):
         self.vattn_async = True if mem_alloc_backend == "async" else False
         self.vattn_mega_cache = True if "megacache" in model_config.attention_backend.lower() else False
         self.cache_mem_size = cache_config.memory_for_gpu
+        # Full contiguous KV tensors for the megacache layout, shaped
+        # [max_batch_size, max_seq_len, num_layers, num_kv_heads, head_size].
+        # Set in allocate_gpu_cache(); used by copy_kv_cache_starting_at_layer to
+        # fill deep-layer KV for early-exited tokens in a single broadcast write.
+        self.megacache_k = None
+        self.megacache_v = None
         super().__init__(cache_config, model_config, parallel_config)
 
         self.step_times = []
@@ -62,6 +74,10 @@ class vATTNCacheEngine(BaseCacheEngine):
         if self.vattn_mega_cache:
             k_cache = kv_cache[0]
             v_cache = kv_cache[1]
+            # Keep handles to the full [batch, seq, layers, heads, head] tensors so
+            # the deep-layer KV copy can be done as one vectorized scatter.
+            self.megacache_k = k_cache
+            self.megacache_v = v_cache
             assert k_cache.device == self.device, \
                         "k_cache device mismatch. expected: {}, got: {}".format(self.device, self.k_cache.device)
             assert v_cache.device == self.device, \
@@ -115,21 +131,62 @@ class vATTNCacheEngine(BaseCacheEngine):
             layer[1][target_cache_idx, token_indices] = src_v
     
     def copy_kv_cache_starting_at_layer(self, src_layer_idx: int, token_indices: torch.Tensor, exited_req_indices: torch.Tensor = None) -> None:
-        return # Skip for now
-        target_cache_idx = self.get_batch_idx()
+        """Fill the missing deep-layer KV for early-exited tokens.
 
-        if target_cache_idx is None or len(target_cache_idx) == 0:
+        When a token early-exits at the shallow layer, layers
+        ``src_layer_idx + 1 .. num_layers - 1`` never compute its K/V, so future
+        decode steps would attend over uninitialized (stale, cross-sequence)
+        cache slots. As a cheap approximation we copy the K/V from the last
+        computed layer (``src_layer_idx``) into every deeper layer at the
+        exited tokens' ``(batch_idx, position)`` slots.
+
+        ``token_indices``/``exited_req_indices`` are aligned with the current
+        batch order set by the most recent ``step()`` (see get_batch_idx()).
+        """
+        target_cache_idx = self.get_batch_idx()
+        if target_cache_idx is None or target_cache_idx.numel() == 0:
             return
-        
+
         if exited_req_indices is not None:
             target_cache_idx = target_cache_idx[exited_req_indices]
+        if target_cache_idx.numel() == 0:
+            return
 
-        src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
-        src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
+        # Nothing to fill if the exit layer is (one before) the last layer.
+        if src_layer_idx + 1 >= self.num_layers:
+            return
 
-        for layer in self.gpu_cache[src_layer_idx + 1:]:
-            layer[0][target_cache_idx, token_indices] = src_k
-            layer[1][target_cache_idx, token_indices] = src_v
+        # The KV-cache seq dimension is allocated for max_model_len; a sequence that
+        # has reached its length limit presents position == max_model_len (one past
+        # the last storable slot). That token is the sequence's last — it terminates,
+        # so its deep-layer KV is never read again. PyTorch advanced indexing
+        # bounds-checks (unlike vAttention's raw-pointer kernel), so drop any such
+        # out-of-range positions to avoid a device-side index assert.
+        seq_dim = (self.megacache_k.shape[1]
+                   if (self.vattn_mega_cache and self.megacache_k is not None)
+                   else self.gpu_cache[src_layer_idx][0].shape[1])
+        valid = (token_indices >= 0) & (token_indices < seq_dim)
+        target_cache_idx = target_cache_idx[valid]
+        token_indices = token_indices[valid]
+        if target_cache_idx.numel() == 0:
+            return
+
+        if self.vattn_mega_cache and self.megacache_k is not None:
+            # megacache: layers are a contiguous dim (dim 2), so the copy into all
+            # deeper layers is a SINGLE broadcast scatter (2 kernels total: K, V)
+            # instead of a Python loop launching 2*(num_layers - src) tiny kernels.
+            # shape: [batch, seq, num_layers, num_kv_heads, head_size]
+            src_k = self.megacache_k[target_cache_idx, token_indices, src_layer_idx]      # [N, H, D]
+            src_v = self.megacache_v[target_cache_idx, token_indices, src_layer_idx]      # [N, H, D]
+            self.megacache_k[target_cache_idx, token_indices, src_layer_idx + 1:] = src_k.unsqueeze(1)
+            self.megacache_v[target_cache_idx, token_indices, src_layer_idx + 1:] = src_v.unsqueeze(1)
+        else:
+            # Non-megacache layout: each layer is a separate tensor; copy per layer.
+            src_k = self.gpu_cache[src_layer_idx][0][target_cache_idx, token_indices]
+            src_v = self.gpu_cache[src_layer_idx][1][target_cache_idx, token_indices]
+            for layer in self.gpu_cache[src_layer_idx + 1:]:
+                layer[0][target_cache_idx, token_indices] = src_k
+                layer[1][target_cache_idx, token_indices] = src_v
     
     def copy_k_cache_between_layers(self, src_layer_idx: int, dest_layer_idx: int, seq_ids_to_copy: List[int], token_indices: torch.Tensor) -> None:
         target_cache_idx = [self.seq_to_batch_idx[seq_id] for seq_id in seq_ids_to_copy]
@@ -193,7 +250,8 @@ class vATTNCacheEngine(BaseCacheEngine):
         # print(f"[vATTNCacheEngine] curr_batch_idx: {self.curr_batch_idx}")
         get_attention_wrapper().set_batch_idx(self.curr_batch_idx, torch.tensor(b_idx_gen, dtype=torch.int32, device=self.device))
 
-        self.step_times.append(end_time - start_time)
+        if EE_PROFILE:
+            self.step_times.append(end_time - start_time)
         # print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
 
     def on_step_completion(self, seq_metadata_list: List[SequenceMetadata]) -> None:

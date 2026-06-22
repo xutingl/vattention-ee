@@ -40,6 +40,14 @@ def main():
     buffer_age_factor = utils.args.buffer_age_factor
     dataset_name = utils.args.dataset_name
 
+    # Launch-time EE toggles, passed to the benchmark (and its Ray workers) via env
+    # vars so they can be set per-run from the CLI without editing source.
+    #   --collect_conf false  -> drop per-step confidence host syncs (throughput)
+    #   --ee_profile          -> record per-step EE timing instrumentation
+    run_env = dict(os.environ)
+    run_env["DREX_COLLECT_CONF"] = "0" if str(utils.args.collect_conf).lower() == "false" else "1"
+    run_env["DREX_EE_PROFILE"] = "1" if utils.args.ee_profile else "0"
+
     for model in models:
         for qps in qps_values:
             for backend in attention_backends:
@@ -93,7 +101,7 @@ def main():
                 print("Running command:", " ".join(command))
 
                 try:
-                    subprocess.run(command, check=True)
+                    subprocess.run(command, check=True, env=run_env)
                 except:
                     continue
 

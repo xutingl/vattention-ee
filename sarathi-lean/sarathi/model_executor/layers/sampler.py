@@ -1,5 +1,6 @@
 """A layer that samples the next tokens from the model's outputs."""
 
+import os
 from typing import Dict, List, Optional, Tuple
 import math
 
@@ -17,6 +18,13 @@ from sarathi.model_executor.parallel_utils.tensor_parallel import (
 )
 
 _SAMPLING_EPS = 1e-5
+
+# On normal (non-EE) decode steps the model passes conf=None and we would
+# otherwise recompute a full-vocab softmax + topk + host sync here purely to log
+# the per-step confidence. Launch-time toggle (set via env var, not source):
+# DREX_COLLECT_CONF=0 drops it for throughput runs (default on). run_ee.py sets
+# this from its --collect_conf flag.
+COLLECT_CONF = os.environ.get("DREX_COLLECT_CONF", "1") != "0"
 
 
 class Sampler(nn.Module):
@@ -63,7 +71,7 @@ class Sampler(nn.Module):
             logits = _get_logits(hidden_states, self.embedding, self.vocab_size)
 
         # Measuring conf score
-        if conf is None:
+        if conf is None and COLLECT_CONF:
             probs = torch.softmax(logits, dim=-1, dtype=torch.float)
             top_2 = torch.topk(probs, dim=-1, k=2)[0]
 
@@ -73,6 +81,10 @@ class Sampler(nn.Module):
             if isinstance(conf_lst, float):
                 conf_lst = [conf_lst]
             conf = conf.mean().item()
+        elif conf is None:
+            # Confidence collection disabled: leave conf=None (downstream skips it)
+            # and hand back an empty list so per-step logging no-ops safely.
+            conf_lst = [] if conf_lst is None else conf_lst
 
 
         # Apply temperature scaling.
