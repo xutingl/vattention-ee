@@ -39,6 +39,7 @@ def main():
     enable_profiling = utils.args.enable_profiling
     buffer_age_factor = utils.args.buffer_age_factor
     dataset_name = utils.args.dataset_name
+    model_load_format = utils.args.model_load_format
 
     # Launch-time EE toggles, passed to the benchmark (and its Ray workers) via env
     # vars so they can be set per-run from the CLI without editing source.
@@ -60,6 +61,7 @@ def main():
                 command = [
                     'python', main,
                         '--model_name', utils.models[model]['hfrecord'],
+                        '--model_load_format', f'{model_load_format}',
                         '--model_tensor_parallel_degree', f'{tp_dim}',
                         '--request_generator_provider', 'real',
                         '--synthetic_request_generator_length_provider', 'trace',

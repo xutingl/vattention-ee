@@ -23,6 +23,12 @@ parser.add_argument('--kv_method', type=str, default='copy', help='Technique to 
 parser.add_argument('--enable_profiling', action='store_true', help='Enable profiling')
 parser.add_argument('--buffer_age_factor', '-a', type=float, default=0.0, help='Buffer age factor')
 parser.add_argument('--model', '-m', type=str, default='llama-2-13b', help='Model key (e.g. llama-2-13b, qwen-14b-chat)')
+parser.add_argument('--model_load_format', type=str, default='auto',
+                    choices=['auto', 'dummy', 'pt', 'safetensors', 'npcache'],
+                    help="Weight load format. 'auto' (default) = load real pretrained weights from "
+                         "disk (meaningful early-exit behavior and quality metrics). 'dummy' = random "
+                         "in-process init (fast throughput/plumbing run, no checkpoint read; outputs "
+                         "are garbage and confidence scores are meaningless).")
 parser.add_argument('--dataset_name', type=str, default='cnn', choices=['cnn', 'xsum'], help='Dataset name for real request generator (cnn or xsum)')
 parser.add_argument('--collect_conf', type=str, default='true', choices=['true', 'false'], help="Collect/log per-step confidence scores. Set 'false' on throughput runs to drop the per-step .tolist()/.item() host syncs (sets DREX_COLLECT_CONF).")
 parser.add_argument('--ee_profile', action='store_true', help='Record per-step EE timing instrumentation (buffer/copy/kvcache timings; sets DREX_EE_PROFILE). Off by default.')

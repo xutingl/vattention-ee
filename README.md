@@ -190,6 +190,22 @@ Other drivers: `scripts/benchmark_e2e_static_trace.py`,
 
 ---
 
+## Experiments
+
+New experiments live under [`experiments/`](experiments/), organized as
+`experiments/<experiment_name>/<environment_model>/` (e.g.
+`experiments/sanity_check/b200_llama_13b/`). Each instance is self-contained — a README,
+a run script (`run.sh`, launched on a compute node with `nohup`; or `run.sbatch` from a
+login node), and a `results/` dir. See [`experiments/README.md`](experiments/README.md)
+for the conventions and how to add one;
+[`experiments/sanity_check/`](experiments/sanity_check/) is the reference example (decode
+throughput for every EE policy + the non-EE baseline on Llama-2-13B).
+
+The `outputs*/` dirs and the older `experiments/e2e_dynamic_eval/` are pre-existing
+results that predate this convention.
+
+---
+
 ## What changed for the B200 port
 
 The original code targeted an A100 with CUDA 12.1 / torch 2.3 / flash-attn 2.5.9 —
