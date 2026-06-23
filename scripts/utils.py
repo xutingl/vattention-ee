@@ -56,7 +56,7 @@ models = {
     'yi-34b-2': {'tp': 2, 'hfrecord': '01-ai/Yi-34B-200k', 'logentry': 'yi-34b'},
     'llama-2-13b': {'tp': 1, 'hfrecord': '/vast/projects/liuv/pennnetworks/hf_models/Llama-2-13b-chat-hf', 'logentry': 'llama2-13b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'TheBloke/Llama-2-70B-GPTQ', 'logentry': 'llama2-70b-ee'}, # 4 bit quant
-    'llama-2-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
+    'llama-2-70b': {'tp': 1, 'hfrecord': '/vast/projects/liuv/pennnetworks/hf_models/Llama-2-70b-chat-hf', 'logentry': 'llama2-70b-ee'},
     # 'llama-2-70b': {'tp': 1, 'hfrecord': 'caisarl76/llama2-70B-8bit', 'logentry': 'llama2-70b-ee'}, # 8 bit quant
     'llama-3-70b': {'tp': 1, 'hfrecord': 'meta-llama/Llama-3.3-70B-Instruct', 'logentry': 'llama3-70b-ee'},
     

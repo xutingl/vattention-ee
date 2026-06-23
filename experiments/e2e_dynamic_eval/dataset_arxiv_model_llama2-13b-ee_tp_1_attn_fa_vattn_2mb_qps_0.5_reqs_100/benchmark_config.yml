@@ -1,9 +1,9 @@
 buffer_age_factor: 0.0
 cluster_num_replicas: 1
 conf_threshold: 0.2
-csv_path: /vast/projects/liuv/pennnetworks/xutingl/vattention-ee/experiments/sanity_check/b200_llama_13b/results/
+csv_path: /vast/projects/liuv/pennnetworks/xutingl/vattention-ee/experiments/overhead_scaling/b200_llama_13b/results/prof_b32/
 early_exit_head_path: ''
-ee_policy: 'off'
+ee_policy: rebatching
 enable_profiling: false
 fixed_request_length_generator_decode_tokens: 512
 fixed_request_length_generator_prefill_tokens: 4096
@@ -29,14 +29,14 @@ model_max_model_len: 512
 model_name: /vast/projects/liuv/pennnetworks/hf_models/Llama-2-13b-chat-hf
 model_pipeline_parallel_degree: 1
 model_tensor_parallel_degree: 1
-num_ee_threshold: -1
+num_ee_threshold: 2
 output_dir: /vast/projects/liuv/pennnetworks/xutingl/vattention-ee/experiments/e2e_dynamic_eval/dataset_arxiv_model_llama2-13b-ee_tp_1_attn_fa_vattn_2mb_qps_0.5_reqs_100//
 poisson_request_interval_generator_qps: 0.5
 port: 8000
 real_request_generator_dataset_name: cnn
 real_request_generator_num_requests: 100
 replica_resource_mapping: ''
-replica_scheduler_max_batch_size: 4
+replica_scheduler_max_batch_size: 32
 replica_scheduler_provider: vllm
 request_generator_provider: real
 sarathi_scheduler_chunk_schedule_max_tokens: 131072
@@ -70,7 +70,7 @@ trace_request_length_generator_trace_file: /vast/projects/liuv/pennnetworks/xuti
 uniform_request_length_generator_max_tokens: 4096
 uniform_request_length_generator_min_tokens: 1024
 uniform_request_length_generator_prefill_to_decode_ratio: 20.0
-vllm_scheduler_max_tokens_in_batch: 2048
+vllm_scheduler_max_tokens_in_batch: 16384
 write_chrome_trace: true
 write_json_trace: true
 write_metrics: true

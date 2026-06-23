@@ -569,9 +569,18 @@ class BenchmarkRunnerLauncher:
         # Importing the serving stack (torch / vAttention / flashinfer) initializes
         # CUDA before ray.init(), which breaks Ray's GPU autodetection (it registers
         # 0 GPUs). Pass the device count explicitly so the "GPU" resource is present.
+        import os
         import torch
         _num_gpus = torch.cuda.device_count()
-        ray.init(ignore_reinit_error=True, num_gpus=_num_gpus or None)
+        # On shared SLURM nodes Ray autodetects the full node CPU count (e.g. 224)
+        # and prestarts that many workers, which thrash and time out during startup
+        # under the job's smaller cgroup -> ray.init hangs at "Started a local Ray
+        # instance" and the GPU worker never registers. DREX only schedules one
+        # replica actor, so cap Ray's logical CPUs. Override with DREX_RAY_NUM_CPUS
+        # (0 = Ray autodetect / old behavior).
+        _ray_cpus = int(os.environ.get("DREX_RAY_NUM_CPUS", "16"))
+        ray.init(ignore_reinit_error=True, num_gpus=_num_gpus or None,
+                 num_cpus=_ray_cpus or None)
 
         if self._is_multi_replica:
             self._validate_cluster_resources()

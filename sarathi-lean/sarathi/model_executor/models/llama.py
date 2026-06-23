@@ -27,6 +27,7 @@ The input of the model is flattened to a 1D tensor of tokens.
 from typing import Any, Dict, List, Optional, Tuple
 
 import os
+import json
 import torch
 from torch import nn
 from transformers import LlamaConfig
@@ -277,6 +278,7 @@ class LlamaDecoderLayer(nn.Module):
 #   DREX_EE_PROFILE=1   -> record per-step timing instrumentation (default off)
 #   DREX_COLLECT_CONF=0 -> drop per-step confidence host syncs for throughput (default on)
 EE_PROFILE = os.environ.get("DREX_EE_PROFILE", "0") == "1"
+EE_PROFILE_SYNC = os.environ.get("DREX_EE_PROFILE_SYNC", "0") == "1"
 COLLECT_CONF = os.environ.get("DREX_COLLECT_CONF", "1") != "0"
 
 
@@ -421,6 +423,11 @@ class LlamaModel(nn.Module):
         self.early_exit_head = None
         self.rebatching_time = 0
         self.num_ee_threshold = getattr(config, 'num_ee_threshold', -1)
+        # How many buffered survivors before they piggyback onto an in-flight deep pass
+        # (inline draining). Lower = drain more eagerly -> fewer dedicated flushes.
+        # Default 1 (the `ab_combined` ablation config: maximally eager inline draining).
+        # Override with DREX_INLINE_DRAIN_MIN.
+        self.inline_drain_min = int(os.environ.get("DREX_INLINE_DRAIN_MIN", "1"))
 
         self.kv_method = config.kv_method # "postfill" or "copy"
         self.recompute_seq_id_to_hidden_states = defaultdict(list) # seq_id -> a list of hidden states. This hidden states is the output of EE'ed layer and will be used for recomputing kv cache.
@@ -656,6 +663,8 @@ class LlamaModel(nn.Module):
         # cache_engine.copy_kv_cache(exited_layer, seq_ids_to_copy, token_indices)
 
         if EE_PROFILE:
+            if EE_PROFILE_SYNC:
+                torch.cuda.synchronize()
             self.fill_kvcache_time_lst.append(time.perf_counter() - start_time)
 
 
@@ -830,6 +839,41 @@ class LlamaModel(nn.Module):
         # print(f"time EE overhead: {sum(self.ee_overhead_time_lst) / max(len(self.ee_overhead_time_lst), 1)}, length: {len(self.ee_overhead_time_lst)}")
         # print(f"time fill kvcache: {sum(self.fill_kvcache_time_lst) / max(len(self.fill_kvcache_time_lst), 1)}, length: {len(self.fill_kvcache_time_lst)}")
         # print(f"================================================")
+
+        # --- EE profiling sidecar (DREX_EE_PROFILE=1 + DREX_EE_PROFILE_OUT=<path>) ---
+        # All timers below already exist; this only serializes their running
+        # aggregates so an offline summarizer can read them. No-op unless both
+        # env vars are set. Writes cumulative means every 50 forwards (last write
+        # == final aggregates). Off the hot path otherwise.
+        if EE_PROFILE:
+            self._prof_fwd_count = getattr(self, "_prof_fwd_count", 0) + 1
+            _prof_out = os.environ.get("DREX_EE_PROFILE_OUT", "")
+            if _prof_out and self._prof_fwd_count % 50 == 0:
+                def _mean(lst):
+                    return (sum(lst) / len(lst)) if lst else 0.0
+                # NOTE: step_sync_ms is CPU-side (vattention.step accumulated since
+                # engine construction) and is NOT affected by DREX_EE_PROFILE_SYNC,
+                # unlike the GPU-synced data-plane keys (fill_kvcache_ms, buf_*_ms).
+                _step_mean = cache_engine.mean_step_time() if cache_engine is not None else 0.0
+                _prof = {
+                    "forwards": self._prof_fwd_count,
+                    "ee_overhead_ms": _mean(self.ee_overhead_time_lst) * 1e3,
+                    "fill_kvcache_ms": _mean(self.fill_kvcache_time_lst) * 1e3,
+                    "update_kvcache_ms": _mean(self.update_kvcache_time_lst) * 1e3,
+                    "buf_add_ms": _mean(self.deep_buffer.time_spent_adding) * 1e3,
+                    "buf_take_ms": _mean(self.deep_buffer.time_spent_taking) * 1e3,
+                    "step_sync_ms": _step_mean * 1e3,
+                    "rebatching_total_ms": self.rebatching_time * 1e3,
+                    "n_ee_overhead": len(self.ee_overhead_time_lst),
+                    "n_fill_kvcache": len(self.fill_kvcache_time_lst),
+                    "n_buf_add": len(self.deep_buffer.time_spent_adding),
+                    "n_buf_take": len(self.deep_buffer.time_spent_taking),
+                }
+                try:
+                    with open(_prof_out, "w") as _f:
+                        json.dump(_prof, _f)
+                except OSError:
+                    pass
 
         
 
@@ -1007,7 +1051,7 @@ class LlamaModel(nn.Module):
 
                     # If there are enough requests in the `deep_buffer`, we will add them to the current deep iteration i.e. concate them to current hidden_states.
                     # if len(self.deep_buffer) >= max(self.max_batch_size//2, self.get_adaptive_rebatching_threshold(self.max_batch_size, rebatching_ee_factor)):
-                    if len(self.deep_buffer) >= 2:
+                    if len(self.deep_buffer) >= self.inline_drain_min:
                         # Take hidden states from `deep_buffer`
                         deep_buffer_hidden_states, deep_buffer_seq_ids, deep_buffer_positions = self.deep_buffer.take_hidden_states()
 

@@ -1,0 +1,1 @@
+{"forwards": 1600, "ee_overhead_ms": 1.366243509754326, "fill_kvcache_ms": 0.1895120042373567, "update_kvcache_ms": 0.2200466694224292, "buf_add_ms": 0.04276676336303353, "buf_take_ms": 0.07815658678061406, "step_sync_ms": 0.14975833283648216, "rebatching_total_ms": 251.993989222683, "n_ee_overhead": 1507, "n_fill_kvcache": 351, "n_buf_add": 350, "n_buf_take": 253}

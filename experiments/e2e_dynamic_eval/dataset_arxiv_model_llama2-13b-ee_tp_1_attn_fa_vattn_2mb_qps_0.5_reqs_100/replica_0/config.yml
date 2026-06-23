@@ -2,7 +2,7 @@ model: /vast/projects/liuv/pennnetworks/hf_models/Llama-2-13b-chat-hf
 replica_id: 0
 replica_resource_mapping:
 - !!python/tuple
-  - node:10.218.137.21
+  - node:10.218.137.26
   - 0
 tokenizer: /vast/projects/liuv/pennnetworks/hf_models/Llama-2-13b-chat-hf
 tokenizer_mode: auto
@@ -18,8 +18,8 @@ gpu_memory_utilization: 0.95
 revision: null
 scheduler_type: vllm
 max_model_len: 512
-max_num_seqs: 4
-max_num_batched_tokens: 2048
+max_num_seqs: 32
+max_num_batched_tokens: 16384
 chunk_size: null
 enable_dynamic_chunking_schedule: false
 low_chunk_size: 128
@@ -39,10 +39,10 @@ enable_chrome_trace: true
 enable_request_outputs: false
 keep_individual_batch_metrics: false
 attention_backend: fa_vattn_megacache
-ee_policy: 'off'
+ee_policy: rebatching
 shallow_exit_layer: 20
 conf_threshold: 0.2
 early_exit_head_path: ''
-num_ee_threshold: -1
+num_ee_threshold: 2
 kv_method: copy
 buffer_age_factor: 0.0

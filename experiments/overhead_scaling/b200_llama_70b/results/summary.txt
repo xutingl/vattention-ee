@@ -1,0 +1,31 @@
+  b  dec_tput  ART_auto  ART_deriv    c_ms  t_f_ms  t_s_ms  t_d_ms  c_over_td  kvfill  bufstg  upd_kv  stepsync  skipmask   resid  d_off%  d_med%
+  8   149.617         4      3.404  21.867  57.171  27.641  51.396      0.425   0.191   0.119   0.156     0.085     6.195  15.120   6.446   5.501
+ 16   206.172         8      7.482  43.003  80.672  31.717  91.958      0.468   0.189   0.137   0.232     0.156     6.895  35.393   8.212   7.722
+ 32   241.086        16     16.109  83.843 123.555  40.845 166.552      0.503   0.190   0.149   0.462     0.375     7.051  75.615   0.955   0.137
+ 64   273.299        32     37.684 157.442 167.935  57.986 267.391      0.589   0.193   0.167   1.355     1.249     7.481 146.997   3.232   2.903
+128   314.278        64        NaN   8.978 297.825 306.803   0.000        NaN   0.000   0.000   0.000     0.000     0.000   8.978   6.831   7.803
+
+c_ms = t_s+t_d-t_f (t_f from off baseline). c/t_d is the scaling ratio (thesis: ~flat).
+ART_auto = engine runtime value (parsed from log; b//2 if never updated).
+ART_deriv = b*(c/t_d), the value the adaptive formula prescribes.
+breakdown ms = mean per occurrence from --ee_profile sidecar (data: kvfill,bufstg; control: upd_kv,stepsync,skipmask; resid = c - sum, the two-pass/launch fixed cost).
+c_ms is from the rebatch cell; breakdown ms are from the separate prof cell (different invocation -> expect noise).
+Breakdown is an attribution (CPU-launch timers + optional sync), not an exact partition.
+
+=== RCT (request completion time, seconds): avg / median(p50) / tail(p95,p99) ===
+  b  policy  rct_avg  rct_med  rct_p95  rct_p99   n
+  8     off    6.506    7.346    7.948    8.013 100
+  8  median    6.825    7.670    7.803    7.849 100
+  8 rebatch   10.825   11.687   13.877   14.829 100
+ 16     off    9.783   11.132   11.744   11.844 100
+ 16  median    9.833   11.065   11.715   11.744 100
+ 16 rebatch   16.594   17.873   20.820   21.770 100
+ 32     off   14.947   16.930   18.656   18.787 100
+ 32  median   15.385   17.271   18.666   18.762 100
+ 32 rebatch   26.516   28.049   39.096   48.081 100
+ 64     off   23.118   23.877   30.500   30.512 100
+ 64  median   23.345   23.901   30.572   30.583 100
+ 64 rebatch   37.851   41.482   43.108   43.573 100
+128     off   33.462   37.978   38.105   38.117 100
+128  median   33.779   38.329   38.456   38.467 100
+128 rebatch   37.370   39.124   39.252   39.263 100

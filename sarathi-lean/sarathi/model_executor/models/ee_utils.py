@@ -11,6 +11,7 @@ from sarathi.model_executor.attention import get_attention_wrapper
 #   DREX_EE_PROFILE=1   -> record per-step buffer/copy/kvcache timing (default off)
 #   DREX_COLLECT_CONF=0 -> drop per-step confidence host syncs for throughput (default on)
 EE_PROFILE = os.environ.get("DREX_EE_PROFILE", "0") == "1"
+EE_PROFILE_SYNC = os.environ.get("DREX_EE_PROFILE_SYNC", "0") == "1"
 COLLECT_CONF = os.environ.get("DREX_COLLECT_CONF", "1") != "0"
 
 
@@ -47,6 +48,8 @@ class HiddenStatesBuffer():
         self.positions[slots] = positions
 
         if EE_PROFILE:
+            if EE_PROFILE_SYNC:
+                torch.cuda.synchronize()
             self.time_spent_adding.append(time.perf_counter() - start_time)
 
         
@@ -81,6 +84,8 @@ class HiddenStatesBuffer():
         output_positions = self.positions[slots]
 
         if EE_PROFILE:
+            if EE_PROFILE_SYNC:
+                torch.cuda.synchronize()
             self.time_spent_taking.append(time.perf_counter() - start_time)
         return output_hidden_states, output_req_ids, output_positions
 

@@ -1,0 +1,26 @@
+
+===================== BATCH 8 =====================
+config                     decode_tok/s  vs_off%  ee_rate  ee_iter forced_out would_stay
+----------------------------------------------------------------------------------------
+off (baseline)                    136.9      0.0    0.000        0          0          0
+eager (baseline)                  149.0      8.8    0.160      234       1609          0
+average (baseline)                140.1      2.4    0.000        2          3        202
+rebatching thr=auto               141.0      3.0    0.000        0          0        203
+rebatching thr=0                  146.4      6.9    0.019      198          0          0
+rebatching thr=2                  137.9      0.7    0.001        2          0        204
+rebatching thr=4                  136.1     -0.6    0.000        0          0        203
+rebatching thr=6                  141.0      3.0    0.000        0          0        203
+
+===================== BATCH 16 =====================
+config                     decode_tok/s  vs_off%  ee_rate  ee_iter forced_out would_stay
+----------------------------------------------------------------------------------------
+off (baseline)                    190.9      0.0    0.000        0          0          0
+eager (baseline)                  209.0      9.5    0.294      223       3222          0
+average (baseline)                187.9     -1.6    0.000        1          4        230
+rebatching thr=auto               188.1     -1.5    0.000        0          0        231
+rebatching thr=0                  188.1     -1.5    0.019      182          0          0
+rebatching thr=2                  189.1     -0.9    0.001        3          0        206
+rebatching thr=4                  187.3     -1.9    0.000        0          0        231
+rebatching thr=6                  190.7     -0.1    0.000        0          0        231
+
+Note: for the `auto` rebatching cell, grep its subdir run.log for 'rebatching_ee_factor' / 'overhead is negative' to see what ART chose.

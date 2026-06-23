@@ -254,6 +254,10 @@ class vATTNCacheEngine(BaseCacheEngine):
             self.step_times.append(end_time - start_time)
         # print(f"[vATTNCacheEngine] num step times: {len(self.step_times)}. total time: {sum(self.step_times)}. avg time: {sum(self.step_times) / len(self.step_times)}")
 
+    def mean_step_time(self) -> float:
+        """Mean CPU-side time of one vattention.step() sync (s). 0 if unprofiled."""
+        return (sum(self.step_times) / len(self.step_times)) if self.step_times else 0.0
+
     def on_step_completion(self, seq_metadata_list: List[SequenceMetadata]) -> None:
         for seq_metadata in seq_metadata_list:
             if seq_metadata.seq.is_finished():

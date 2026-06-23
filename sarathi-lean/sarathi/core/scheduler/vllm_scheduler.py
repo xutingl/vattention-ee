@@ -1,3 +1,4 @@
+import os
 import time
 from typing import List
 
@@ -41,8 +42,13 @@ class VLLMScheduler(BaseScheduler):
 
         # Minimum buffer occupancy before triggering a dedicated flush iteration.
         # Prevents wasting a full iteration to process just 1-2 buffered sequences.
-        self.min_flush_size = max(self.scheduler_config.max_num_seqs // 2, 1)
-        self.min_flush_size = 8
+        # Default = batch size (the `ab_combined` ablation config: flush only when the
+        # buffer is full, so flushes are as dense as possible). Stays <= the KV-slot pool
+        # ceiling (2*batch+1), so it won't hit the 2*batch allocation crash.
+        # Override with DREX_MIN_FLUSH_SIZE.
+        self.min_flush_size = int(
+            os.environ.get("DREX_MIN_FLUSH_SIZE", str(self.scheduler_config.max_num_seqs))
+        )
 
         self.request_age_threshold = scheduler_config.buffer_age_factor
 

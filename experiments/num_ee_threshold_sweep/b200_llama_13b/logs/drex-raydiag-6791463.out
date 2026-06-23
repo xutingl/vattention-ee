@@ -1,0 +1,11 @@
+[drex_env] DREX_ROOT=/vast/projects/liuv/pennnetworks/xutingl/vattention-ee
+[drex_env] python=/vast/projects/liuv/pennnetworks/xutingl/vattention-ee/.venv/bin/python  cuda=/vast/projects/liuv/pennnetworks/xutingl/vattention-ee/cuda-12.8/bin/nvcc
+host: dgx024  CVD=0
+compute_mode, memory.used [MiB]
+Default, 0 MiB
+### TEST A: driver PRE-initializes CUDA before ray.init (mirrors DREX)
+PREINIT=True  CVD=0
+driver device_count: 1
+2026-06-23 01:43:41,738	INFO worker.py:1672 -- Using address local set in the environment variable RAY_ADDRESS
+2026-06-23 01:43:53,160	INFO worker.py:2012 -- Started a local Ray instance.
+slurmstepd: error: *** JOB 6791463 ON dgx024 CANCELLED AT 2026-06-23T01:54:36 ***

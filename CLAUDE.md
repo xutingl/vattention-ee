@@ -63,6 +63,17 @@ from the local `cuda-12.8/` toolkit via `CUDA_HOME`.
 - **From a login node → must use `sbatch`.** Login nodes have no GPU and kill
   heavy/model-loading jobs. Submit the run as a batch job (`sbatch`) so it lands on
   a compute node; do not run model loads or benchmarks directly on the login node.
+  Canonical sbatch guide: [`/vast/projects/liuv/pennnetworks/xutingl/sbatch_instruction.md`](/vast/projects/liuv/pennnetworks/xutingl/sbatch_instruction.md)
+  (partition `dgx-b200`, `--qos=dgx`, `--gpus=1`, `mkdir -p logs` first).
+  **⚠️ sbatch currently does NOT work for DREX on this cluster:** DREX runs the model in a
+  **Ray** worker, and under the SLURM batch cgroup Ray hangs at startup or the worker fails
+  to acquire the GPU (`torch.cuda.set_device` → *"CUDA device busy or unavailable"*) on a
+  free GPU. Isolated to Ray-under-SLURM (a minimal `ray.init(num_gpus=1)`+GPU actor also
+  hangs via sbatch); `ray stop --force` fixes the hang but not the GPU handoff, and
+  `RAY_NOSET_CUDA_VISIBLE_DEVICES=1` did not help. **Until fixed, use an interactive
+  compute-node shell** (`srun --partition=dgx-b200 --qos=dgx --gpus=1 -t 04:00:00 --pty bash`)
+  and run directly. Full write-up + kept-but-broken sbatch artifacts:
+  `experiments/num_ee_threshold_sweep/b200_llama_13b/` (see its README; run via `run_b16.sh`).
 
 Entry point: `sarathi-lean/sarathi/benchmark/main.py`, wrapped by `scripts/run_ee.py`.
 

@@ -9,6 +9,15 @@ find, reproduce, and compare.
 > `outputs_7b_daniel/`, `outputs_qwen_14b/`, and the legacy `experiments/e2e_dynamic_eval/`.
 > Those predate this convention and are left as-is.
 
+## Experiments in this repo
+
+| Experiment | What it measures |
+|---|---|
+| [`sanity_check/`](sanity_check/) | All EE policies + the non-EE baseline; decode throughput at batch 4 & 8 |
+| [`num_ee_threshold_sweep/`](num_ee_threshold_sweep/) | Does a fixed rebatching `num_ee_threshold` beat the no-EE baseline? Batch 8 & 16, thresholds {auto, 0, 2, 4, 6} |
+| [`rebatching_overhead_ablation/`](rebatching_overhead_ablation/) | Do stronger inline draining + raised `min_flush_size` recover rebatching's flush-overhead loss? 13B, batch 16, thr=2 |
+| [`overhead_scaling/`](overhead_scaling/) | How rebatching overhead `c` and `c/t_d` scale with batch size {8..128}, and `c`'s control-plane vs data-plane breakdown. 13B |
+
 ## Layout
 
 ```
@@ -48,14 +57,24 @@ tail -f run.log
 `run.sh` is self-contained: it `source`s `scripts/drex_env.sh` (venv + local CUDA
 toolkit), sets `RAY_ADDRESS=local`, and runs `ray stop --force` before each run.
 
-### From a login node (use `sbatch`)
+### From a login node (use `sbatch`) — ⚠️ currently broken for DREX
 
-Login nodes have no GPU and will kill model-loading jobs. Submit a `run.sbatch` that
-requests the `dgx-b200` partition so the job lands on a compute node:
+Login nodes have no GPU. The usual answer is `sbatch`, **but DREX's Ray-based GPU
+worker does not work under the SLURM batch cgroup on this cluster** (Ray hangs at
+startup, or the worker hits *"CUDA device busy or unavailable"* on a free GPU — even a
+minimal `ray.init(num_gpus=1)` + GPU actor hangs via sbatch; isolated to Ray-under-SLURM,
+not DREX). `ray stop --force` and `RAY_NOSET_CUDA_VISIBLE_DEVICES=1` did not resolve it.
+**Until that's fixed, get an interactive compute-node shell and run directly** (the
+`nohup bash run.sh` path above):
 
 ```bash
-sbatch experiments/<experiment_name>/<environment_model>/run.sbatch
+srun --partition=dgx-b200 --qos=dgx --gpus=1 --cpus-per-task=16 -t 04:00:00 --pty bash
+# ...then on the node: cd .../<env_model> && nohup bash run.sh > run.log 2>&1 &
 ```
+
+See [`num_ee_threshold_sweep/b200_llama_13b/README.md`](num_ee_threshold_sweep/b200_llama_13b/)
+for the full write-up of the sbatch/Ray failure and the kept-but-not-working sbatch
+artifacts.
 
 ## Where results go
 
